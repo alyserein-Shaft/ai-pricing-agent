@@ -1,0 +1,32 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { extractSupplierQuote, exactProductCandidates, supplierPriceEligibility } from "../app/domain/supplier-price-intake.mjs";
+
+const csv = new TextEncoder().encode(`Supplier,Acme Fire\nQuote No,Q-2026-10\nCurrency,SAR\nIssue Date,2026-08-01\nValid Until,2026-12-31\nItem,Manufacturer,Model,Description,Unit,Qty,Currency,List Price,Discount,Net Unit Price\n1,Honeywell,2151,Smoke detector,EA,10,SAR,100,10,90\n,Section A,,,,,,,,\n,Subtotal,,,,,,,,900\n,Total,,,,,,,,900`);
+const extracted = extractSupplierQuote(csv, { extension: "csv", fileName: "quote.csv" });
+const line = extracted.rows.find(row => row.rowType === "SUPPLIER_LINE");
+const eligible = overrides => supplierPriceEligibility({ rowType: "SUPPLIER_LINE", productId: "p1", mappingActorId: "u1", mappingBasis: "EXACT_CANONICAL_MODEL", currency: "SAR", netUnitPrice: 9000, supplierId: "s1", quotationReference: "Q-2026-10", documentId: "d1", documentVersionId: "v1", issueDate: "2026-08-01", validUntil: "2026-12-31", reviewStatus: "Approved", downstreamUse: "Costing Eligible", ...overrides }, { at: new Date("2026-08-11T00:00:00Z") });
+
+test("1 structured CSV supplier line extracts exact commercial fields", () => { assert.equal(line.partNumber, "2151"); assert.equal(line.netUnitPrice, 90); assert.equal(line.currency, "SAR"); });
+test("2 header, section, subtotal and total rows never become supplier lines", () => { assert.equal(extracted.rows.filter(row => row.rowType === "SUPPLIER_LINE").length, 1); assert.ok(extracted.rows.some(row => row.rowType === "HEADER")); assert.ok(extracted.rows.some(row => row.rowType === "SUBTOTAL")); assert.ok(extracted.rows.some(row => row.rowType === "TOTAL")); });
+test("3 exact canonical model creates only a mapping candidate", () => assert.deepEqual(exactProductCandidates(line, [{ id: "p1", part_number: "2151", normalized_part_number: "2151", manufacturer: "Honeywell" }]), [{ productId: "p1", basis: "MANUFACTURER_EXACT_MODEL" }]));
+test("4 fuzzy description alone cannot create a mapping candidate", () => assert.deepEqual(exactProductCandidates({ description: "Smoke detector" }, [{ id: "p1", part_number: "2151", description: "Smoke detector" }]), []));
+test("5 unmapped line is not costing eligible", () => assert.ok(eligible({ productId: null }).blockers.includes("UNMAPPED")));
+test("6 missing currency is not costing eligible", () => assert.ok(eligible({ currency: null }).blockers.includes("MISSING_CURRENCY")));
+test("7 missing validity is not costing eligible", () => assert.ok(eligible({ validUntil: null }).blockers.includes("MISSING_VALIDITY")));
+test("8 expired price is not costing eligible", () => assert.ok(eligible({ validUntil: "2026-01-01" }).blockers.includes("EXPIRED")));
+test("9 extracted line begins Needs Review", () => assert.equal(line.reviewStatus, "Needs Review"));
+test("10 approval is mandatory", () => assert.ok(eligible({ reviewStatus: "Needs Review" }).blockers.includes("APPROVAL_REQUIRED")));
+test("11 rejected line cannot enter costing", () => assert.ok(eligible({ reviewStatus: "Rejected" }).blockers.includes("REJECTED")));
+test("12 approved current mapped line is eligible for canonical pricing discovery", () => assert.deepEqual(eligible({}), { eligible: true, blockers: [] }));
+test("13 extraction never selects a price", () => assert.equal("selectedPriceSourceId" in line, false));
+test("14 extraction never approves pricing", () => assert.equal("pricingApproval" in line, false));
+test("15 source sheet and row provenance persists in extraction output", () => { assert.equal(line.sheet, "CSV"); assert.equal(line.rowNumber, 7); assert.ok(line.raw); });
+test("16 migration preserves quote revisions and historical rows", async () => { const sql = await readFile(new URL("../drizzle/0055_supplier_price_intake.sql", import.meta.url), "utf8"); assert.match(sql, /document_version_id TEXT NOT NULL/); assert.match(sql, /superseded_at TEXT/); });
+test("17 duplicate processing is protected by a unique input fingerprint", async () => assert.match(await readFile(new URL("../drizzle/0055_supplier_price_intake.sql", import.meta.url), "utf8"), /UNIQUE INDEX supplier_quote_intake_fingerprint_idx/));
+test("18 API scopes every query and mutation to the owned project", async () => { const source = await readFile(new URL("../worker/supplier-price-intake-api.mjs", import.meta.url), "utf8"); assert.match(source, /owner_user_id=\?/); assert.match(source, /id=\? AND project_id=\?/); });
+test("19 raw source facts are preserved without invented defaults", () => { assert.equal(line.supplier, "Acme Fire"); assert.equal(line.quotationReference, "Q-2026-10"); assert.equal(line.issueDate, "2026-08-01"); assert.equal(line.validUntil, "2026-12-31"); });
+test("20 canonical promotion uses project supplier quote and does not write pricing_lines", async () => { const source = await readFile(new URL("../worker/supplier-price-intake-api.mjs", import.meta.url), "utf8"); assert.match(source, /'Project Supplier Quote'/); assert.doesNotMatch(source, /INSERT INTO pricing_lines/); });
+test("21 quotation reference is mandatory for costing authority", () => assert.ok(eligible({ quotationReference: null }).blockers.includes("MISSING_QUOTATION_REFERENCE")));
+test("22 review workspace uses governed inline controls without browser prompts", async () => { const source = await readFile(new URL("../app/components/workspaces/SupplierPriceIntakeWorkspace.tsx", import.meta.url), "utf8"); assert.doesNotMatch(source, /window\.(?:prompt|alert)/); assert.match(source, /Exact canonical product/); assert.match(source, /Review reason/); });

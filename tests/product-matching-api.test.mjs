@@ -18,11 +18,12 @@ test("Task 10 persists immutable runs, candidates, comparisons, reviews and run 
 });
 
 test("worker exposes queue, history, comparison, evidence and feedback operations", async () => {
-  const [worker, index] = await Promise.all([readFile(new URL("../worker/product-matching-api.mjs", import.meta.url), "utf8"), readFile(new URL("../worker/index.ts", import.meta.url), "utf8")]);
+  const [worker, index, authority] = await Promise.all([readFile(new URL("../worker/product-matching-api.mjs", import.meta.url), "utf8"), readFile(new URL("../worker/index.ts", import.meta.url), "utf8"), readFile(new URL("../worker/canonical-product-authority.mjs", import.meta.url), "utf8")]);
   for (const contract of ["start", "recalculate", "status", "candidates", "history", "compare-runs", "manual-candidate", "comparisons", "explanation", "reject", "feedback"]) assert.match(worker, new RegExp(contract));
   assert.match(worker, /resolveApplicationContext/);
   assert.doesNotMatch(worker, /oai-authenticated-user-id|x-user-id|x-user-role/);
-  assert.match(worker, /approved_for_discovery=1/);
+  assert.match(worker, /CANONICAL_DISCOVERY_PRODUCT_PREDICATE/);
+  assert.match(authority, /approved_for_discovery=1/);
   assert.match(index, /handleProductMatchingApi/);
 });
 

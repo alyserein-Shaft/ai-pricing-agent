@@ -40,6 +40,7 @@ import { BoqReviewWorkspace } from "./components/workspaces/BoqReviewWorkspace";
 import { TechnicalRequirementsWorkspace } from "./components/workspaces/TechnicalRequirementsWorkspace";
 import { MatchingCandidateReview, MatchingWorkspace } from "./components/workspaces/MatchingWorkspace";
 import { PricingWorkspace } from "./components/workspaces/PricingWorkspace";
+import { SupplierPriceIntakeWorkspace } from "./components/workspaces/SupplierPriceIntakeWorkspace";
 import { CommercialReviewWorkspace } from "./components/workspaces/CommercialReviewWorkspace";
 import { QuotationWorkspace } from "./components/workspaces/QuotationWorkspace";
 import { TechnicalReviewWorkspace } from "./components/workspaces/TechnicalReviewWorkspace";
@@ -7974,7 +7975,7 @@ export default function Home() {
       }
       body = {
         reason: "Classification evidence reviewed and confirmed",
-        startExtraction: false,
+        startExtraction: document.predicted_type === "Supplier Quotation",
       };
     } else if (operation === "page") {
       const pageFrom = Number(window.prompt("First page:", "1"));
@@ -8061,7 +8062,7 @@ export default function Home() {
             selectedType,
             reason,
             secondaryTypes: [],
-            startExtraction: false,
+            startExtraction: selectedType === "Supplier Quotation",
           }),
         },
       );
@@ -13952,6 +13953,7 @@ export default function Home() {
     ) : activeModule === "Price Sources" ? (
       <>
         {sourceLifecycleSummary}
+        <SupplierPriceIntakeWorkspace projectId={projectId} />
         <section className="module-page">
           <div className="module-heading">
             <div>

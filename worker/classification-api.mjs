@@ -6,6 +6,7 @@ import {
 import { executeBoqExtraction } from "./boq-extraction-api.mjs";
 import { createSpecificationJob, processSpecificationJob } from "./specification-extraction-background.mjs";
 import { applicationActor, resolveApplicationContext } from "./application-context.mjs";
+import { executeSupplierQuoteExtraction } from "./supplier-price-intake-api.mjs";
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 const id = (prefix) => `${prefix}_${crypto.randomUUID()}`;
@@ -96,6 +97,7 @@ const executeConfirmedDownstreamExtraction = async (env, ctx, { documentId, user
     }
     return created;
   }
+  if (["Supplier Quotation", "Supplier Quote"].includes(primaryType)) return executeSupplierQuoteExtraction(env, { documentId, userId });
   return undefined;
 };
 
@@ -135,7 +137,7 @@ const confirmOrOverride = async (request, env, ctx, document, classification, us
     db.prepare("INSERT INTO classification_overrides (id, classification_id, document_id, previous_type, selected_type, secondary_types, reason, overridden_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(id("override"), classification.id, document.id, classification.primary_type, selectedType, JSON.stringify(secondaryTypes), reason || null, user.id),
     db.prepare("INSERT INTO document_audit_events (id, project_id, document_id, version_id, actor_user_id, action, old_value, new_value, reason, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(id("audit"), document.project_id, document.id, document.version_id, user.id, mode === "confirm" ? "Classification Confirmed" : "Classification Override", JSON.stringify({ primaryType: classification.primary_type, status: classification.status }), JSON.stringify({ primaryType: selectedType, secondaryTypes, status: "Manually Confirmed", route }), reason || "Classification confirmed", requestId),
   ]);
-  if (body.startExtraction === true && ["BOQ", "Technical Specification"].includes(selectedType)) ctx.waitUntil(Promise.resolve(executeConfirmedDownstreamExtraction(env, ctx, { documentId: document.id, userId: user.id, primaryType: selectedType, reason: `Explicit extraction after ${selectedType} classification confirmation` })).catch(() => undefined));
+  if (body.startExtraction === true && ["BOQ", "Technical Specification", "Supplier Quotation", "Supplier Quote"].includes(selectedType)) ctx.waitUntil(Promise.resolve(executeConfirmedDownstreamExtraction(env, ctx, { documentId: document.id, userId: user.id, primaryType: selectedType, reason: `Explicit extraction after ${selectedType} classification confirmation` })).catch(() => undefined));
   return json({ classification: await resultPayload(db, document.id), requestId });
 };
 

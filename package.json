@@ -11,6 +11,7 @@
     "test:phase3": "node --test tests/ai-product-ranking.test.mjs tests/product-matching-engine.test.mjs tests/product-matching-api.test.mjs tests/estimator-row-readiness.test.mjs",
     "test:phase3-smoke": "node scripts/run-real-product-matching-smoke.mjs",
     "test:phase5c": "node --test tests/phase5c-ux-journey.test.mjs",
+    "test:phase6a": "node --test tests/supplier-price-intake.test.mjs tests/supplier-price-intake-db.test.mjs",
     "test:ai-smoke": "node scripts/run-real-boq-understanding-smoke.mjs",
     "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vite",
     "dev:ai": "BOQ_AI_REST_ENABLED=1 WRANGLER_LOG_PATH=.wrangler/wrangler-ai.log vite",
