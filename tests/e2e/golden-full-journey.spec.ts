@@ -197,6 +197,28 @@ test("@golden @golden-full completes the governed upload-to-issued-export journe
   const incompleteReadiness = await request.post(`/api/boq-items/${incomplete.id}/requirement-profile/approve-readiness`, { data: { reason: "Attempt must remain blocked because mandatory identity is missing" } });
   expect(incompleteReadiness.status()).toBe(409);
 
+  const understandingRun = await api(
+    request,
+    "post",
+    `/api/projects/${projectId}/estimator-understanding/run`,
+  );
+  expect(understandingRun.status).toBe("COMPLETED");
+
+  const understanding = await api(
+    request,
+    "get",
+    `/api/projects/${projectId}/estimator-understanding`,
+  );
+  for (const item of items) {
+    expect(
+      understanding.items.some((entry: any) =>
+        entry.boqItemId === item.id &&
+        ["COMPLETED", "NEEDS_REVIEW"].includes(entry.status),
+      ),
+      `BOQ understanding must be persisted before product matching for ${item.id}`,
+    ).toBe(true);
+  }
+
   for (const item of items) await api(request, "post", `/api/boq-items/${item.id}/matching/start`);
   for (const item of items) await poll("product matching", () => api(request, "get", `/api/boq-items/${item.id}/matching/status`), (value: any) => !["Queued", "Processing", "Not Started"].includes(value.processing?.status || value.status));
   const validCandidates = (await api(request, "get", `/api/boq-items/${valid.id}/matching/candidates`)).candidates;

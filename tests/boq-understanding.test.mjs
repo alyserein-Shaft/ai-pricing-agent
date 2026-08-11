@@ -30,3 +30,58 @@ test("native Workers AI binding is preferred and uses the strict response schema
 test("local Workers AI REST fallback uses the same strict response schema",async()=>{let request;const configured=createConfiguredBoqUnderstandingProvider({BOQ_AI_PROVIDER:"cloudflare",BOQ_AI_MODEL:"@cf/test/model",BOQ_AI_REST_ENABLED:"1",CLOUDFLARE_ACCOUNT_ID:"account",CLOUDFLARE_AI_API_TOKEN:"secret"},{fetch:async(url,init)=>{request={url,init};return new Response(JSON.stringify({success:true,result:{response:JSON.stringify(baseOutput())}}),{status:200,headers:{"content-type":"application/json"}})}});assert.ok(configured);const output=await configured.interpret({prompt:{system:"system",user:"user"}});assert.equal(output.system.value,"Fire Alarm");assert.equal(request.url,"https://api.cloudflare.com/client/v4/accounts/account/ai/run/@cf/test/model");assert.equal(request.init.headers.authorization,"Bearer secret");const body=JSON.parse(request.init.body);assert.equal(body.response_format.type,"json_schema");assert.deepEqual(body.response_format.json_schema,BOQ_UNDERSTANDING_RESPONSE_SCHEMA);assert.equal(body.temperature,0)});
 test("Workers AI provider fails safely without a native binding or explicitly enabled REST credentials",()=>{assert.equal(createConfiguredBoqUnderstandingProvider({BOQ_AI_PROVIDER:"cloudflare",BOQ_AI_MODEL:"model"}),null);assert.equal(createConfiguredBoqUnderstandingProvider({BOQ_AI_PROVIDER:"cloudflare",BOQ_AI_MODEL:"model",BOQ_AI_REST_ENABLED:"1",CLOUDFLARE_ACCOUNT_ID:"account"}),null)});
 test("frontend does not reference the server-only Workers AI token",()=>{const frontend=fs.readFileSync(new URL("../app/page.tsx",import.meta.url),"utf8");assert.doesNotMatch(frontend,/CLOUDFLARE_AI_API_TOKEN/)});
+
+
+test("Golden E2E understanding provider is deterministic and cannot activate outside Golden mode", async () => {
+  const normal = createConfiguredBoqUnderstandingProvider({});
+  assert.equal(normal, null);
+
+  const goldenWithoutProvider = createConfiguredBoqUnderstandingProvider({
+    GOLDEN_E2E: "1",
+  });
+  assert.equal(
+    goldenWithoutProvider,
+    null,
+    "Golden mode alone must not activate the deterministic provider",
+  );
+
+  const providerWithoutGolden = createConfiguredBoqUnderstandingProvider({
+    GOLDEN_BOQ_UNDERSTANDING_PROVIDER: "deterministic",
+  });
+  assert.equal(
+    providerWithoutGolden,
+    null,
+    "Golden deterministic provider control alone must not activate outside Golden mode",
+  );
+
+  const golden = createConfiguredBoqUnderstandingProvider({
+    GOLDEN_E2E: "1",
+    GOLDEN_BOQ_UNDERSTANDING_PROVIDER: "deterministic",
+  });
+  assert.ok(golden);
+  assert.equal(golden.metadata.provider, "golden-e2e");
+
+  const valid = await golden.interpret({
+    input: {
+      description: "Golden addressable detector 24 V DC",
+      system: "Fire Alarm",
+      modelText: "GOLDEN-FA-001",
+    },
+  });
+
+  assert.equal(valid.confidence, "HIGH");
+  assert.equal(valid.productId, undefined);
+  assert.equal(valid.price, undefined);
+  assert.equal(valid.approved, undefined);
+
+  const incomplete = await golden.interpret({
+    input: {
+      description: "Addressable interface module",
+      system: "Fire Alarm",
+      modelText: "",
+    },
+  });
+
+  assert.equal(incomplete.confidence, "LOW");
+  assert.ok(incomplete.missingInformation.some((entry) => entry.value === "Exact model"));
+});

@@ -37,6 +37,127 @@ export function createConfiguredCloudflareStructuredProvider(env = {}, { schema,
   };
 }
 
+const goldenFact = (value, origin = "INFERRED", confidence = 90) => ({
+  value,
+  origin,
+  confidence,
+});
+
+const goldenMissing = () => goldenFact(null, "MISSING", 0);
+
+const goldenUnderstandingOutput = (input = {}) => {
+  const description = String(input.description || "").trim();
+  const partNumber = String(input.modelText || "").trim();
+  const lower = description.toLowerCase();
+
+  const base = {
+    normalizedDescription: goldenFact(description, "EXTRACTED", 100),
+    system: goldenFact(input.system || "Fire Alarm", input.system ? "EXTRACTED" : "INFERRED", input.system ? 100 : 90),
+    category: goldenMissing(),
+    subcategory: goldenMissing(),
+    equipmentType: goldenMissing(),
+    productFamily: goldenMissing(),
+    attributes: {},
+    manufacturerPreferences: [],
+    manufacturerRestrictions: [],
+    standards: [],
+    compatibilityRequirements: [],
+    requiredAccessories: [],
+    searchTerms: [],
+    missingInformation: [],
+    ambiguities: [],
+    engineeringNotes: [],
+    confidence: "MEDIUM",
+  };
+
+  if (partNumber === "GOLDEN-FA-001") {
+    return {
+      ...base,
+      category: goldenFact("Detection Device"),
+      subcategory: goldenFact("Smoke Detector"),
+      equipmentType: goldenFact("Addressable Detector"),
+      productFamily: goldenFact("Addressable Detector"),
+      manufacturerPreferences: [goldenFact("Golden Manufacturer")],
+      searchTerms: [
+        goldenFact("GOLDEN-FA-001", "EXTRACTED", 100),
+        goldenFact("addressable detector"),
+      ],
+      engineeringNotes: [
+        goldenFact("Exact model remains subject to governed Product Matching and engineer review."),
+      ],
+      confidence: "HIGH",
+    };
+  }
+
+  if (lower.includes("interface module")) {
+    return {
+      ...base,
+      category: goldenFact("Interface Module"),
+      subcategory: goldenFact("Addressable Interface Module"),
+      equipmentType: goldenFact("Addressable Interface Module"),
+      productFamily: goldenFact("Interface Module"),
+      searchTerms: [goldenFact("addressable interface module", "EXTRACTED", 100)],
+      missingInformation: [
+        goldenFact("Manufacturer"),
+        goldenFact("Exact model"),
+      ],
+      ambiguities: [
+        goldenFact("Manufacturer and exact model are not stated in the supplied evidence."),
+      ],
+      engineeringNotes: [
+        goldenFact("Identity must remain unresolved until engineer clarification."),
+      ],
+      confidence: "LOW",
+    };
+  }
+
+  if (partNumber === "GOLDEN-NOMATCH-001") {
+    return {
+      ...base,
+      category: goldenFact("Annunciator"),
+      subcategory: goldenFact("Specialized Annunciator"),
+      equipmentType: goldenFact("Specialized Annunciator"),
+      productFamily: goldenFact("Annunciator"),
+      manufacturerPreferences: [goldenFact("Golden Manufacturer")],
+      searchTerms: [
+        goldenFact("GOLDEN-NOMATCH-001", "EXTRACTED", 100),
+        goldenFact("specialized annunciator"),
+      ],
+      engineeringNotes: [
+        goldenFact("No catalog product is inferred by BOQ Understanding."),
+      ],
+      confidence: "HIGH",
+    };
+  }
+
+  return {
+    ...base,
+    missingInformation: [goldenFact("Engineering classification")],
+    ambiguities: [goldenFact("Golden fixture row is outside the deterministic understanding cases.")],
+    confidence: "LOW",
+  };
+};
+
 export function createConfiguredBoqUnderstandingProvider(env = {}, runtime = {}) {
-  return createConfiguredCloudflareStructuredProvider(env, { schema: BOQ_UNDERSTANDING_RESPONSE_SCHEMA, maxTokens: 1800, runtime });
+  if (
+    String(env.GOLDEN_E2E || "") === "1" &&
+    String(env.GOLDEN_BOQ_UNDERSTANDING_PROVIDER || "") === "deterministic"
+  ) {
+    return {
+      metadata: {
+        provider: "golden-e2e",
+        model: "deterministic-fixture",
+        modelVersion: "1",
+      },
+      async interpret({ input }) {
+        return goldenUnderstandingOutput(input);
+      },
+    };
+  }
+
+  return createConfiguredCloudflareStructuredProvider(env, {
+    schema: BOQ_UNDERSTANDING_RESPONSE_SCHEMA,
+    maxTokens: 1800,
+    runtime,
+  });
 }

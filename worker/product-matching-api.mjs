@@ -52,9 +52,26 @@ export const handleProductMatchingApi = async (request, env, ctx) => {
   if (retryMatch) { if (request.method !== "POST") return json({ error: { code: "METHOD_NOT_ALLOWED", message: "Use POST to retry matching." } }, 405); try { return json(await executeProductMatching(env, { itemId: decodeURIComponent(retryMatch[1]), user, force: true })); } catch (error) { return json({ error: { code: error.code || "PRODUCT_MATCHING_FAILED", message: error.message } }, error.code?.endsWith("REQUIRED") ? 409 : 422); } }
   const itemMatch = url.pathname.match(/^\/api\/boq-items\/([^/]+)\/matching(?:\/(start|recalculate|status|summary|candidates|history|no-match|compare-runs|manual-candidate))?$/);
   if (itemMatch) { const item = await ownedItem(env.DB, decodeURIComponent(itemMatch[1]), user.id); if (!item) return json({ error: { code: "BOQ_ITEM_NOT_FOUND", message: "BOQ item not found." } }, 404); const operation = itemMatch[2] || "summary";
-    if (["start", "recalculate"].includes(operation) && request.method === "POST") { const profile = await currentProfile(env.DB, item.id); if (!profile) return json({ error: { code: "REQUIREMENT_PROFILE_REQUIRED", message: "Generate a Requirement Profile before matching." } }, 409); const processingRunId = id("job"); await env.DB.batch([env.DB.prepare("INSERT INTO document_processing_runs (id, document_version_id, stage, status, progress, processor_version) VALUES (?, ?, 'Queued', 'Queued', 1, ?)").bind(processingRunId, item.source_document_version_id, MATCH_ENGINE_VERSION), env.DB.prepare("INSERT INTO processing_history (id, run_id, from_status, to_status, progress, actor, message) VALUES (?, ?, NULL, 'Queued', 1, ?, 'Product matching queued.')").bind(id("history"), processingRunId, user.id)]); ctx.waitUntil(executeProductMatching(env, { itemId: item.id, user, processingRunId, force: operation === "recalculate" }).catch(() => undefined)); return json({ status: "Queued", itemId: item.id, processingRunId }, 202); }
-    const run = await currentRun(env.DB, item.id); if (!run) return operation === "status" ? json({ status: "Not Started" }) : json({ error: { code: "MATCH_RUN_REQUIRED", message: "Start product matching first." } }, 409);
-    if (operation === "status" && request.method === "GET") { const job = run.processing_run_id ? await env.DB.prepare("SELECT stage, status, progress, error_code, error_message, updated_at FROM document_processing_runs WHERE id=?").bind(run.processing_run_id).first() : null; return json({ matchRunId: run.id, status: run.status, processing: job }); }
+    if (["start", "recalculate"].includes(operation) && request.method === "POST") { const profile = await currentProfile(env.DB, item.id); if (!profile) return json({ error: { code: "REQUIREMENT_PROFILE_REQUIRED", message: "Generate a Requirement Profile before matching." } }, 409); const processingRunId = id("job"); await env.DB.batch([env.DB.prepare("INSERT INTO document_processing_runs (id, document_version_id, stage, status, progress, processor_version, technical_details) VALUES (?, ?, 'Queued', 'Queued', 1, ?, ?)").bind(processingRunId, item.source_document_version_id, MATCH_ENGINE_VERSION, JSON.stringify({ entityType: "BOQ Item", boqItemId: item.id, purpose: "Product Matching" })), env.DB.prepare("INSERT INTO processing_history (id, run_id, from_status, to_status, progress, actor, message) VALUES (?, ?, NULL, 'Queued', 1, ?, 'Product matching queued.')").bind(id("history"), processingRunId, user.id)]); ctx.waitUntil(executeProductMatching(env, { itemId: item.id, user, processingRunId, force: operation === "recalculate" }).catch(() => undefined)); return json({ status: "Queued", itemId: item.id, processingRunId }, 202); }
+    const run = await currentRun(env.DB, item.id);
+    if (operation === "status" && request.method === "GET") {
+      const job = run?.processing_run_id
+        ? await env.DB.prepare(
+            "SELECT id, stage, status, progress, error_code, error_message, updated_at FROM document_processing_runs WHERE id=?",
+          ).bind(run.processing_run_id).first()
+        : await env.DB.prepare(
+            "SELECT id, stage, status, progress, error_code, error_message, updated_at FROM document_processing_runs WHERE document_version_id=? AND processor_version=? AND json_extract(technical_details, '$.boqItemId')=? ORDER BY created_at DESC, id DESC LIMIT 1",
+          ).bind(item.source_document_version_id, MATCH_ENGINE_VERSION, item.id).first();
+
+      if (!run && !job) return json({ status: "Not Started" });
+
+      return json({
+        matchRunId: run?.id || null,
+        status: run?.status || job?.status || "Not Started",
+        processing: job || null,
+      });
+    }
+    if (!run) return json({ error: { code: "MATCH_RUN_REQUIRED", message: "Start product matching first." } }, 409);
     if ((operation === "summary" || operation === "no-match") && request.method === "GET") return json({ matchRun: { ...run, search_scope: parse(run.search_scope, {}), summary: parse(run.summary, {}), no_match: parse(run.no_match, null) } });
     if (operation === "candidates" && request.method === "GET") { const rows = await env.DB.prepare("SELECT c.*, p.part_number, p.description, m.name manufacturer, f.name family FROM product_match_candidates c JOIN canonical_library_products p ON p.requested_product_id=c.product_id JOIN product_manufacturers m ON m.id=p.manufacturer_id LEFT JOIN product_families f ON f.id=p.family_id WHERE c.match_run_id=? ORDER BY c.rank LIMIT 200").bind(run.id).all(); return json({ candidates: (rows.results || []).map(candidateFromRow) }); }
     if (operation === "history" && request.method === "GET") { const rows = await env.DB.prepare("SELECT id, version_number, status, input_fingerprint, candidate_count, started_at, completed_at, superseded_at FROM product_match_runs WHERE boq_item_id=? ORDER BY version_number DESC").bind(item.id).all(); return json({ history: rows.results || [] }); }

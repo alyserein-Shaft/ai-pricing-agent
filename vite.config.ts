@@ -32,6 +32,8 @@ const localBindingConfig = {
           APP_USER_EMAIL: "golden-e2e@local.invalid",
           APP_USER_NAME: "Golden E2E User",
           APP_ORGANIZATION_ID: "golden-e2e-organization",
+          GOLDEN_E2E: "1",
+          GOLDEN_BOQ_UNDERSTANDING_PROVIDER: "deterministic",
         }
       : {}),
   },

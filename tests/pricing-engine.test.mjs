@@ -23,3 +23,157 @@ test("shared costs reconcile without double counting rounding residue", () => { 
 test("manual pricing requires source, reason, scope, role and technical approval", () => assert.equal(validateManualPriceInput({ input: { projectId: "p", boqItemId: "b", candidateId: "c", productId: "x", price: 10, currency: "SAR", source: "Q1", validUntil: "2027-01-01", reason: "Urgent quote", scope: "This item" }, user: { role: "Procurement" }, technicalApproval: { status: "Approved", candidateId: "c" } }).permitted, true));
 test("project aggregation uses only approval-ready pricing lines", () => { const line = calculatePricingLine(base), summary = aggregateProjectPricing([line, { approvalReady: false, totalCost: 999 }]); assert.equal(summary.pricedItemCount, 1); assert.equal(summary.totalCost, 1000); });
 test("validity states distinguish expired and missing", () => { assert.equal(priceValidity({ validUntil: null }, at), "No Validity Provided"); assert.equal(priceValidity({ validUntil: "2026-01-01" }, at), "Expired"); });
+
+
+test("engineer receives a non-authoritative price suggestion without bypassing explicit source selection", () => {
+  const result = calculatePricingLine({
+    projectId: "project-1",
+    productId: "product-1",
+    candidateId: "candidate-1",
+    quantity: 2,
+    unit: "EA",
+    region: "KSA",
+    calculatedAt: "2026-08-11T12:00:00Z",
+    projectCurrency: "SAR",
+    precision: 2,
+    technicalApproval: {
+      status: "Approved",
+      candidateId: "candidate-1",
+    },
+    safetyDecision: {
+      priceEligibility: "Eligible for Pricing",
+    },
+    priceSources: [
+      {
+        id: "price-source-1",
+        productId: "product-1",
+        projectId: "project-1",
+        priceType: "Project Supplier Quote",
+        amount: 125,
+        currency: "SAR",
+        approvalStatus: "Approved",
+        downstreamUse: "Costing",
+        validUntil: "2099-01-01",
+        reliability: 95,
+        reference: "Supplier Quote SQ-001",
+      },
+    ],
+    selectedPriceSourceId: null,
+    costComponents: [],
+    discounts: [],
+    sellingRule: {
+      method: "Markup",
+      rate: 20,
+      minimumMargin: 0,
+    },
+    vatRule: {
+      applicable: true,
+      rate: 15,
+    },
+  });
+
+  assert.equal(result.status, "Pricing Blocked");
+  assert.ok(result.blockers.includes("PRICE_SOURCE_SELECTION_REQUIRED"));
+  assert.equal(result.approvalReady, false);
+
+  assert.deepEqual(result.engineerSuggestion, {
+    status: "Suggested",
+    sourceId: "price-source-1",
+    sourceType: "Project Supplier Quote",
+    reference: "Supplier Quote SQ-001",
+    unitPrice: 125,
+    currency: "SAR",
+    validity: "Valid",
+    authoritative: false,
+    requiresExplicitSelection: true,
+  });
+});
+
+
+test("engineer suggestion is withheld when no price source is currently eligible", () => {
+  const result = calculatePricingLine({
+    projectId: "project-1",
+    productId: "product-1",
+    candidateId: "candidate-1",
+    quantity: 2,
+    unit: "EA",
+    region: "KSA",
+    calculatedAt: "2026-08-11T12:00:00Z",
+    projectCurrency: "SAR",
+    precision: 2,
+    technicalApproval: {
+      status: "Approved",
+      candidateId: "candidate-1",
+    },
+    safetyDecision: {
+      priceEligibility: "Eligible for Pricing",
+    },
+    priceSources: [
+      {
+        id: "expired-source",
+        productId: "product-1",
+        projectId: "project-1",
+        priceType: "Project Supplier Quote",
+        amount: 100,
+        currency: "SAR",
+        approvalStatus: "Approved",
+        downstreamUse: "Costing",
+        validUntil: "2026-08-01",
+        reliability: 99,
+      },
+      {
+        id: "unapproved-source",
+        productId: "product-1",
+        projectId: "project-1",
+        priceType: "Supplier Quote",
+        amount: 90,
+        currency: "SAR",
+        approvalStatus: "Needs Review",
+        downstreamUse: "Costing",
+        validUntil: "2099-01-01",
+        reliability: 99,
+      },
+      {
+        id: "discovery-source",
+        productId: "product-1",
+        projectId: "project-1",
+        priceType: "Manufacturer Price List",
+        amount: 80,
+        currency: "SAR",
+        approvalStatus: "Approved",
+        downstreamUse: "Discovery Only",
+        validUntil: "2099-01-01",
+        reliability: 99,
+      },
+      {
+        id: "other-project-source",
+        productId: "product-1",
+        projectId: "project-2",
+        priceType: "Project Supplier Quote",
+        amount: 70,
+        currency: "SAR",
+        approvalStatus: "Approved",
+        downstreamUse: "Costing",
+        validUntil: "2099-01-01",
+        reliability: 99,
+      },
+    ],
+    selectedPriceSourceId: null,
+    costComponents: [],
+    discounts: [],
+    sellingRule: {
+      method: "Markup",
+      rate: 20,
+      minimumMargin: 0,
+    },
+    vatRule: {
+      applicable: true,
+      rate: 15,
+    },
+  });
+
+  assert.equal(result.status, "Pricing Blocked");
+  assert.ok(result.blockers.includes("PRICE_SOURCE_SELECTION_REQUIRED"));
+  assert.equal(result.engineerSuggestion, null);
+  assert.equal(result.approvalReady, false);
+});

@@ -22,3 +22,137 @@ test("persisted Discovery Only evidence is never presented as costing approved",
   assert.deepEqual(pricingSourcePresentation({ type: "Supplier Quotation", downstreamUse: "Costing", eligibleForCosting: true }), { label: "Current costing-eligible source", costingApproved: true });
 });
 test("Task 11 authorization now uses durable project membership and controlled override decisions", async () => { const api = await readFile(new URL("worker/confidence-safety-api.mjs", root), "utf8"); assert.match(api, /project_members/); assert.match(api, /\/api\\\/safety\\\/overrides/); assert.match(api, /OVERRIDE_DECISION_ROLE_REQUIRED/); assert.doesNotMatch(api, /request\.headers\.get\("x-user-role"\)/); });
+
+
+test("Costing read model preserves the non-authoritative engineer price suggestion", () => {
+  const view = pricingLineModel(
+    {
+      id: "b1",
+      item_number: "1.01",
+      description: "Fire Alarm Control Panel",
+    },
+    {
+      line: {
+        status: "Pricing Blocked",
+        version_number: 3,
+        output: {
+          blockers: ["PRICE_SOURCE_SELECTION_REQUIRED"],
+          approvalReady: false,
+          engineerSuggestion: {
+            status: "Suggested",
+            sourceId: "source-1",
+            sourceType: "Project Supplier Quote",
+            reference: "SQ-001",
+            unitPrice: 125,
+            currency: "SAR",
+            validity: "Valid",
+            authoritative: false,
+            requiresExplicitSelection: true,
+          },
+        },
+      },
+    },
+  );
+
+  assert.deepEqual(view.result.engineerSuggestion, {
+    status: "Suggested",
+    sourceId: "source-1",
+    sourceType: "Project Supplier Quote",
+    reference: "SQ-001",
+    unitPrice: 125,
+    currency: "SAR",
+    validity: "Valid",
+    authoritative: false,
+    requiresExplicitSelection: true,
+  });
+
+  assert.equal(view.result.approvalReady, false);
+  assert.deepEqual(view.result.blockers, ["PRICE_SOURCE_SELECTION_REQUIRED"]);
+});
+
+
+test("Costing workspace visibly distinguishes Engineer Price Suggestion from governed selection", async () => {
+  const ui = await readFile(
+    new URL("app/components/workspaces/PricingWorkspace.tsx", root),
+    "utf8",
+  );
+
+  assert.match(ui, /engineerSuggestion/);
+  assert.match(ui, /Engineer suggested price/);
+  assert.match(ui, /Not selected or commercially approved/);
+  assert.match(ui, /requiresExplicitSelection/);
+});
+
+
+test("pricing persistence fingerprint includes the pricing engine version", async () => {
+  const source = await readFile(
+    new URL("../worker/pricing-api.mjs", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    source,
+    /fingerprint\s*=\s*await\s+hash\(\{/,
+    "pricing persistence must fingerprint governed inputs",
+  );
+  assert.match(
+    source,
+    /engine:\s*PRICING_ENGINE_VERSION/,
+    "behavior-changing pricing engine versions must invalidate persisted-run idempotency",
+  );
+  assert.match(
+    source,
+    /ruleset:\s*PRICING_RULESET_VERSION/,
+    "pricing ruleset version must remain part of persisted-run idempotency",
+  );
+});
+
+test("Costing first calculation requests an advisory suggestion before explicit source selection", async () => {
+  const page = await readFile(
+    new URL("../app/page.tsx", import.meta.url),
+    "utf8",
+  );
+
+  const start = page.indexOf("const calculatePersistentPricing");
+  const end = page.indexOf("const approvedPricingCandidate", start);
+  const calculate = page.slice(start, end);
+
+  assert.ok(start >= 0 && end > start, "persistent pricing calculation handler must exist");
+  assert.doesNotMatch(
+    calculate,
+    /window\.(?:confirm|prompt)\(/,
+    "initial governed calculation must not select price evidence in the browser",
+  );
+  assert.match(
+    calculate,
+    /explicitPriceSourceId:\s*string\s*\|\s*null\s*=\s*null/,
+    "initial calculation must begin without an explicitly selected price source",
+  );
+  assert.match(
+    calculate,
+    /const selectedPriceSourceId\s*=\s*explicitPriceSourceId/,
+    "the server request must preserve the explicit-selection boundary",
+  );
+  assert.match(
+    calculate,
+    /selectedPriceSourceId,/,
+    "initial calculation must allow the server to return a non-authoritative Engineer Price Suggestion",
+  );
+});
+
+
+test("idempotent pricing replay returns persisted line output rather than an unpersisted recomputation", async () => {
+  const source = await readFile(
+    new URL("../worker/pricing-api.mjs", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(
+    source,
+    /l\.status,\s*l\.output FROM pricing_runs/,
+  );
+  assert.match(
+    source,
+    /result:\s*parse\(existing\.output,\s*result\)/,
+  );
+});

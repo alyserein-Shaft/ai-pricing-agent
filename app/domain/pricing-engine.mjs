@@ -1,4 +1,4 @@
-export const PRICING_ENGINE_VERSION = "pricing-engine-1.0.0";
+export const PRICING_ENGINE_VERSION = "pricing-engine-1.1.0";
 export const PRICING_RULESET_VERSION = "pricing-rules-2026-08-02";
 
 const round = (value, precision = 2) => { const factor = 10 ** precision; return Math.round((Number(value) + Number.EPSILON) * factor) / factor; };
@@ -76,7 +76,41 @@ export const sellingPrice = ({ totalCost, method, rate, fixedPrice, minimumMargi
 export const calculatePricingLine = (input) => {
   const blockers = []; if (!input.technicalApproval || input.technicalApproval.status !== "Approved" || input.technicalApproval.candidateId !== input.candidateId) blockers.push("TECHNICAL_APPROVAL_REQUIRED"); if (!input.safetyDecision || !/^Eligible/.test(input.safetyDecision.priceEligibility || "")) blockers.push("SAFETY_PRICE_ELIGIBILITY_REQUIRED"); if (!present(input.unit)) blockers.push("UNIT_REQUIRED");
   let multiplier; try { multiplier = quantityMultiplier({ quantity: input.quantity, unit: input.unit, lumpSumMode: input.lumpSumMode }); } catch (error) { blockers.push(error.code); }
-  const ranked = selectPriceSources({ sources: input.priceSources || [], projectId: input.projectId, productId: input.productId, quantity: input.quantity, region: input.region, at: input.calculatedAt, precedence: input.sourcePrecedence }); const selected = ranked.find((entry) => entry.id === input.selectedPriceSourceId), source = selected?.eligible ? { ...selected, status: "Selected", explanation: `${selected.explanation} Explicitly selected for this calculation.` } : null; if (!input.selectedPriceSourceId) blockers.push("PRICE_SOURCE_SELECTION_REQUIRED"); else if (!source) blockers.push("CURRENT_PRICE_SOURCE_REQUIRED"); if (blockers.length) return { status: "Pricing Blocked", blockers: [...new Set(blockers)], sources: ranked, approvalReady: false };
+  const ranked = selectPriceSources({ sources: input.priceSources || [], projectId: input.projectId, productId: input.productId, quantity: input.quantity, region: input.region, at: input.calculatedAt, precedence: input.sourcePrecedence });
+  const recommended = ranked.find((entry) => entry.eligible);
+  const suggestionPrerequisitesPassed = blockers.length === 0;
+  const engineerSuggestion =
+    suggestionPrerequisitesPassed && recommended
+      ? {
+          status: "Suggested",
+          sourceId: recommended.id,
+          sourceType: recommended.priceType,
+          reference: recommended.reference || recommended.id,
+          unitPrice: recommended.amount,
+          currency: recommended.currency,
+          validity: recommended.validity,
+          authoritative: false,
+          requiresExplicitSelection: true,
+        }
+      : null;
+  const selected = ranked.find((entry) => entry.id === input.selectedPriceSourceId),
+    source = selected?.eligible
+      ? {
+          ...selected,
+          status: "Selected",
+          explanation: `${selected.explanation} Explicitly selected for this calculation.`,
+        }
+      : null;
+  if (!input.selectedPriceSourceId) blockers.push("PRICE_SOURCE_SELECTION_REQUIRED");
+  else if (!source) blockers.push("CURRENT_PRICE_SOURCE_REQUIRED");
+  if (blockers.length)
+    return {
+      status: "Pricing Blocked",
+      blockers: [...new Set(blockers)],
+      sources: ranked,
+      engineerSuggestion,
+      approvalReady: false,
+    };
   const conversion = convertCurrency({ amount: source.amount, sourceCurrency: source.currency, projectCurrency: input.projectCurrency, exchangeRate: input.exchangeRate, precision: input.precision }); const discounted = applyDiscounts({ amount: conversion.convertedAmount, discounts: input.discounts || [], context: { componentType: "Material", projectId: input.projectId, manufacturer: input.manufacturer, sourceId: source.id, at: input.calculatedAt, precision: input.precision || 2 } }); const materialTotal = round(discounted.net * multiplier, input.precision);
   const components = (input.costComponents || []).map((component) => calculateCostComponent({ component, bases: { quantity: multiplier, material: materialTotal, directCost: materialTotal }, precision: input.precision })); const directCost = round(materialTotal + components.filter((entry) => !["Overhead", "Risk", "Contingency"].includes(entry.type)).reduce((sum, entry) => sum + entry.calculatedAmount, 0), input.precision); const indirect = components.filter((entry) => ["Overhead", "Risk", "Contingency"].includes(entry.type)).reduce((sum, entry) => sum + entry.calculatedAmount, 0); const totalCost = round(directCost + indirect, input.precision);
   const sale = sellingPrice({ totalCost, ...input.sellingRule, precision: input.precision }); const customerDiscount = round(sale.gross * Number(input.customerDiscount?.percentage || 0) / 100, input.precision), netSelling = round(sale.gross - customerDiscount, input.precision); const resultingMargin = netSelling ? round((netSelling - totalCost) / netSelling * 100, 4) : -100; if (resultingMargin < Number(input.sellingRule.minimumMargin || 0) && !input.customerDiscount?.authorizedException) return { status: "Pricing Blocked", blockers: ["CUSTOMER_DISCOUNT_MINIMUM_BREACH"], approvalReady: false, totalCost, grossSelling: sale.gross };

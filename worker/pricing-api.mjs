@@ -240,10 +240,14 @@ const persistRun = async (
     version = Number(previous?.version_number || 0) + 1,
     runId = id("pricingrun"),
     lineId = id("pricingline"),
-    fingerprint = await hash({ input, ruleset: PRICING_RULESET_VERSION });
+    fingerprint = await hash({
+      input,
+      engine: PRICING_ENGINE_VERSION,
+      ruleset: PRICING_RULESET_VERSION,
+    });
   const existing = await db
     .prepare(
-      "SELECT r.id run_id, r.version_number, l.id line_id, l.status FROM pricing_runs r JOIN pricing_lines l ON l.pricing_run_id=r.id WHERE r.scenario_id=? AND l.boq_item_id=? AND r.input_fingerprint=? ORDER BY r.version_number DESC LIMIT 1",
+      "SELECT r.id run_id, r.version_number, l.id line_id, l.status, l.output FROM pricing_runs r JOIN pricing_lines l ON l.pricing_run_id=r.id WHERE r.scenario_id=? AND l.boq_item_id=? AND r.input_fingerprint=? ORDER BY r.version_number DESC LIMIT 1",
     )
     .bind(scenario.id, boqItemId, fingerprint)
     .first();
@@ -253,7 +257,7 @@ const persistRun = async (
       lineId: existing.line_id,
       version: existing.version_number,
       status: existing.status,
-      result,
+      result: parse(existing.output, result),
       idempotent: true,
     };
   const statements = [

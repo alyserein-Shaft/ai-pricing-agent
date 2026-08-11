@@ -4830,7 +4830,10 @@ export default function Home() {
     }
   };
 
-  const calculatePersistentPricing = async (item: CostItem) => {
+  const calculatePersistentPricing = async (
+    item: CostItem,
+    explicitPriceSourceId: string | null = null,
+  ) => {
     const persistentItem = extractedBoqItems.find(
       (entry) => entry.sequence === item.id,
     );
@@ -4860,36 +4863,7 @@ export default function Home() {
             entry.technical_status === "Technically Compliant",
         ) || candidatePayload.candidates?.[0];
       if (!candidate) throw new Error("Run technical matching before pricing.");
-      const pricesResponse = await fetch(
-          `/api/products/${encodeURIComponent(candidate.product_id)}/prices?projectId=${encodeURIComponent(projectId)}`,
-        ),
-        pricesPayload = await pricesResponse.json();
-      if (!pricesResponse.ok)
-        throw new Error(
-          pricesPayload.error?.message || "Price sources could not be loaded.",
-        );
-      const eligiblePrices = (pricesPayload.prices || []).filter(
-        (entry: { eligibleForCosting?: boolean }) => entry.eligibleForCosting,
-      );
-      let selectedPriceSourceId = "";
-      if (eligiblePrices.length === 1) {
-        if (
-          !window.confirm(
-            `Use the approved price source ${eligiblePrices[0].file_name || eligiblePrices[0].id} at ${eligiblePrices[0].amount} ${eligiblePrices[0].currency}?`,
-          )
-        )
-          throw new Error("Price source selection was cancelled.");
-        selectedPriceSourceId = eligiblePrices[0].id;
-      } else if (eligiblePrices.length > 1) {
-        const choice = window.prompt(
-          `Select a price source number:\n${eligiblePrices.map((entry: { file_name?: string; id: string; amount: number; currency: string }, index: number) => `${index + 1}. ${entry.file_name || entry.id} — ${entry.amount} ${entry.currency}`).join("\n")}`,
-          "1",
-        );
-        const selected = eligiblePrices[Number(choice) - 1];
-        if (!selected)
-          throw new Error("Select one approved current price source.");
-        selectedPriceSourceId = selected.id;
-      }
+      const selectedPriceSourceId = explicitPriceSourceId;
       const response = await fetch(
         commercialApi.calculatePricing(persistentItem.id),
           {
@@ -4899,8 +4873,9 @@ export default function Home() {
               scenarioId: pricingScenarioId,
               candidateId: candidate.id,
               selectedPriceSourceId,
-              reason:
-                "Estimator explicitly selected the governed price source and requested calculation",
+              reason: selectedPriceSourceId
+                ? "Estimator explicitly selected the governed price source and requested calculation"
+                : "Estimator requested a governed non-authoritative price suggestion before source selection",
             }),
           },
         ),
@@ -10857,7 +10832,10 @@ export default function Home() {
   const commercialReviewQueue = reviewQueue.filter((item) =>
     /commercial|cost|price|quotation/i.test(`${item.review_type} ${item.required_decision}`),
   );
-  const calculateServerPricingByItemId = (itemId: string) => {
+  const calculateServerPricingByItemId = (
+    itemId: string,
+    sourceId?: string,
+  ) => {
     const item = extractedBoqItems.find((entry) => entry.id === itemId);
     if (!item) return;
     const legacy = items.find((entry) => entry.id === item.sequence);
@@ -10873,7 +10851,7 @@ export default function Home() {
       unit: String(item.current_values?.unit || item.original_unit || ""),
       specification: "",
       sourceRows: [],
-    });
+    }, sourceId || null);
   };
 
   const openFirstMatch = () => {
