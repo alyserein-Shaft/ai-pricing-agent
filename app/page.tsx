@@ -1095,6 +1095,7 @@ type ExcelExportRecord = {
   download_count?: number | null;
   locked_versions: Record<string, string | number>;
   sheet_set: string[];
+  quotation_revision_id?: string | null;
 };
 type RevisionCandidate = {
   id: string;
@@ -10817,11 +10818,27 @@ export default function Home() {
       if (result) setQuotationApprovalReason("");
     });
   };
-  const issueQuotationRevision = () => {
+  const issueQuotationRevision = async () => {
     if (!serverQuotation) return;
+    const response = await fetch(
+      `/api/excel-exports/projects/${encodeURIComponent(projectId)}/history`,
+      { cache: "no-store" },
+    );
+    const payload = await response.json();
+    const governedExport = (payload.exports || []).find(
+      (entry: ExcelExportRecord) =>
+        entry.quotation_revision_id === serverQuotation.id &&
+        ["Approved Cost Sheet", "Client-Safe Export"].includes(entry.export_mode) &&
+        ["Completed", "Completed with Warnings"].includes(entry.status),
+    );
+    if (!response.ok || !governedExport) {
+      showToast("Generate a governed export for this approved revision before issue");
+      return;
+    }
     return mutateQuotation("issue", {
       quotationRevisionId: serverQuotation.id,
       quotationFingerprint: serverQuotation.quotation_fingerprint || serverQuotation.quotationFingerprint,
+      exportJobId: governedExport.id,
       reason: "Issue the currently approved governed quotation revision",
     });
   };
@@ -13886,7 +13903,6 @@ export default function Home() {
         onDraft={() => void createServerQuotationDraft()}
         onApprove={() => void approveQuotationRevision()}
         onIssue={() => void issueQuotationRevision()}
-        onOpen={() => setShowQuotation(true)}
         money={money}
       />
     ) : activeModule === "Price Sources" && !baseTenderLoaded ? (
@@ -21445,7 +21461,9 @@ export default function Home() {
           );
         })()}
 
-      {showQuotation && (
+      {/* The former browser-calculated quotation is retained only as unreachable
+          migration code. Server-backed QuotationWorkspace is the sole authority. */}
+      {false && showQuotation && (
         <div className="quotation-overlay">
           <button
             className="drawer-scrim"
