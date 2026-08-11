@@ -25,6 +25,7 @@ import {
   buildProjectLocation,
   parseProjectLocation,
   reconcileFailedDocumentFilter,
+  visibleProductProjects,
 } from "./lib/project-navigation.mjs";
 import { ProjectShell } from "./components/project/ProjectShell";
 import type {
@@ -41,6 +42,7 @@ import { MatchingCandidateReview, MatchingWorkspace } from "./components/workspa
 import { PricingWorkspace } from "./components/workspaces/PricingWorkspace";
 import { CommercialReviewWorkspace } from "./components/workspaces/CommercialReviewWorkspace";
 import { QuotationWorkspace } from "./components/workspaces/QuotationWorkspace";
+import { TechnicalReviewWorkspace } from "./components/workspaces/TechnicalReviewWorkspace";
 import { RfqAuthorityWorkspace } from "./components/workspaces/RfqAuthorityWorkspace";
 import { HistoricalLearningWorkspace } from "./components/workspaces/HistoricalLearningWorkspace";
 import { CaseStudiesWorkspace } from "./components/workspaces/CaseStudiesWorkspace";
@@ -185,7 +187,8 @@ type ModuleName =
   | "Pricing Memory"
   | "Case Studies"
   | "Costing"
-  | "Review"
+  | "Technical Review"
+  | "Commercial Review"
   | "Supplier RFQs"
   | "Quotation"
   | "Price Sources"
@@ -1711,31 +1714,6 @@ const globalNavItems: Array<
   ["⚙", "Settings", "Settings"],
 ];
 
-const projectTabs: Array<[string, ModuleName]> = [
-  ["Overview", "Overview"],
-  ["Documents", "Documents"],
-  ["BOQ", "BOQ"],
-  ["Technical Review", "Review"],
-  ["Product Matching", "Technical Matching"],
-  ["Pricing", "Costing"],
-  ["Quotation", "Quotation"],
-];
-
-const workflowSteps: Array<{
-  label: string;
-  module: ModuleName;
-  owner: string;
-}> = [
-  { label: "Documents", module: "Documents", owner: "Document control" },
-  { label: "Extract & Review", module: "BOQ", owner: "Estimator" },
-  { label: "Match & Price", module: "Technical Matching", owner: "Estimator" },
-  { label: "Supplier RFQs", module: "Supplier RFQs", owner: "Procurement" },
-  { label: "Cost Review", module: "Costing", owner: "Estimator" },
-  { label: "Validation", module: "Review", owner: "Discipline owners" },
-  { label: "Quotation Approval", module: "Quotation", owner: "Commercial" },
-  { label: "Issue & Export", module: "Reports", owner: "Commercial" },
-];
-
 const tenderDocuments = [
   "BOQ.xlsx",
   "28 46 00 - Fire Detection and Alarm System - Rev 1.pdf",
@@ -1904,7 +1882,7 @@ const projectControlState = (project: LocalProject) => {
     return {
       ...context,
       nextLabel: `Review ${unpriced} unpriced`,
-      nextModule: "Review" as ModuleName,
+      nextModule: "Commercial Review" as ModuleName,
     };
   if (technicalReadiness < 100)
     return {
@@ -2811,7 +2789,9 @@ export default function Home() {
       BOQ: "BOQ",
       Requirements: "Technical Matching",
       Matching: "Technical Matching",
-      Review: "Review",
+      "Technical Review": "Technical Review",
+      Review: new URLSearchParams(query).get("type") === "final" ? "Commercial Review" : "Technical Review",
+      "Commercial Review": "Commercial Review",
       Costing: "Costing",
       "Supplier RFQs": "Supplier RFQs",
       Quotation: "Quotation",
@@ -9904,7 +9884,7 @@ export default function Home() {
           title: `Quarantine ${workspaceOwnershipConflicts} cross-project record${workspaceOwnershipConflicts === 1 ? "" : "s"}`,
           detail:
             "An RFQ or quotation approval does not belong to the active project identity. Final issue remains blocked until project ownership is corrected.",
-          target: "Review" as ModuleName,
+          target: "Commercial Review" as ModuleName,
         }
       : null,
     revisionCandidates.length
@@ -9943,7 +9923,7 @@ export default function Home() {
           title: `Resolve ${unpricedCostItems.length} unpriced BOQ line${unpricedCostItems.length === 1 ? "" : "s"}`,
           detail:
             "Approve current source evidence or route unresolved scope into supplier RFQs.",
-          target: "Review" as ModuleName,
+          target: "Commercial Review" as ModuleName,
         }
       : null,
     expiredCostItems.length || validityMissingCostItems.length
@@ -10011,7 +9991,7 @@ export default function Home() {
           title: "Resolve materials-only scope conflict",
           detail:
             "The BOQ requires supply, installation and connection; record formal client/tender authority before excluding services.",
-          target: "Review" as ModuleName,
+          target: "Commercial Review" as ModuleName,
         }
       : null,
     !scopeMissing && drawingEvidenceCount === 0
@@ -10056,7 +10036,7 @@ export default function Home() {
         : outstanding
           ? `${outstanding} BOQ line${outstanding === 1 ? " lacks" : "s lack"} current approved cost evidence.`
           : `All ${items.length} BOQ lines have current approved cost evidence.`,
-      target: "Review",
+      target: "Commercial Review",
     },
     {
       title: "Engineering assurance dossier",
@@ -10092,7 +10072,7 @@ export default function Home() {
       detail: scopeAlignmentResolved
         ? "Materials-only boundary has the required authority or no service-scope conflict exists."
         : "Tender service obligations conflict with the materials-only quotation boundary.",
-      target: "Review",
+      target: "Commercial Review",
     },
     {
       title: "Product lifecycle review",
@@ -10170,7 +10150,7 @@ export default function Home() {
         .toLowerCase()
         .includes(projectSearch.trim().toLowerCase()),
   );
-  const projectSwitcherProjects = projectPortfolio.filter((project) =>
+  const projectSwitcherProjects = visibleProductProjects(projectPortfolio).filter((project) =>
     `${project.name} ${project.client} ${project.code}`
       .toLowerCase()
       .includes(projectMenuSearch.trim().toLowerCase()),
@@ -10301,7 +10281,8 @@ export default function Home() {
       "Technical Matching": 3,
       "Supplier RFQs": 4,
       Costing: 5,
-      Review: 6,
+      "Technical Review": 4,
+      "Commercial Review": 6,
       Quotation: 7,
     };
     if (workflowIndex[module]) setActiveStep(workflowIndex[module]);
@@ -11260,12 +11241,12 @@ export default function Home() {
             </button>
           </section>
         )}
-        {baseTenderLoaded && (
+        {baseTenderLoaded && managedDocuments.length > 0 && (
           <div className="revision-alert">
             <span>DOCUMENT CONTROL</span>
             <div>
               <strong>
-                Specification Rev 1 and 13 tender drawings indexed
+                Persisted tender documents are indexed
               </strong>
               <p>
                 No previous issue was supplied, so revision differences cannot
@@ -11857,6 +11838,7 @@ export default function Home() {
               </div>
             )}
         </section>
+        {baseTenderLoaded && managedDocuments.length === 0 && <div className="legacy-project-notice"><strong>Legacy indexed reference evidence</strong><p>Earlier workflow references are available for context, but this project currently has no persisted documents. Upload the source files before relying on them as current evidence.</p></div>}
         <details className="document-progressive-section baseline-document-register">
           <summary>
             <span>
@@ -12851,6 +12833,7 @@ export default function Home() {
           window.history.pushState(null, "", buildProjectLocation(projectId, "Technical Matching", itemId));
         }}
         onOpenLibrary={() => navigate("Product Library")}
+        onOpenPrerequisite={() => openDashboardRoute(projectId, preSalesWorkflow?.nextAction?.route || "BOQ")}
       />
     ) : activeModule === "Technical Matching" && Boolean(0) ? (
       <section className="module-page construction-workspace">
@@ -13115,12 +13098,17 @@ export default function Home() {
           </>
         )}
       </section>
-    ) : activeModule === "Review" ? (
+    ) : activeModule === "Technical Review" ? (
+      <TechnicalReviewWorkspace workflow={preSalesWorkflow} onOpenRoute={(route) => openDashboardRoute(projectId, route)} />
+    ) : activeModule === "Commercial Review" ? (
       <CommercialReviewWorkspace
         summary={reviewSummary}
         items={commercialReviewQueue}
         loading={reviewLoading}
         error={reviewError}
+        available={Number(preSalesWorkflow?.facts?.pricedItems || 0) > 0}
+        blocker={preSalesWorkflow?.blockers.find((entry) => ["supplier", "costing"].includes(entry.stageId))?.message}
+        onPrerequisite={() => navigate("Costing")}
         filter={reviewFilter}
         search={reviewSearch}
         reasons={reviewDecisionReason}
@@ -13130,7 +13118,7 @@ export default function Home() {
         onRefresh={() => void loadReviewWorkspace(false)}
         onAction={(item, operation, outcome) => void actOnReview(item, operation, outcome)}
       />
-    ) : activeModule === "Review" && scopeMissing && Boolean(0) ? (
+    ) : activeModule === "Technical Review" && scopeMissing && Boolean(0) ? (
       <section className="module-page">
         <div className="module-heading">
           <div>
@@ -13156,7 +13144,7 @@ export default function Home() {
           </button>
         </div>
       </section>
-    ) : activeModule === "Review" && Boolean(0) ? (
+    ) : activeModule === "Technical Review" && Boolean(0) ? (
       <section className="module-page">
         <div className="module-heading">
           <div>
@@ -13903,6 +13891,7 @@ export default function Home() {
         onDraft={() => void createServerQuotationDraft()}
         onApprove={() => void approveQuotationRevision()}
         onIssue={() => void issueQuotationRevision()}
+        onOpenRoute={(route) => openDashboardRoute(projectId, route)}
         money={money}
       />
     ) : activeModule === "Price Sources" && !baseTenderLoaded ? (
@@ -15105,7 +15094,7 @@ export default function Home() {
             <div className="top-actions">
               <button
                 className="review-link"
-                onClick={() => navigate("Review")}
+                onClick={() => navigate("Commercial Review")}
               >
                 Action queue
                 <small>
@@ -15119,10 +15108,6 @@ export default function Home() {
                   <option>SAR</option>
                 </select>
               </label>
-              <span className="demo-badge">
-                <b>SERVER</b>
-                <small>Verified project records</small>
-              </span>
               {canViewCommercial && (
                 <button
                   className="settings-button"
@@ -15143,7 +15128,6 @@ export default function Home() {
               projectCode={projectCode || projectName}
               workspaceSeal={workspaceContextSeal}
               activeWorkspace={activeModule}
-              tabs={projectTabs}
               canViewCommercial={canViewCommercial}
               onNavigate={(workspace) => navigate(workspace as ModuleName)}
               onOpenRoute={(route) => openDashboardRoute(projectId, route)}
@@ -15175,7 +15159,7 @@ export default function Home() {
             <section className="projects-page organization-dashboard">
               <div className="module-heading">
                 <div>
-                  <small>ORGANIZATION OPERATIONS · SERVER VERIFIED</small>
+                  <small>ORGANIZATION OPERATIONS</small>
                   <h1>
                     {organizationDashboard?.organization.name ||
                       "Organization dashboard"}
@@ -15209,7 +15193,7 @@ export default function Home() {
               )}
               {organizationDashboard && (
                 <>
-                  <div className="organization-metric-grid">
+                  {topLevelArea === "Dashboard" && <><div className="organization-metric-grid">
                     {[
                       [
                         "Active projects",
@@ -15253,17 +15237,16 @@ export default function Home() {
                             openDashboardRoute(first.project.id, route);
                         }}
                       >
-                        <small>{label}</small>
+                        <small>{label}{["reviewRequired","missingPrices"].includes(String(key)) ? " · BOQ items" : ""}</small>
                         <strong>
                           {organizationDashboard.metrics[key] || 0}
                         </strong>
-                        <span>Open details →</span>
+                        <span>{key === "reviewRequired" ? "Review items →" : key === "missingPrices" ? "Resolve pricing →" : "Open details →"}</span>
                       </button>
                     ))}
                   </div>
                   <div className="organization-updated">
                     <span>{organizationDashboard.organization.name}</span>
-                    <span>Model {organizationDashboard.modelVersion}</span>
                     <span>
                       Updated{" "}
                       {new Date(
@@ -15273,7 +15256,7 @@ export default function Home() {
                     <span>
                       {dashboardLoading ? "Refreshing…" : "Auto-refresh active"}
                     </span>
-                  </div>
+                  </div></>}
                   {organizationDashboard.unassignedLegacyProjects.count > 0 && (
                     <div className="legacy-project-notice">
                       <strong>
@@ -15291,7 +15274,7 @@ export default function Home() {
                       </p>
                     </div>
                   )}
-                  <label className="project-search">
+                  {topLevelArea === "Projects" && <label className="project-search">
                     <span>⌕</span>
                     <input
                       aria-label="Search projects"
@@ -15299,9 +15282,10 @@ export default function Home() {
                       onChange={(event) => setProjectSearch(event.target.value)}
                       placeholder="Search by project, client or tender reference"
                     />
-                  </label>
+                  </label>}
+                  <div className="section-title"><div><small>{topLevelArea === "Dashboard" ? "PRIORITY PROJECTS" : "PROJECT REGISTER"}</small><strong>{topLevelArea === "Dashboard" ? "Projects needing attention" : "All accessible organization projects"}</strong></div></div>
                   <div className="server-project-list">
-                    {organizationDashboard.projects.map((entry) => (
+                    {visibleProductProjects(organizationDashboard.projects).slice(0, topLevelArea === "Dashboard" ? 3 : 100).map((entry) => (
                       <article key={entry.project.id}>
                         <header>
                           <button
@@ -15422,7 +15406,7 @@ export default function Home() {
                       </div>
                     )}
                   </div>
-                  <section className="organization-action-queue">
+                  {topLevelArea === "Dashboard" && <section className="organization-action-queue">
                     <div className="section-title">
                       <div>
                         <small>ORGANIZATION ACTION QUEUE</small>
@@ -15469,7 +15453,7 @@ export default function Home() {
                         </p>
                       </div>
                     )}
-                  </section>
+                  </section>}
                 </>
               )}
             </section>
@@ -15486,6 +15470,9 @@ export default function Home() {
               sources={persistentPriceSources}
               loading={persistentPricingLoadingId !== null}
               error={persistentPricingError}
+              available={Number(preSalesWorkflow?.facts?.technicalApproved || 0) > 0}
+              blocker={preSalesWorkflow?.blockers.find((entry) => ["requirements", "selection", "technical"].includes(entry.stageId))?.message}
+              onPrerequisite={() => navigate("Technical Review")}
               onScenario={(id) => {
                 setPricingScenarioId(id);
                 const url = new URL(window.location.href);
@@ -15496,7 +15483,7 @@ export default function Home() {
               onCalculate={calculateServerPricingByItemId}
               onSubmitManualPrice={(itemId) => void submitManualPriceEvidence(itemId)}
               onReviewSource={(itemId, sourceId) => void reviewPersistentPriceSource(itemId, sourceId)}
-              onOpenReview={() => navigate("Review")}
+              onOpenReview={() => navigate("Commercial Review")}
               money={money}
             />
           )}
@@ -15526,7 +15513,7 @@ export default function Home() {
                       {String(nextCostingItem.id).padStart(3, "0")} →
                     </button>
                   ) : (
-                    <button onClick={() => navigate("Review")}>
+                    <button onClick={() => navigate("Commercial Review")}>
                       Open pricing review →
                     </button>
                   )}
@@ -15999,7 +15986,7 @@ export default function Home() {
       </main>
 
       {!showAllProjects &&
-        (activeModule === "BOQ" || activeModule === "Review") && (
+        (activeModule === "BOQ" || activeModule === "Technical Review") && (
           <div
             className="review-launcher-stack"
             aria-label="Technical review tools"

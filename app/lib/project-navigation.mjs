@@ -5,7 +5,9 @@ export const PROJECT_MODULES = Object.freeze({
   Requirements: "Technical Matching",
   Matching: "Technical Matching",
   "Technical Matching": "Technical Matching",
-  Review: "Review",
+  "Technical Review": "Technical Review",
+  Review: "Commercial Review",
+  "Commercial Review": "Commercial Review",
   Costing: "Costing",
   Pricing: "Costing",
   "Supplier RFQs": "Supplier RFQs",
@@ -41,13 +43,66 @@ export function buildProjectLocation(projectId, workspace, selectedItemId = "") 
 
 const WORKSPACE_STAGE_IDS = Object.freeze({
   Overview: [],
-  Documents: ["document-intake"],
-  BOQ: ["boq-extraction", "extraction-review"],
-  Review: ["technical-review", "requirement-analysis"],
-  "Technical Matching": ["product-matching"],
-  Costing: ["pricing", "commercial-review"],
+  Documents: ["intake", "document-intake"],
+  BOQ: ["extraction", "boq-extraction", "extraction-review"],
+  "Technical Review": ["scope", "technical", "technical-review"],
+  "Technical Matching": ["requirements", "selection", "requirement-analysis", "product-matching"],
+  "Commercial Review": ["costing", "commercial-review", "final-review"],
+  Costing: ["supplier", "costing", "pricing"],
   Quotation: ["quotation"],
 });
+
+export function workspaceForRoute(route = "Overview") {
+  const [name, query = ""] = String(route).split("?");
+  if (name === "Review") return new URLSearchParams(query).get("type") === "final" ? "Commercial Review" : "Technical Review";
+  return PROJECT_MODULES[name] || "Overview";
+}
+
+export function canonicalStepperItems(workflow) {
+  const stages = Array.isArray(workflow?.stages) ? workflow.stages : [];
+  return [
+    { id: "overview", name: "Overview", route: "Overview", workspace: "Overview", status: workflow?.status || "Waiting", progress: workflow?.progress || 0 },
+    ...stages.map((stage) => ({ ...stage, workspace: workspaceForRoute(stage.route) })),
+  ];
+}
+
+const COMPLETE = new Set(["Completed", "Not Applicable", "Skipped"]);
+export function workspaceAvailability(workflow, workspace) {
+  if (!workflow) return { state: "WAITING", title: "Workflow status is loading", detail: "Wait for the project status to load.", route: "Overview" };
+  const ids = WORKSPACE_STAGE_IDS[workspace] || [];
+  const stages = workflow.stages.filter((stage) => ids.includes(stage.id));
+  if (!stages.length || workspace === "Overview" || workspace === "Documents") return { state: "READY", title: "Workspace available", detail: "", route: "Overview" };
+  const blocked = stages.find((stage) => stage.status === "Blocked");
+  const waiting = stages.find((stage) => ["Not Started", "Waiting"].includes(stage.status));
+  const target = blocked || waiting;
+  if (!target) return { state: stages.every((stage) => COMPLETE.has(stage.status)) ? "COMPLETED" : "READY", title: "Workspace available", detail: "", route: "Overview" };
+  const blocker = workflow.blockers.find((entry) => entry.stageId === target.id) || workflow.blockers[0];
+  return {
+    state: blocked ? "BLOCKED" : "WAITING",
+    title: `${target.name} ${blocked ? "is blocked" : "is waiting"}`,
+    detail: blocker?.message || target.blockers?.[0] || "Complete the preceding workflow stage before continuing.",
+    route: blocker?.route || workflow.nextAction?.route || "Overview",
+  };
+}
+
+export function aiQuotationAvailability(workflow) {
+  const boqItems = Number(workflow?.facts?.boqItems || 0);
+  const pricedItems = Number(workflow?.facts?.pricedItems || 0);
+  if (!boqItems) return { available: false, reason: "A reviewed BOQ is required before an advisory can be generated.", route: "BOQ" };
+  if (!pricedItems) return { available: false, reason: "Governed pricing evidence is required before an advisory can be generated.", route: "Costing" };
+  return { available: true, reason: "Governed quotation evidence is available.", route: "Quotation" };
+}
+
+export function isGoldenProject(project) {
+  const explicit = project?.testMode === true || project?.isTestFixture === true || project?.metadata?.testMode === "golden";
+  const goldenEnvironment = typeof process !== "undefined" && process.env?.GOLDEN_E2E === "1";
+  return !goldenEnvironment && (explicit || project?.organizationId === "golden-e2e-organization");
+}
+
+export function visibleProductProjects(projects, options = {}) {
+  if (options.goldenMode === true) return projects;
+  return projects.filter((entry) => !isGoldenProject(entry.project || entry));
+}
 
 export function workflowPresentation(workflow, workspace) {
   if (!workflow) return { status: "Loading", progress: 0 };

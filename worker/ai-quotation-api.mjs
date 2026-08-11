@@ -21,6 +21,7 @@ export async function handleAiQuotationApi(request,env){
     return json({advisory:hydrate(latest,inputFingerprint,configFingerprint),evidenceFingerprint:context.sourceFingerprint,inputFingerprint});
   }
   if(request.method!=="POST")return json({error:{code:"METHOD_NOT_ALLOWED",message:"Use GET or POST."}},405);
+  if(!Number(context.workflow?.facts?.boqItems||0)||!Number(context.workflow?.facts?.pricedItems||0))return json({error:{code:"AI_QUOTATION_EVIDENCE_REQUIRED",message:"AI advisory becomes available after a reviewed BOQ and governed pricing evidence are available.",blockers:context.workflow?.blockers||[]}},409);
   const provider=createConfiguredCloudflareStructuredProvider(env,{schema:AI_QUOTATION_RESPONSE_SCHEMA,maxTokens:3000});
   if(!provider)return json({error:{code:"AI_UNAVAILABLE",message:"No AI quotation provider is configured. Governed quotation workflow remains unchanged."}},503);
   const configFingerprint=aiQuotationConfigFingerprint(provider.metadata),existing=await env.DB.prepare("SELECT * FROM ai_quotation_advisories WHERE project_id=? AND input_fingerprint=? AND config_fingerprint=?").bind(project.id,inputFingerprint,configFingerprint).first();
