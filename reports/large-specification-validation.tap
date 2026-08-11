@@ -1,0 +1,32 @@
+TAP version 13
+# Warning: Cannot load "@napi-rs/canvas" package: "Error: Cannot find module '@napi-rs/canvas'
+# Require stack:
+# - /Users/serein-b/Documents/Codex/2026-07-31/referenced-chatgpt-conversation-this-is-an/node_modules/pdfjs-dist/legacy/build/pdf.mjs".
+# Warning: TT: undefined function: 21
+# Warning: TT: undefined function: 21
+# Warning: TT: undefined function: 21
+# Warning: TT: undefined function: 21
+# Warning: TT: undefined function: 21
+# Warning: TT: undefined function: 21
+# Warning: TT: undefined function: 21
+# Warning: TT: undefined function: 21
+# Warning: TT: undefined function: 21
+# Warning: TT: undefined function: 21
+# Warning: TT: undefined function: 21
+# Warning: TT: undefined function: 21
+# HOTEL_QA_METRICS {"pages":2340,"chunks":47,"firstChunkMs":421,"firstChunkMemoryDeltaBytes":69255168,"chunkDurationMs":{"average_ms":526,"fastest_ms":257,"slowest_ms":958},"persistedWrites":{"pages":2340,"entities":73307,"checkpoints":48,"failures":1}}
+# Subtest: Hotel 2340-page specification survives lifecycle, recovery, isolated retry, and concurrency
+ok 1 - Hotel 2340-page specification survives lifecycle, recovery, isolated retry, and concurrency
+  ---
+  duration_ms: 51462.304125
+  type: 'test'
+  ...
+1..1
+# tests 1
+# suites 0
+# pass 1
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 51529.9315

@@ -1,0 +1,918 @@
+{
+  "verdict": "GOLDEN E2E PASSED",
+  "completedAt": "2026-08-10T18:29:28.241Z",
+  "failure": null,
+  "checkpoints": [
+    {
+      "milestone": "project-created",
+      "modelVersion": "presales-estimation-v2.1",
+      "lifecycleState": "Draft",
+      "workflowStatus": "In Progress",
+      "status": "In Progress",
+      "workflowStage": "Document intake and classification",
+      "progress": 9,
+      "currentStageId": "intake",
+      "readyForQuotation": false,
+      "readyForIssue": false,
+      "terminal": false,
+      "suspended": false,
+      "stages": [
+        {
+          "id": "setup",
+          "name": "Project setup",
+          "owner": "Project Manager",
+          "route": "Overview",
+          "weight": 5,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Complete project details"
+        },
+        {
+          "id": "intake",
+          "name": "Document intake and classification",
+          "owner": "Estimator",
+          "route": "Documents",
+          "weight": 10,
+          "status": "Ready",
+          "progress": 0,
+          "blockers": [],
+          "warnings": [],
+          "action": "Upload tender documents"
+        },
+        {
+          "id": "extraction",
+          "name": "BOQ and specification extraction",
+          "owner": "Estimator",
+          "route": "BOQ",
+          "weight": 12,
+          "status": "Not Started",
+          "progress": 0,
+          "blockers": [],
+          "warnings": [
+            "Specification extraction has not completed."
+          ],
+          "action": "Review extracted BOQ and specification evidence"
+        },
+        {
+          "id": "scope",
+          "name": "Scope and evidence review",
+          "owner": "Estimator / Technical Reviewer",
+          "route": "Review?type=scope&status=open",
+          "weight": 8,
+          "status": "Not Started",
+          "progress": 50,
+          "blockers": [],
+          "warnings": [],
+          "action": "Resolve scope gaps and clarifications"
+        },
+        {
+          "id": "requirements",
+          "name": "Requirement intelligence and classification",
+          "owner": "Technical Reviewer",
+          "route": "Requirements",
+          "weight": 12,
+          "status": "Not Started",
+          "progress": 0,
+          "blockers": [],
+          "warnings": [],
+          "action": "Generate, review and approve Requirement Profiles"
+        },
+        {
+          "id": "selection",
+          "name": "Product identity, matching and safety",
+          "owner": "Estimator / Technical Reviewer",
+          "route": "Matching",
+          "weight": 15,
+          "status": "Not Started",
+          "progress": 0,
+          "blockers": [],
+          "warnings": [],
+          "action": "Run matching and review product evidence"
+        },
+        {
+          "id": "technical",
+          "name": "Technical review",
+          "owner": "Technical Reviewer",
+          "route": "Review?type=technical&status=open",
+          "weight": 8,
+          "status": "Not Started",
+          "progress": 0,
+          "blockers": [],
+          "warnings": [],
+          "action": "Complete governed technical decisions"
+        },
+        {
+          "id": "supplier",
+          "name": "Supplier RFQs and current price evidence",
+          "owner": "Procurement / Estimator",
+          "route": "Supplier RFQs",
+          "weight": 8,
+          "status": "Not Started",
+          "progress": 0,
+          "blockers": [],
+          "warnings": [],
+          "action": "Obtain and validate supplier quotations"
+        },
+        {
+          "id": "costing",
+          "name": "Costing, commercial and final review",
+          "owner": "Commercial Reviewer",
+          "route": "Costing",
+          "weight": 10,
+          "status": "Not Started",
+          "progress": 0,
+          "blockers": [],
+          "warnings": [],
+          "action": "Complete costing, margin and commercial approval"
+        },
+        {
+          "id": "quotation",
+          "name": "Quotation revision and approval",
+          "owner": "Commercial Approver",
+          "route": "Quotation",
+          "weight": 8,
+          "status": "Not Started",
+          "progress": 0,
+          "blockers": [
+            "Technical and commercial readiness gates must pass."
+          ],
+          "warnings": [],
+          "action": "Create a quotation draft"
+        },
+        {
+          "id": "issue",
+          "name": "Final issue and export",
+          "owner": "Commercial Approver",
+          "route": "Reports",
+          "weight": 4,
+          "status": "Not Started",
+          "progress": 0,
+          "blockers": [],
+          "warnings": [],
+          "action": "Generate and issue the approved quotation"
+        }
+      ],
+      "blockers": [
+        {
+          "stageId": "quotation",
+          "stage": "Quotation revision and approval",
+          "message": "Technical and commercial readiness gates must pass.",
+          "route": "Quotation",
+          "owner": "Commercial Approver"
+        }
+      ],
+      "warnings": [
+        {
+          "stageId": "extraction",
+          "stage": "BOQ and specification extraction",
+          "message": "Specification extraction has not completed.",
+          "route": "BOQ",
+          "owner": "Estimator"
+        }
+      ],
+      "nextAction": {
+        "title": "Upload tender documents",
+        "route": "Documents",
+        "owner": "Estimator",
+        "stageId": "intake"
+      },
+      "domainSummaries": {
+        "intake": {
+          "status": "Ready",
+          "records": 0,
+          "openReviews": 0,
+          "failed": 0
+        },
+        "extraction": {
+          "status": "Not Started",
+          "records": 0,
+          "openReviews": 0
+        },
+        "technical": {
+          "status": "Not Started",
+          "approved": 0,
+          "pending": 0,
+          "safetyBlocks": 0
+        },
+        "commercial": {
+          "status": "Not Started",
+          "priced": 0,
+          "missingPrices": 0,
+          "approved": 0,
+          "pending": 0,
+          "finalReviewApproved": 0,
+          "finalReviewPending": 0
+        },
+        "quotation": {
+          "status": "Not Started",
+          "drafts": 0,
+          "approved": 0,
+          "issued": 0
+        }
+      },
+      "facts": {
+        "documents": 0,
+        "classified": 0,
+        "processing": 0,
+        "failedJobs": 0,
+        "boqItems": 0,
+        "extractionReview": 0,
+        "specificationExtractions": 0,
+        "requirementProfiles": 0,
+        "requirementReview": 0,
+        "matchedItems": 0,
+        "technicalPending": 0,
+        "technicalApproved": 0,
+        "pricedItems": 0,
+        "missingPrices": 0,
+        "commercialPending": 0,
+        "commercialApproved": 0,
+        "finalReviewApproved": 0,
+        "finalReviewPending": 0,
+        "openClarifications": 0,
+        "blockingClarifications": 0,
+        "openSafetyBlocks": 0,
+        "exportsCompleted": 0,
+        "exportFailures": 0,
+        "quotationDrafts": 0,
+        "quotationApproved": 0,
+        "quotationIssued": 0
+      }
+    },
+    {
+      "milestone": "before-final-review",
+      "modelVersion": "presales-estimation-v2.1",
+      "lifecycleState": "Active",
+      "workflowStatus": "In Progress",
+      "status": "In Progress",
+      "workflowStage": "Costing, commercial and final review",
+      "progress": 78,
+      "currentStageId": "costing",
+      "readyForQuotation": false,
+      "readyForIssue": false,
+      "terminal": false,
+      "suspended": false,
+      "stages": [
+        {
+          "id": "setup",
+          "name": "Project setup",
+          "owner": "Project Manager",
+          "route": "Overview",
+          "weight": 5,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Complete project details"
+        },
+        {
+          "id": "intake",
+          "name": "Document intake and classification",
+          "owner": "Estimator",
+          "route": "Documents",
+          "weight": 10,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Finish classification and processing"
+        },
+        {
+          "id": "extraction",
+          "name": "BOQ and specification extraction",
+          "owner": "Estimator",
+          "route": "BOQ",
+          "weight": 12,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Review extracted BOQ and specification evidence"
+        },
+        {
+          "id": "scope",
+          "name": "Scope and evidence review",
+          "owner": "Estimator / Technical Reviewer",
+          "route": "Review?type=scope&status=open",
+          "weight": 8,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Resolve scope gaps and clarifications"
+        },
+        {
+          "id": "requirements",
+          "name": "Requirement intelligence and classification",
+          "owner": "Technical Reviewer",
+          "route": "Requirements",
+          "weight": 12,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Generate, review and approve Requirement Profiles"
+        },
+        {
+          "id": "selection",
+          "name": "Product identity, matching and safety",
+          "owner": "Estimator / Technical Reviewer",
+          "route": "Matching",
+          "weight": 15,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Run matching and review product evidence"
+        },
+        {
+          "id": "technical",
+          "name": "Technical review",
+          "owner": "Technical Reviewer",
+          "route": "Review?type=technical&status=open",
+          "weight": 8,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Complete governed technical decisions"
+        },
+        {
+          "id": "supplier",
+          "name": "Supplier RFQs and current price evidence",
+          "owner": "Procurement / Estimator",
+          "route": "Supplier RFQs",
+          "weight": 8,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Obtain and validate supplier quotations"
+        },
+        {
+          "id": "costing",
+          "name": "Costing, commercial and final review",
+          "owner": "Commercial Reviewer",
+          "route": "Review?type=final&status=open",
+          "weight": 10,
+          "status": "Needs Review",
+          "progress": 0,
+          "blockers": [
+            "1 final estimation review(s) remain unapproved."
+          ],
+          "warnings": [],
+          "action": "Complete final estimation review"
+        },
+        {
+          "id": "quotation",
+          "name": "Quotation revision and approval",
+          "owner": "Commercial Approver",
+          "route": "Quotation",
+          "weight": 8,
+          "status": "Not Started",
+          "progress": 0,
+          "blockers": [
+            "Technical and commercial readiness gates must pass."
+          ],
+          "warnings": [],
+          "action": "Create a quotation draft"
+        },
+        {
+          "id": "issue",
+          "name": "Final issue and export",
+          "owner": "Commercial Approver",
+          "route": "Reports",
+          "weight": 4,
+          "status": "Not Started",
+          "progress": 0,
+          "blockers": [],
+          "warnings": [],
+          "action": "Generate and issue the approved quotation"
+        }
+      ],
+      "blockers": [
+        {
+          "stageId": "costing",
+          "stage": "Costing, commercial and final review",
+          "message": "1 final estimation review(s) remain unapproved.",
+          "route": "Review?type=final&status=open",
+          "owner": "Commercial Reviewer"
+        },
+        {
+          "stageId": "quotation",
+          "stage": "Quotation revision and approval",
+          "message": "Technical and commercial readiness gates must pass.",
+          "route": "Quotation",
+          "owner": "Commercial Approver"
+        }
+      ],
+      "warnings": [],
+      "nextAction": {
+        "title": "Complete final estimation review",
+        "route": "Review?type=final&status=open",
+        "owner": "Commercial Reviewer",
+        "stageId": "costing"
+      },
+      "domainSummaries": {
+        "intake": {
+          "status": "Completed",
+          "records": 2,
+          "openReviews": 0,
+          "failed": 0
+        },
+        "extraction": {
+          "status": "Completed",
+          "records": 1,
+          "openReviews": 0
+        },
+        "technical": {
+          "status": "Completed",
+          "approved": 1,
+          "pending": 0,
+          "safetyBlocks": 0
+        },
+        "commercial": {
+          "status": "Needs Review",
+          "priced": 1,
+          "missingPrices": 0,
+          "approved": 1,
+          "pending": 0,
+          "finalReviewApproved": 0,
+          "finalReviewPending": 1
+        },
+        "quotation": {
+          "status": "Not Started",
+          "drafts": 0,
+          "approved": 0,
+          "issued": 0
+        }
+      },
+      "facts": {
+        "documents": 2,
+        "classified": 2,
+        "processing": 0,
+        "failedJobs": 0,
+        "boqItems": 1,
+        "extractionReview": 0,
+        "specificationExtractions": 1,
+        "requirementProfiles": 1,
+        "requirementReview": 0,
+        "matchedItems": 1,
+        "technicalPending": 0,
+        "technicalApproved": 1,
+        "pricedItems": 1,
+        "missingPrices": 0,
+        "commercialPending": 0,
+        "commercialApproved": 1,
+        "finalReviewApproved": 0,
+        "finalReviewPending": 1,
+        "openClarifications": 0,
+        "blockingClarifications": 0,
+        "openSafetyBlocks": 0,
+        "exportsCompleted": 0,
+        "exportFailures": 0,
+        "quotationDrafts": 0,
+        "quotationApproved": 0,
+        "quotationIssued": 0
+      }
+    },
+    {
+      "milestone": "ready-for-quotation",
+      "modelVersion": "presales-estimation-v2.1",
+      "lifecycleState": "Active",
+      "workflowStatus": "Ready for Quotation",
+      "status": "Ready for Quotation",
+      "workflowStage": "Quotation revision and approval",
+      "progress": 88,
+      "currentStageId": "quotation",
+      "readyForQuotation": true,
+      "readyForIssue": false,
+      "terminal": false,
+      "suspended": false,
+      "stages": [
+        {
+          "id": "setup",
+          "name": "Project setup",
+          "owner": "Project Manager",
+          "route": "Overview",
+          "weight": 5,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Complete project details"
+        },
+        {
+          "id": "intake",
+          "name": "Document intake and classification",
+          "owner": "Estimator",
+          "route": "Documents",
+          "weight": 10,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Finish classification and processing"
+        },
+        {
+          "id": "extraction",
+          "name": "BOQ and specification extraction",
+          "owner": "Estimator",
+          "route": "BOQ",
+          "weight": 12,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Review extracted BOQ and specification evidence"
+        },
+        {
+          "id": "scope",
+          "name": "Scope and evidence review",
+          "owner": "Estimator / Technical Reviewer",
+          "route": "Review?type=scope&status=open",
+          "weight": 8,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Resolve scope gaps and clarifications"
+        },
+        {
+          "id": "requirements",
+          "name": "Requirement intelligence and classification",
+          "owner": "Technical Reviewer",
+          "route": "Requirements",
+          "weight": 12,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Generate, review and approve Requirement Profiles"
+        },
+        {
+          "id": "selection",
+          "name": "Product identity, matching and safety",
+          "owner": "Estimator / Technical Reviewer",
+          "route": "Matching",
+          "weight": 15,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Run matching and review product evidence"
+        },
+        {
+          "id": "technical",
+          "name": "Technical review",
+          "owner": "Technical Reviewer",
+          "route": "Review?type=technical&status=open",
+          "weight": 8,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Complete governed technical decisions"
+        },
+        {
+          "id": "supplier",
+          "name": "Supplier RFQs and current price evidence",
+          "owner": "Procurement / Estimator",
+          "route": "Supplier RFQs",
+          "weight": 8,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Obtain and validate supplier quotations"
+        },
+        {
+          "id": "costing",
+          "name": "Costing, commercial and final review",
+          "owner": "Commercial Reviewer",
+          "route": "Costing",
+          "weight": 10,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Complete costing, margin and commercial approval"
+        },
+        {
+          "id": "quotation",
+          "name": "Quotation revision and approval",
+          "owner": "Commercial Approver",
+          "route": "Quotation",
+          "weight": 8,
+          "status": "Ready",
+          "progress": 0,
+          "blockers": [],
+          "warnings": [],
+          "action": "Create a quotation draft"
+        },
+        {
+          "id": "issue",
+          "name": "Final issue and export",
+          "owner": "Commercial Approver",
+          "route": "Reports",
+          "weight": 4,
+          "status": "Not Started",
+          "progress": 0,
+          "blockers": [],
+          "warnings": [],
+          "action": "Generate and issue the approved quotation"
+        }
+      ],
+      "blockers": [],
+      "warnings": [],
+      "nextAction": {
+        "title": "Create a quotation draft",
+        "route": "Quotation",
+        "owner": "Commercial Approver",
+        "stageId": "quotation"
+      },
+      "domainSummaries": {
+        "intake": {
+          "status": "Completed",
+          "records": 2,
+          "openReviews": 0,
+          "failed": 0
+        },
+        "extraction": {
+          "status": "Completed",
+          "records": 1,
+          "openReviews": 0
+        },
+        "technical": {
+          "status": "Completed",
+          "approved": 1,
+          "pending": 0,
+          "safetyBlocks": 0
+        },
+        "commercial": {
+          "status": "Completed",
+          "priced": 1,
+          "missingPrices": 0,
+          "approved": 1,
+          "pending": 0,
+          "finalReviewApproved": 1,
+          "finalReviewPending": 0
+        },
+        "quotation": {
+          "status": "Ready",
+          "drafts": 0,
+          "approved": 0,
+          "issued": 0
+        }
+      },
+      "facts": {
+        "documents": 2,
+        "classified": 2,
+        "processing": 0,
+        "failedJobs": 0,
+        "boqItems": 1,
+        "extractionReview": 0,
+        "specificationExtractions": 1,
+        "requirementProfiles": 1,
+        "requirementReview": 0,
+        "matchedItems": 1,
+        "technicalPending": 0,
+        "technicalApproved": 1,
+        "pricedItems": 1,
+        "missingPrices": 0,
+        "commercialPending": 0,
+        "commercialApproved": 1,
+        "finalReviewApproved": 1,
+        "finalReviewPending": 0,
+        "openClarifications": 0,
+        "blockingClarifications": 0,
+        "openSafetyBlocks": 0,
+        "exportsCompleted": 0,
+        "exportFailures": 0,
+        "quotationDrafts": 0,
+        "quotationApproved": 0,
+        "quotationIssued": 0
+      }
+    },
+    {
+      "milestone": "issued",
+      "modelVersion": "presales-estimation-v2.1",
+      "lifecycleState": "Active",
+      "workflowStatus": "Quotation Issued",
+      "status": "Quotation Issued",
+      "workflowStage": "Final issue and export",
+      "progress": 100,
+      "currentStageId": "issue",
+      "readyForQuotation": true,
+      "readyForIssue": true,
+      "terminal": false,
+      "suspended": false,
+      "stages": [
+        {
+          "id": "setup",
+          "name": "Project setup",
+          "owner": "Project Manager",
+          "route": "Overview",
+          "weight": 5,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Complete project details"
+        },
+        {
+          "id": "intake",
+          "name": "Document intake and classification",
+          "owner": "Estimator",
+          "route": "Documents",
+          "weight": 10,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Finish classification and processing"
+        },
+        {
+          "id": "extraction",
+          "name": "BOQ and specification extraction",
+          "owner": "Estimator",
+          "route": "BOQ",
+          "weight": 12,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Review extracted BOQ and specification evidence"
+        },
+        {
+          "id": "scope",
+          "name": "Scope and evidence review",
+          "owner": "Estimator / Technical Reviewer",
+          "route": "Review?type=scope&status=open",
+          "weight": 8,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Resolve scope gaps and clarifications"
+        },
+        {
+          "id": "requirements",
+          "name": "Requirement intelligence and classification",
+          "owner": "Technical Reviewer",
+          "route": "Requirements",
+          "weight": 12,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Generate, review and approve Requirement Profiles"
+        },
+        {
+          "id": "selection",
+          "name": "Product identity, matching and safety",
+          "owner": "Estimator / Technical Reviewer",
+          "route": "Matching",
+          "weight": 15,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Run matching and review product evidence"
+        },
+        {
+          "id": "technical",
+          "name": "Technical review",
+          "owner": "Technical Reviewer",
+          "route": "Review?type=technical&status=open",
+          "weight": 8,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Complete governed technical decisions"
+        },
+        {
+          "id": "supplier",
+          "name": "Supplier RFQs and current price evidence",
+          "owner": "Procurement / Estimator",
+          "route": "Supplier RFQs",
+          "weight": 8,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Obtain and validate supplier quotations"
+        },
+        {
+          "id": "costing",
+          "name": "Costing, commercial and final review",
+          "owner": "Commercial Reviewer",
+          "route": "Costing",
+          "weight": 10,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Complete costing, margin and commercial approval"
+        },
+        {
+          "id": "quotation",
+          "name": "Quotation revision and approval",
+          "owner": "Commercial Approver",
+          "route": "Quotation",
+          "weight": 8,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Review and approve the current quotation fingerprint"
+        },
+        {
+          "id": "issue",
+          "name": "Final issue and export",
+          "owner": "Commercial Approver",
+          "route": "Reports",
+          "weight": 4,
+          "status": "Completed",
+          "progress": 100,
+          "blockers": [],
+          "warnings": [],
+          "action": "Generate and issue the approved quotation"
+        }
+      ],
+      "blockers": [],
+      "warnings": [],
+      "nextAction": {
+        "title": "Generate and issue the approved quotation",
+        "route": "Reports",
+        "owner": "Commercial Approver",
+        "stageId": "issue"
+      },
+      "domainSummaries": {
+        "intake": {
+          "status": "Completed",
+          "records": 2,
+          "openReviews": 0,
+          "failed": 0
+        },
+        "extraction": {
+          "status": "Completed",
+          "records": 1,
+          "openReviews": 0
+        },
+        "technical": {
+          "status": "Completed",
+          "approved": 1,
+          "pending": 0,
+          "safetyBlocks": 0
+        },
+        "commercial": {
+          "status": "Completed",
+          "priced": 1,
+          "missingPrices": 0,
+          "approved": 1,
+          "pending": 0,
+          "finalReviewApproved": 1,
+          "finalReviewPending": 0
+        },
+        "quotation": {
+          "status": "Completed",
+          "drafts": 1,
+          "approved": 1,
+          "issued": 1
+        }
+      },
+      "facts": {
+        "documents": 2,
+        "classified": 2,
+        "processing": 0,
+        "failedJobs": 0,
+        "boqItems": 1,
+        "extractionReview": 0,
+        "specificationExtractions": 1,
+        "requirementProfiles": 1,
+        "requirementReview": 0,
+        "matchedItems": 1,
+        "technicalPending": 0,
+        "technicalApproved": 1,
+        "pricedItems": 1,
+        "missingPrices": 0,
+        "commercialPending": 0,
+        "commercialApproved": 1,
+        "finalReviewApproved": 1,
+        "finalReviewPending": 0,
+        "openClarifications": 0,
+        "blockingClarifications": 0,
+        "openSafetyBlocks": 0,
+        "exportsCompleted": 1,
+        "exportFailures": 0,
+        "quotationDrafts": 1,
+        "quotationApproved": 1,
+        "quotationIssued": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+import type { ReactNode } from "react";
+export function DocumentsWorkspace({ children, reviewCount, unknownCount, lowConfidenceCount, onOpenBoq, onUpload, onReviewFirst }: { children: ReactNode; reviewCount: number; unknownCount: number; lowConfidenceCount: number; onOpenBoq: () => void; onUpload: () => void; onReviewFirst: () => void }) {
+  return <section className="module-page"><div className="module-heading"><div><small>STEP 01 · DOCUMENT INTAKE</small><h1>Project documents</h1><p>Upload, classify and track the authoritative files for this project.</p></div><div className="heading-actions"><button className="secondary-action" onClick={onOpenBoq}>Open BOQ workspace</button><button onClick={onUpload}>⇧ Upload documents</button></div></div>
+    {reviewCount > 0 && <section id="documents-needing-review" className="classification-review-explainer" aria-labelledby="classification-review-title"><div><small>WHY REVIEW IS REQUIRED</small><strong id="classification-review-title">{reviewCount} document{reviewCount === 1 ? "" : "s"} need classification confirmation</strong><p>{unknownCount} have no reliable document type and {lowConfidenceCount} are below the 80% automatic-classification threshold. They stay in review so a drawing, specification or price list cannot enter the wrong extraction workflow.</p></div><button id="review-first-classification" onClick={onReviewFirst}>Review first document →</button></section>}
+    {children}
+  </section>;
+}

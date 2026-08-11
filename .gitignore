@@ -1,0 +1,67 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# env files (can opt-in for committing if needed)
+.env*
+
+# vercel
+.vercel
+
+# typescript
+next-env.d.ts
+/dist/
+/.wrangler/
+/.sites-runtime/
+/outputs/
+/work/
+
+# Local secrets and development runtime
+.dev.vars
+.env
+.env.*
+!.env.example
+.wrangler/
+.sites-runtime/
+node_modules/
+dist/
+.next/
+*.log
+*.sqlite
+*.sqlite3
+
+# Generated local development artifacts
+.artifact-runtime/
+.venv-golden/
+.vinext/
+build/
+test-results/
+tmp/
+*.sqlite-shm
+*.sqlite-wal
+tsconfig.tsbuildinfo

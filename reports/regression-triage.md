@@ -1,0 +1,541 @@
+# Repository Regression Triage
+
+Generated: 2026-08-04T20:34:02.636Z
+
+## Summary
+
+- Total: 444
+- Passed: 315
+- Failed: 129
+- Skipped: 0
+
+## D — Intentional UI or API contract change
+
+Count: 5
+
+- **matching UI consumes persisted safety decisions without automatic approval** — `tests/confidence-safety-api.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /approval blocker/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: Medium
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **new-project foundation persists domain and draft while restoring direct links** — `tests/dashboard-api.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /system: draftIntakeProfile\.system, status: "Draft"/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: Medium
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **manual classification is durable but never starts extraction implicitly** — `tests/document-management.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /target="_blank" rel="noreferrer">Preview/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: Medium
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **renders governed applicability review and recalculates only confirmed links** — `tests/engineering-knowledge.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression />Confirm</. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: Medium
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **27 product search excludes demo candidate cards** — `tests/task9-fire-alarm-library.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Demo candidates are isolated/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: Medium
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+
+## B — Outdated source-contract assertion
+
+Count: 123
+
+- **downgrades incomplete matches to discovery-only** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /No candidate or price is approved here/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **keeps local project workspaces isolated** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /setSavedProjects\(\(projects\) => \[currentProjectSnapshot\(\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **makes project metadata edits transactional** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /setProjectDetailsDraft\(\{ name: projectName, client: clientName, code: projectCode, dueDate: projectDueDate, status: projectStatus \}\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **creates real scope-only project copies instead of toast-only duplicates** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /items:\s*items\.map\(\(item\) => \(\{ \.\.\.item, supplier: "Awaiting technical selection", unitCost: 0/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **registers uploads without silently changing BOQ or prices** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /cannot replace the active BOQ, become a price source, authorize a scope exclusion, or change quotation totals/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **governs client inquiries and scope letters as a distinct construction evidence role** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /DocumentRole = "BOQ" \| "Specification" \| "Drawing" \| "Client inquiry"/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **does not advance registered-only projects into pricing** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /deriveWorkflowStages\(workflowSteps, \{ documentCount: currentDocumentCount, scopeMissing/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **applies only the fingerprinted decision-reviewed BOQ extraction** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /crypto\.subtle\.digest\("SHA-256"/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **opens recognized BOQ extraction immediately and can reopen identical intake** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Extraction complete · 90 source rows normalized to 21 review candidates/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **requires six unique in-range page-and-clause anchors before technical indexing** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const requirementAnchorIntegrity = \(requirements: Requirement\[\], pageCount: number\) =>/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **turns specification checks into persistent project-specific decisions** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /setRequirementReviews\(project\.requirementReviews \|\| fireRequirements\.map/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **requires evidence for compliant or deviation decisions without touching costs** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /requirementResult !== "Review" && \(!requirementEvidence\.trim\(\) \|\| !requirementNote\.trim\(\)\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **keeps deviations and pending reviews blocking quotation approval** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /requirementReviews: requirementReviews\.map\(\(requirement\) => \(\{ id: requirement\.id, status: requirement\.status, evidence:/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **keeps technical profiles and product catalogues project-specific** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /extractedBoqItems\.find\(\(entry\) => entry\.sequence === matchingItemId\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **binds RFQs and quotation approvals to an explicit owner project** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /type QuotationApproval = \{ projectId: string/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **quarantines cross-project commercial records before action or issue** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const workspaceOwnershipConflicts = foreignRfqRecords\.length \+ foreignQuotationApprovals\.length/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **migrates legacy and restored commercial records into their owning workspace** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /migrateQuotationApprovals = .*projectId: ownerProjectId/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **keeps RFQ issue local and auditable** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /does not email a supplier or transmit any project file/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **blocks RFQ readiness and export until every grouped line is supplier-answerable** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const unanswerableLines = items\.filter\(\(item\) => current\.itemIds\.includes\(item\.id\) && !matchReadiness\(item\)\.canApprove\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **normalizes supplier responses without applying or awarding prices** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /line\.partNumber\.trim\(\).*Number\.isFinite\(line\.unitPrice\).*line\.unitPrice > 0.*line\.technicalResult !== "Pending"/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **retains multiple source-linked offers per RFQ for bid leveling** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const migrateRfqRecords = \(records: RfqRecord\[\], ownerProjectId: string\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **awards only the selected reviewed offer and its own source file** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /responseOffers\?\.find\(\(offer\) => offer\.id === activeAwardOfferId\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **requires an explicit compliant award before supplier prices enter BOQ costs** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /review\.lines\.every\(\(line\) => line\.technicalResult === "Compliant"\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **quarantines source-role mismatches from supplier response normalization** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /\["Supplier quotation", "Unclassified"\]\.includes\(initialRoleForName\(name\)\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **revalidates supplier-document role at normalization and award** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const sourceRoleValid = Boolean\(responseDraft\.sourceFile && documentRoles\[responseDraft\.sourceFile\] === "Supplier quotation"/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **routes every failed validation check to its evidence owner and resolution module** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /if \(check\.target === "Settings"\) openPricingSettings\(\); else navigate\(check\.target\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **binds final quotation approval to an exact calculation revision** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /if \(alertCount \|\| !quotationApprovalReason\.trim\(\)\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **requires explicit client terms without copying supplier procurement terms** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const clientTermsMissing = !clientPaymentTerms\.trim\(\) \|\| !clientDeliveryTerms\.trim\(\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **keeps commercial settings transactional until explicit confirmation** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /setSettingsDraft\(\{ exchangeRate, exchangeRateEvidence, vatRate, riskAllowanceRate, riskAllowanceReason, warrantyMonths, validityDays, clientPaymentTerms, clientDeliveryTerms, clientDeliveryLocation, clientFreightTerms, clientQualifications \}\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **governs exchange rates with dated source evidence** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /type ExchangeRateEvidence = \{ source: string; effectiveDate: string; validUntil: string/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **automatically blocks expired exchange-rate evidence** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /exchangeRateEvidence\.validUntil < commercialToday \? "Expired"/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **reports commercial value by construction system without hiding evidence gaps** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Unpriced, expired and undated lines remain visible as coverage gaps/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **keeps incomplete analytics exports explicitly draft-only** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /disabled=\{!currentQuotationApproval \|\| alertCount > 0\}/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **uses a reversible project archive instead of destructive portfolio deletion** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /projectStatus === "Archived" \? "Reopen project" : "Archive project"/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **captures construction tender context without turning declarations into approvals** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /cannot approve a materials-only exclusion, activate a price library, apply a discount, or satisfy document controls/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **persists project intake context inside its isolated workspace** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /setProjectIntakeProfile\(project\.intakeProfile \|\|/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **governs project contingency as a visible commercial allowance** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /settingsDraft\.riskAllowanceRate === 0 \|\| settingsDraft\.riskAllowanceReason\.trim\(\)\.length >= 10/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **binds contingency changes to approvals, audit evidence, and exports** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Applied visibly at \{riskAllowanceRate\}% after line-level selling prices/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **does not copy contingency decisions into a scope-only project duplicate** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /setRiskAllowanceRate\(0\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **keeps the fire alarm quotation scope factual and explicit** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Supply of fire detection and alarm equipment for the reviewed BOQ scope/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **supersedes approval after any commercial calculation change** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /projectStatus !== "Quotation Approved" \|\| !latestQuotationApproval \|\| currentQuotationApproval/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **persists quotation revisions inside each isolated project** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /setQuotationApprovals\(migrateQuotationApprovals\(project\.quotationApprovals \|\| \[\], project\.id\)\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **registers supplier responses without approving their prices** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /remains non-pricing evidence until its content is reviewed/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **enforces source-sheet and positive-price eligibility at the candidate boundary** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const pricingEligibleSourceSheets = new Set<MatchCandidate\["sourceSheet"\]>\(\["2023 Farenhyt"\]\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **rejects the unsupported 65 percent discount assumption** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Any discount must be entered later from dated supplier evidence/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **binds final issue exports to the exact approved quotation revision** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /disabled=\{!currentQuotationApproval \|\| alertCount > 0\}/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **exports a transparent point-in-time audit register** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /not a cryptographically signed or multi-user server audit log/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **chains every new audit event to its project and predecessor** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const auditEventHash = .*projectId.*previousHash/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **migrates legacy audit histories without overwriting sealed records** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /event\.eventHash \|\| event\.previousHash \?/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **blocks quotation issue when the audit chain is broken** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const projectAuditEvents = auditEvents\.filter\(\(event\) => event\.projectId === projectId\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **rejects sealed backups with altered audit ownership or chain links** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /sealedAuditPresent && !auditChainIntegrity\(project\.auditEvents, project\.id\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **exports verifiable audit-chain metadata and event hashes** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /"Previous event hash", "Event hash"/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **shows per-event integrity proof on demand without crowding the activity feed** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /<details className="activity-proof"><summary>Integrity proof<\/summary>/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **categorizes audit evidence without discarding original event details** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /if \(\/document\|boq\|source\|specification\|extraction\|indexed\/\.test\(action\)\) return "Source"/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **defaults costing to a focused unresolved-item work queue** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /useState<"Needs action" \| "All items" \| "Priced">\("Needs action"\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **lets estimators filter costing without modifying BOQ data** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /No BOQ data has been removed/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **keeps governed costs locked in the simplified costing screen** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /freshness\.status === "Validity missing" \? "Validity missing" : "Awaiting approval"/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **asks for document intent before opening the generic file picker** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /choose the intended evidence role before selecting files/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **keeps intake roles separate from downstream approvals** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Register scope for duplicate checking and row-level extraction review/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **routes price-source intake into the correct review queue** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /onClick=\{openPriceSourceUpload\}>＋ Add source document/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **does not allow validation shortcuts to confirm exchange rates** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /<button onClick=\{openPricingSettings\}>Review rates/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **turns RFQ deadlines and responses into a procurement action queue** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Normalize \{responsesAwaitingReview\.length\} new supplier response/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **derives RFQ deadline states without silently mutating package status** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const statusLabel = isOverdue \? "Response overdue" : isDueSoon \? "Response due soon" : rfq\.status/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **shows owner and evidence basis for every pricing review control** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /EVIDENCE · Approved source reference and valid-until date/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **resets technical decisions while retaining copied tender structure** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /requirementReviews: technicalProfileLoaded \? fireRequirements\.map/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **explains scope-copy consequences before the action** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Pricing, RFQs, decisions, client terms and approvals restart/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **captures project identity and deadline without mutating the active workspace** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /code: draftProjectCode\.trim\(\) \|\|/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **blocks ambiguous duplicate project identities before workspace creation** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /project\.name\.trim\(\)\.toLowerCase\(\) === normalizedDraftProjectName && project\.client\.trim\(\)\.toLowerCase\(\) === normalizedDraftClientName/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **makes new-project startup controls explicit** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /No catalogue discount, supplier price, RFQ, award or quotation approval is assumed/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **rejects identical document content even under another filename** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const duplicateContentNames = \[\.\.\.new Set/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **turns the project portfolio into an evidence-based control center** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /pricingReadiness \* \.45 \+ technicalReadiness \* \.2 \+ commercialReadiness \* \.15/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **caps portfolio readiness at the actual evidence stage** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const readiness = !documents \? 0 : !projectItems\.length \? 20 : calculatedReadiness/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **surfaces tender deadline risk without treating approved or archived work as overdue** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const terminal = project\.status === "Archived" \|\| \(project\.status === "Quotation Approved" && projectQuotationApprovals\.length > 0\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **prevents a manually selected status from impersonating governed quotation approval** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /projectDetailsDraft\.status === "Quotation Approved" && !currentQuotationApproval/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **uses explicit construction decision roles instead of a decorative profile** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /type WorkingRole = "Estimator" \| "Engineering Reviewer" \| "Procurement Reviewer" \| "Commercial Approver"/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **routes governed decisions to their responsible working roles** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /requireWorkingRole\("Engineering Reviewer", "Technical requirement decision"\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **records role ownership without pretending to authenticate a person** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Working role changed/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **requires an auditable handoff note before changing responsibility context** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /roleHandoffNote\.trim\(\)\.length < 10/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **persists working responsibility context locally and keeps it usable on mobile** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /setWorkingRole\(data\.workingRole\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **does not claim export completion until the current fingerprint was exported** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /event\.action === "Final issue package exported" && event\.detail\.includes\(quotationFingerprint\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **retains authoritative Excel row anchors for every normalized BOQ line** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /\["Smoke detectors \(above ceiling\)",571,"No",\[11,59,103,144\]\]/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **reconciles all 90 source rows exactly once before applying the known BOQ** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /unanchoredLines: candidateItems\.filter\(\(item\) => !item\.sourceRows\.length\)\.length/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **gives every unresolved costing line a controlled reason and next action** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const diagnostic = matchDiagnosticFor\(item, freshness\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **turns unresolved costing actions into real non-duplicating RFQ handoffs** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const activeRfqCoverageIds = new Set\(rfqs\.filter\(\(rfq\) => rfq\.status !== "Awarded"\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **consolidates only identical RFQ scope while retaining every BOQ anchor** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /existing\.sourceRows = \[\.\.\.new Set\(\[\.\.\.existing\.sourceRows, \.\.\.item\.sourceRows\]\)\]/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **requires reasons for exclusions and applies only accepted BOQ lines** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /setItems\(accepted\.map/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **keeps extraction decisions isolated from technical and price data** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /imports only accepted descriptions, units, quantities and row anchors—never specifications or prices/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **publishes a safe generic BOQ CSV contract instead of guessing arbitrary spreadsheets** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /System, Description, Unit and Quantity are required/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **ignores commercial columns during generic BOQ intake** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Supplier pricing requires a separate current quotation and governed award/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **applies only valid accepted generic BOQ rows without pricing or technical approval** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /unitCost: 0, markup: 20, status: "RFQ Required"/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **registers construction issue metadata separately from document content** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /type DocumentIssueStatus = "Tender" \| "Addendum" \| "For Information" \| "Superseded"/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **locks issue metadata after it produces scope or technical requirements** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /register a genuinely revised file with a new content fingerprint/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **persists project-isolated document controls and resets them safely** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /setDocumentControls\(\{\}\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **detects the service-scope obligation in the supplied BOQ fingerprint** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const knownServiceScope = baseTenderLoaded \|\| appliedDocumentHashes\.includes\(almoosaBoqSha256\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **blocks a materials-only quotation until the tender conflict is authorized** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Without formal authority, quotation approval remains blocked/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **requires a commercial approver and substantive authority evidence** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /requireWorkingRole\("Commercial Approver", "Materials-only scope authorization"\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **carries the approved pricing boundary into client preview and final issue export** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /\["Excluded services", "Installation; cabling; programming; testing; commissioning; civil works; and unlisted items"\]/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **keeps internal procurement economics out of the approved client export** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /\["BOQ reference", "Description", "Unit", "Quantity", "Selling unit price", "Total selling price"\]/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **reports commercial KPIs only from current approved price evidence** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const reportGrossProfit = reportCommercialTotals\.sellingValue - reportCommercialTotals\.directCost/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **keeps manual prices out of technical product matching** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /does not affect technical compliance/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **discloses the exact evidentiary limits of the local audit chain** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /\["Integrity method", "Ordered FNV-1a-style browser checksum chain/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **shows stable last activity in the portfolio without adding a mutable timestamp field** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const lastActivityLabel = projectAuditEvents\[0\]\?\.time \|\| "No recorded activity"/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **supersedes quotation approval for changed assumptions but not an identical reconfirmation timestamp** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /exchangeRateEvidence: \{ source: exchangeRateEvidence\.source\.trim\(\), effectiveDate: exchangeRateEvidence\.effectiveDate, validUntil: exchangeRateEvidence\.validUntil \}/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **keeps scope authorization isolated and clears it for new or copied scope** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /setScopeAlignmentDecision\(project\.scopeAlignmentDecision \|\|/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **measures document readiness from construction evidence classes** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /\[hasBoqEvidence, hasSpecificationEvidence, drawingEvidenceCount > 0\]/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **shows an evidence map without claiming document completeness** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Presence is not completeness/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **registers revised content separately without changing the active baseline** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /does not replace the active baseline, re-run extraction or change prices/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **invalidates quotation fingerprints when document evidence changes** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /documentEvidence: Object\.keys\(documentHashes\)\.sort\(\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **persists revision candidates per project and clears them from scope copies** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /setRevisionCandidates\(\[\]\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **uses real Honeywell obsolete and replacement rows as lifecycle evidence** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /IDP-BEAM.*OSI-RI-FH/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **requires engineering review without approving equivalence or price** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /requireWorkingRole\("Engineering Reviewer", "Product lifecycle mapping review"\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **detects exact obsolete part references without prefix guessing** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /\.toUpperCase\(\)\.split\(\/\[\^A-Z0-9.-\]\+\//. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **persists lifecycle reviews per project and clears them from scope copies** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /setLifecycleReviews\(\{\}\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **exports one versioned checksummed backup for all isolated projects** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /type LocalBackupEnvelope = \{ schemaVersion: 1/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **documents backup coverage and excludes original source bytes** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Original PDF, Excel and supplier-quotation file bytes are not embedded/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **requires a new quotation fingerprint after restore** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /changed project identity requires a new approval fingerprint/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **keeps costing status and next action visible on narrow screens** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Swipe for cost details\. Status and the next action stay visible\./. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **creates RFQs from an explicitly selected governed costing scope** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Only unresolved lines without an active RFQ are eligible/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **blocks impossible tender chronology during project setup** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /const draftInquiryInFuture = Boolean\(draftIntakeProfile\.inquiryReceived && draftIntakeProfile\.inquiryReceived > draftToday\)/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **states the client quotation tax basis without ambiguous include-tax defaults** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /\["Tax basis", `Line selling prices and subtotal exclude VAT; VAT is added separately at \$\{vatRate\}%`\]/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **shows commercial decision ownership before settings are edited** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Decision owner · Commercial Approver/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **requires an explicit governed client qualification statement** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /<b>Qualifications:<\/b> \{clientQualifications\}/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+- **separates the portfolio home dashboard from each project dashboard** — `tests/pricing-guardrails.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Home dashboard/. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: High
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.
+
+## G — Test infrastructure issue
+
+Count: 1
+
+- **renders development preview metadata** — `tests/rendered-html.test.mjs` — AssertionError [ERR_ASSERTION]: The input did not match the regular expression /<meta(?=[^>]*\bname=["']codex-preview["'])(?=[^>]*\bcontent=["']development["'])[^>]*>/i. Input:
+  - Product wrong: No; test wrong: Yes
+  - Risk: Medium
+  - Action: Left failing pending safe behavior-test replacement; no demo or obsolete client implementation was restored.

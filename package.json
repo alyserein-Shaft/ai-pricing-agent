@@ -1,0 +1,55 @@
+{
+  "name": "ai-pricing-agent",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "install:ci": "bash scripts/install-ci.sh",
+    "test:phase2": "node --test tests/boq-understanding.test.mjs tests/estimator-row-readiness.test.mjs",
+    "test:ai-smoke": "node scripts/run-real-boq-understanding-smoke.mjs",
+    "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vite",
+    "dev:ai": "BOQ_AI_REST_ENABLED=1 WRANGLER_LOG_PATH=.wrangler/wrangler-ai.log vite",
+    "build": "bash scripts/build-verified.sh",
+    "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
+    "test": "npm run build && node --test tests/estimator-row-readiness.test.mjs tests/task9-fire-alarm-library.test.mjs tests/production-readiness.test.mjs tests/dashboard-workflow-engine.test.mjs tests/dashboard-api.test.mjs tests/excel-export-engine.test.mjs tests/excel-export-api.test.mjs tests/excel-export-review-scope.test.mjs tests/excel-export-pricing-scope.test.mjs tests/review-workflow.test.mjs tests/review-workflow-api.test.mjs tests/boq-extractor.test.mjs tests/specification-extractor.test.mjs tests/engineering-knowledge.test.mjs tests/technical-requirement-engine.test.mjs tests/product-price-library.test.mjs tests/product-price-library-api.test.mjs tests/product-matching-engine.test.mjs tests/product-matching-api.test.mjs tests/confidence-safety-engine.test.mjs tests/confidence-safety-api.test.mjs tests/pricing-engine.test.mjs tests/pricing-api.test.mjs tests/pricing-scenario-authority.test.mjs tests/pricing-input-authority.test.mjs tests/document-classifier.test.mjs tests/document-management.test.mjs tests/document-intelligence.test.mjs tests/native-document-parsers.test.mjs tests/behavioral-safety-regression.test.mjs tests/rendered-html.test.mjs",
+    "test:identity": "node --test tests/identity-resolution-engine.test.mjs tests/identity-resolution-api.test.mjs tests/identity-resolution-auth.test.mjs tests/identity-resolution-governance.test.mjs tests/identity-resolution-scope.test.mjs tests/identity-production-governance.test.mjs",
+    "test:e2e": "bash scripts/run-golden-e2e.sh",
+    "test:e2e:golden": "bash scripts/run-golden-e2e.sh --grep @golden",
+    "test:e2e:golden:smoke": "bash scripts/run-golden-e2e.sh --grep @golden-smoke",
+    "test:e2e:golden:full": "bash scripts/run-golden-e2e.sh --grep @golden-full",
+    "validate:artifact": "bash scripts/validate-artifact.sh",
+    "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
+    "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.2",
+    "fflate": "0.7.4",
+    "next": "16.2.6",
+    "pdfjs-dist": "file:vendor/pdfjs-dist-5.6.205.tgz",
+    "react": "19.2.6",
+    "react-dom": "19.2.6"
+  },
+  "devDependencies": {
+    "@cloudflare/vite-plugin": "1.37.1",
+    "playwright": "1.55.0",
+    "@tailwindcss/postcss": "4.2.1",
+    "@types/node": "22.19.19",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.2",
+    "@vitejs/plugin-rsc": "0.5.26",
+    "drizzle-kit": "0.31.10",
+    "eslint": "9.39.4",
+    "eslint-config-next": "16.2.6",
+    "react-server-dom-webpack": "19.2.6",
+    "tailwindcss": "4.2.1",
+    "typescript": "5.9.3",
+    "vinext": "0.0.50",
+    "vite": "8.0.13",
+    "wrangler": "4.92.0"
+  },
+  "type": "module",
+  "displayName": "AI Pricing Agent"
+}

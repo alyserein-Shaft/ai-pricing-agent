@@ -1,0 +1,9 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import { handleExcelExportApi } from "../worker/excel-export-api.mjs";
+const root = new URL("../", import.meta.url);
+test("Excel export API fails closed without configured application context", async () => { const response = await handleExcelExportApi(new Request("https://local.test/api/excel-exports/templates"), { DB: {}, FILES: {} }); assert.equal(response.status, 503); assert.equal((await response.json()).error.code, "APPLICATION_CONTEXT_UNAVAILABLE"); });
+test("Task 14 schema persists templates, jobs, files, reconciliation and audit", async () => { const schema = await readFile(new URL("db/schema.ts", root), "utf8"); for (const entity of ["exportTemplates", "exportTemplateMappings", "excelExportJobs", "excelExportFiles", "excelExportReconciliations", "excelExportAuditLog"]) assert.match(schema, new RegExp(`export const ${entity}`)); });
+test("export API locks versions, protects downloads and stores immutable files", async () => { const api = await readFile(new URL("worker/excel-export-api.mjs", root), "utf8"); for (const control of ["project_members", "locked_versions", "idempotency-key", "reviewReadiness", "excel_export_reconciliations", "x-export-sha256", "private, no-store", "superseded_by_id"]) assert.match(api, new RegExp(control)); assert.doesNotMatch(api, /localStorage|sessionStorage|x-user-role/); });
+test("Excel export routes before review and pricing", async () => { const worker = await readFile(new URL("worker/index.ts", root), "utf8"), excel = worker.indexOf("handleExcelExportApi(request, env)"), review = worker.indexOf("handleReviewWorkflowApi(request, env)"), pricing = worker.indexOf("handlePricingApi(request, env)"); assert.ok(excel > 0 && excel < review && review < pricing); });

@@ -1,0 +1,44 @@
+
+> ai-pricing-agent@0.1.0 build
+> bash scripts/build-verified.sh
+
+Running bounded vinext build...
+
+  vinext build  (Vite 8.0.13)
+
+[1/5] analyze client references...
+[2Ktransforming...✓ 215 modules transformed.
+rendering chunks...
+✓ built in 852ms
+[2/5] analyze server references...
+[2Ktransforming...✓ 72 modules transformed.
+rendering chunks...
+✓ built in 140ms
+[3/5] build rsc environment...
+[2Ktransforming...✓ 221 modules transformed.
+rendering chunks...
+computing gzip size...
+✓ built in 846ms
+[4/5] build client environment...
+[2Ktransforming...✓ 80 modules transformed.
+rendering chunks...
+computing gzip size...
+✓ built in 225ms
+[5/5] build ssr environment...
+[2Ktransforming...✓ 78 modules transformed.
+rendering chunks...
+computing gzip size...
+✓ built in 374ms
+[0m
+  Route (app)
+  ─ ? /
+
+  ? Unknown
+
+  ? Some routes could not be classified. vinext currently uses static analysis
+    and cannot detect dynamic API usage (headers(), cookies(), etc.) at build time.
+    Automatic classification will be improved in a future release.
+
+  Build complete. Run `vinext start` to start the production server.
+
+Validated Sites artifact: ESM Worker default.fetch and hosting manifest are present.

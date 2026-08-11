@@ -1,0 +1,11 @@
+import test from "node:test";
+import assert from "node:assert/strict";
+import fs from "node:fs";
+
+const api = fs.readFileSync(new URL("../worker/dashboard-api.mjs", import.meta.url), "utf8"), page = fs.readFileSync(new URL("../app/page.tsx", import.meta.url), "utf8"), overview = fs.readFileSync(new URL("../app/components/workspaces/OverviewWorkspace.tsx", import.meta.url), "utf8"), schema = fs.readFileSync(new URL("../db/schema.ts", import.meta.url), "utf8"), worker = fs.readFileSync(new URL("../worker/index.ts", import.meta.url), "utf8");
+test("dashboard routes before transactional feature APIs", () => { assert.ok(worker.indexOf("handleDashboardApi(request") < worker.indexOf("handleExcelExportApi(request")); });
+test("authoritative dashboard facts use canonical server tables", () => { for (const table of ["documents", "document_processing_runs", "boq_items", "requirement_profile_versions", "product_match_runs", "review_queue_items", "pricing_lines", "review_clarifications", "safety_blocks", "excel_export_jobs"]) assert.match(api, new RegExp(table)); });
+test("organization and project dashboard endpoints are distinct", () => { assert.match(api, /\/api\/dashboard\/organization/); assert.match(api, /dashboard\|workflow\|actions\|risks/); assert.match(page, /ORGANIZATION OPERATIONS · SERVER VERIFIED/); assert.match(page, /PROJECT OPERATIONS · SERVER VERIFIED/); });
+test("project controls are authorized, audited and soft-delete protected", () => { assert.match(api, /PROJECT_CONTROL_PERMISSION_REQUIRED/); assert.match(api, /dashboard_audit_log/); assert.match(api, /PROJECT_DELETE_PROTECTED_HISTORY/); assert.match(api, /Project Soft Deleted/); });
+test("Task 15 read models are durable and versioned", () => { for (const entity of ["projectDashboardProfiles", "workflowStageStates", "projectProgressSnapshots", "dashboardMetricDefinitions", "dashboardMetricSnapshots", "projectRisks", "projectStatusHistory", "dashboardAuditLog"]) assert.match(schema, new RegExp(`export const ${entity}`)); });
+test("frontend consumes server progress, actions, risk and permission state", () => { assert.match(page, /<OverviewWorkspace/); assert.match(overview, /workflow\.progress/); assert.match(overview, /workflow\.nextAction/); assert.match(overview, /dashboard\.risks/); assert.match(overview, /commercialRestricted/); });

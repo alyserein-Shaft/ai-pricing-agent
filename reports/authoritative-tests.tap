@@ -1,0 +1,1384 @@
+TAP version 13
+# Subtest: incomplete BOQ information fails closed without fabricated product candidates
+ok 1 - incomplete BOQ information fails closed without fabricated product candidates
+  ---
+  duration_ms: 2.415875
+  type: 'test'
+  ...
+# Subtest: manual commercial evidence cannot override failed technical compliance
+ok 2 - manual commercial evidence cannot override failed technical compliance
+  ---
+  duration_ms: 1.956167
+  type: 'test'
+  ...
+# Subtest: undated supplier evidence stays blocked from costing
+ok 3 - undated supplier evidence stays blocked from costing
+  ---
+  duration_ms: 0.778209
+  type: 'test'
+  ...
+# Subtest: manual pricing requires governed source, reason, validity, scope and role
+ok 4 - manual pricing requires governed source, reason, validity, scope and role
+  ---
+  duration_ms: 0.137625
+  type: 'test'
+  ...
+# Subtest: BOQ review loads every persisted extraction page
+ok 5 - BOQ review loads every persisted extraction page
+  ---
+  duration_ms: 9.309
+  type: 'test'
+  ...
+# Subtest: decodes BIFF RK floating and scaled numbers from the high IEEE word
+ok 6 - decodes BIFF RK floating and scaled numbers from the high IEEE word
+  ---
+  duration_ms: 0.175708
+  type: 'test'
+  ...
+# Subtest: normalizes controlled units and preserves unknown units
+ok 7 - normalizes controlled units and preserves unknown units
+  ---
+  duration_ms: 0.182166
+  type: 'test'
+  ...
+# Subtest: parses numeric, formula, range, lump-sum and blank quantities without inventing zero
+ok 8 - parses numeric, formula, range, lump-sum and blank quantities without inventing zero
+  ---
+  duration_ms: 0.4255
+  type: 'test'
+  ...
+# Subtest: extracts real XLSX sheets, formulas, hierarchy, totals, duplicates and source evidence
+ok 9 - extracts real XLSX sheets, formulas, hierarchy, totals, duplicates and source evidence
+  ---
+  duration_ms: 6.431708
+  type: 'test'
+  ...
+# Subtest: assigns globally unique sequences across every workbook sheet
+ok 10 - assigns globally unique sequences across every workbook sheet
+  ---
+  duration_ms: 1.5175
+  type: 'test'
+  ...
+# Subtest: reads legacy XLS BOQs through the safe native parser without executing macros
+ok 11 - reads legacy XLS BOQs through the safe native parser without executing macros
+  ---
+  duration_ms: 1.544291
+  type: 'test'
+  ...
+# Subtest: extracts CSV content and retains blank quantity as missing
+ok 12 - extracts CSV content and retains blank quantity as missing
+  ---
+  duration_ms: 0.378583
+  type: 'test'
+  ...
+# Subtest: fails safely for scanned PDF when OCR is not configured
+ok 13 - fails safely for scanned PDF when OCR is not configured
+  ---
+  duration_ms: 0.494375
+  type: 'test'
+  ...
+# Subtest: extracts a native-text PDF table without flattening page provenance
+ok 14 - extracts a native-text PDF table without flattening page provenance
+  ---
+  duration_ms: 0.564958
+  type: 'test'
+  ...
+# Subtest: supports every required row type
+ok 15 - supports every required row type
+  ---
+  duration_ms: 0.1095
+  type: 'test'
+  ...
+# Subtest: compares revisions without overwriting history
+ok 16 - compares revisions without overwriting history
+  ---
+  duration_ms: 0.238292
+  type: 'test'
+  ...
+# Subtest: wires classification, persistent APIs, audit, review actions and approved downstream access
+ok 17 - wires classification, persistent APIs, audit, review actions and approved downstream access
+  ---
+  duration_ms: 39.893375
+  type: 'test'
+  ...
+# Subtest: renders the canonical BOQ review table with governed in-app actions
+ok 18 - renders the canonical BOQ review table with governed in-app actions
+  ---
+  duration_ms: 34.682166
+  type: 'test'
+  ...
+# Subtest: Task 11 routes safety evaluation before the framework and matching handlers
+ok 19 - Task 11 routes safety evaluation before the framework and matching handlers
+  ---
+  duration_ms: 9.417292
+  type: 'test'
+  ...
+# Subtest: Task 11 API persists immutable decisions and enforces controlled approvals
+ok 20 - Task 11 API persists immutable decisions and enforces controlled approvals
+  ---
+  duration_ms: 1.61675
+  type: 'test'
+  ...
+# Subtest: unclassified new BOQ items cannot be high confidence or approve product or price
+ok 21 - unclassified new BOQ items cannot be high confidence or approve product or price
+  ---
+  duration_ms: 4.614958
+  type: 'test'
+  ...
+# Subtest: missing quantity disables approval
+ok 22 - missing quantity disables approval
+  ---
+  duration_ms: 0.910708
+  type: 'test'
+  ...
+# Subtest: missing unit disables approval
+ok 23 - missing unit disables approval
+  ---
+  duration_ms: 0.190083
+  type: 'test'
+  ...
+# Subtest: missing category specifications forces discovery-safe confidence
+ok 24 - missing category specifications forces discovery-safe confidence
+  ---
+  duration_ms: 0.163458
+  type: 'test'
+  ...
+# Subtest: semantic-only candidate cannot become high confidence
+ok 25 - semantic-only candidate cannot become high confidence
+  ---
+  duration_ms: 0.15025
+  type: 'test'
+  ...
+# Subtest: missing compatibility evidence cannot be approved
+ok 26 - missing compatibility evidence cannot be approved
+  ---
+  duration_ms: 0.170292
+  type: 'test'
+  ...
+# Subtest: valid price cannot override a technical failure
+ok 27 - valid price cannot override a technical failure
+  ---
+  duration_ms: 0.177166
+  type: 'test'
+  ...
+# Subtest: expired-only price creates a warning and remains price-disabled
+ok 28 - expired-only price creates a warning and remains price-disabled
+  ---
+  duration_ms: 0.140292
+  type: 'test'
+  ...
+# Subtest: prohibited manufacturer is a non-overridable block
+ok 29 - prohibited manufacturer is a non-overridable block
+  ---
+  duration_ms: 0.229208
+  type: 'test'
+  ...
+# Subtest: discontinued product requires an authorized exception
+ok 30 - discontinued product requires an authorized exception
+  ---
+  duration_ms: 0.155583
+  type: 'test'
+  ...
+# Subtest: critical provenance absence caps confidence and blocks approval
+ok 31 - critical provenance absence caps confidence and blocks approval
+  ---
+  duration_ms: 0.099708
+  type: 'test'
+  ...
+# Subtest: confidence uses the weakest critical component instead of an average
+ok 32 - confidence uses the weakest critical component instead of an average
+  ---
+  duration_ms: 0.074208
+  type: 'test'
+  ...
+# Subtest: compliance, confidence and approval readiness remain independent
+ok 33 - compliance, confidence and approval readiness remain independent
+  ---
+  duration_ms: 0.069916
+  type: 'test'
+  ...
+# Subtest: critical conflicts and unapproved assumptions block approval
+ok 34 - critical conflicts and unapproved assumptions block approval
+  ---
+  duration_ms: 3.163041
+  type: 'test'
+  ...
+# Subtest: manual pricing requires identity, reason, source, validity, scope, technical approval and audit
+ok 35 - manual pricing requires identity, reason, source, validity, scope, technical approval and audit
+  ---
+  duration_ms: 0.140209
+  type: 'test'
+  ...
+# Subtest: authorized standard match becomes technically eligible but not price-approved without prior technical approval
+ok 36 - authorized standard match becomes technically eligible but not price-approved without prior technical approval
+  ---
+  duration_ms: 0.07675
+  type: 'test'
+  ...
+# Subtest: dashboard routes before transactional feature APIs
+ok 37 - dashboard routes before transactional feature APIs
+  ---
+  duration_ms: 1.213334
+  type: 'test'
+  ...
+# Subtest: authoritative dashboard facts use canonical server tables
+ok 38 - authoritative dashboard facts use canonical server tables
+  ---
+  duration_ms: 0.245458
+  type: 'test'
+  ...
+# Subtest: organization and project dashboard endpoints are distinct
+ok 39 - organization and project dashboard endpoints are distinct
+  ---
+  duration_ms: 0.244709
+  type: 'test'
+  ...
+# Subtest: project controls are authorized, audited and soft-delete protected
+ok 40 - project controls are authorized, audited and soft-delete protected
+  ---
+  duration_ms: 0.076292
+  type: 'test'
+  ...
+# Subtest: Task 15 read models are durable and versioned
+ok 41 - Task 15 read models are durable and versioned
+  ---
+  duration_ms: 0.356791
+  type: 'test'
+  ...
+# Subtest: frontend consumes server progress, actions, risk and permission state
+ok 42 - frontend consumes server progress, actions, risk and permission state
+  ---
+  duration_ms: 0.314166
+  type: 'test'
+  ...
+# Subtest: project progress changes only with real workflow facts
+ok 43 - project progress changes only with real workflow facts
+  ---
+  duration_ms: 1.298667
+  type: 'test'
+  ...
+# Subtest: blocking conflicts prevent quotation readiness
+ok 44 - blocking conflicts prevent quotation readiness
+  ---
+  duration_ms: 1.536583
+  type: 'test'
+  ...
+# Subtest: pending technical approval cannot show complete
+ok 45 - pending technical approval cannot show complete
+  ---
+  duration_ms: 0.23725
+  type: 'test'
+  ...
+# Subtest: failed documents generate an exact filtered action
+ok 46 - failed documents generate an exact filtered action
+  ---
+  duration_ms: 0.779375
+  type: 'test'
+  ...
+# Subtest: missing price count drives costing action
+ok 47 - missing price count drives costing action
+  ---
+  duration_ms: 0.219166
+  type: 'test'
+  ...
+# Subtest: risk indicators always explain trigger and impact
+ok 48 - risk indicators always explain trigger and impact
+  ---
+  duration_ms: 0.190333
+  type: 'test'
+  ...
+# Subtest: commercial totals are hidden from unauthorized roles
+ok 49 - commercial totals are hidden from unauthorized roles
+  ---
+  duration_ms: 2.313459
+  type: 'test'
+  ...
+# Subtest: ready for quotation is derived and cannot be manually falsified
+ok 50 - ready for quotation is derived and cannot be manually falsified
+  ---
+  duration_ms: 0.119875
+  type: 'test'
+  ...
+# Subtest: only terminal business statuses can override derived workflow status
+ok 51 - only terminal business statuses can override derived workflow status
+  ---
+  duration_ms: 0.11125
+  type: 'test'
+  ...
+# Subtest: metric registry has formal source, permission and drill-down definitions
+ok 52 - metric registry has formal source, permission and drill-down definitions
+  ---
+  duration_ms: 0.124083
+  type: 'test'
+  ...
+# Subtest: supports the complete extensible Task 4 taxonomy and routing map
+ok 53 - supports the complete extensible Task 4 taxonomy and routing map
+  ---
+  duration_ms: 0.549875
+  type: 'test'
+  ...
+# Subtest: classifies a real BOQ CSV from content and structure
+ok 54 - classifies a real BOQ CSV from content and structure
+  ---
+  duration_ms: 7.893292
+  type: 'test'
+  ...
+# Subtest: classifies specification, quotation, price list, RFQ, compliance and email content
+ok 55 - classifies specification, quotation, price list, RFQ, compliance and email content
+  ---
+  duration_ms: 17.635166
+  type: 'test'
+  ...
+# Subtest: keeps cause-and-effect sheets in the drawing route
+ok 56 - keeps cause-and-effect sheets in the drawing route
+  ---
+  duration_ms: 0.56575
+  type: 'test'
+  ...
+# Subtest: classifies files containing DWG in the filename as drawings
+ok 57 - classifies files containing DWG in the filename as drawings
+  ---
+  duration_ms: 0.15675
+  type: 'test'
+  ...
+# Subtest: native DWG sources classify as drawings without engineering interpretation
+ok 58 - native DWG sources classify as drawings without engineering interpretation
+  ---
+  duration_ms: 0.091542
+  type: 'test'
+  ...
+# Subtest: uses actual PDF page content and preserves page-level evidence
+ok 59 - uses actual PDF page content and preserves page-level evidence
+  ---
+  duration_ms: 1.48525
+  type: 'test'
+  ...
+# Subtest: classifies Excel worksheets independently and detects mixed workbooks
+ok 60 - classifies Excel worksheets independently and detects mixed workbooks
+  ---
+  duration_ms: 30.992125
+  type: 'test'
+  ...
+# Subtest: never awards high confidence from filename or declared type alone
+ok 61 - never awards high confidence from filename or declared type alone
+  ---
+  duration_ms: 1.239708
+  type: 'test'
+  ...
+# Subtest: routes unreadable scans and legacy containers to actionable manual review
+ok 62 - routes unreadable scans and legacy containers to actionable manual review
+  ---
+  duration_ms: 0.166333
+  type: 'test'
+  ...
+# Subtest: detects mixed semantic sections and stores ranked alternatives
+ok 63 - detects mixed semantic sections and stores ranked alternatives
+  ---
+  duration_ms: 3.089792
+  type: 'test'
+  ...
+# Subtest: validates AI escalation outputs before they can be persisted
+ok 64 - validates AI escalation outputs before they can be persisted
+  ---
+  duration_ms: 0.419375
+  type: 'test'
+  ...
+# Subtest: connects automatic queue execution, classification APIs, persistence and decision-only routing
+ok 65 - connects automatic queue execution, classification APIs, persistence and decision-only routing
+  ---
+  duration_ms: 32.236125
+  type: 'test'
+  ...
+# Subtest: declared document intent takes precedence without pretending it was inferred
+ok 66 - declared document intent takes precedence without pretending it was inferred
+  ---
+  duration_ms: 0.878833
+  type: 'test'
+  ...
+# Subtest: classifies common engineering evidence conservatively
+ok 67 - classifies common engineering evidence conservatively
+  ---
+  duration_ms: 0.509541
+  type: 'test'
+  ...
+# Subtest: validates upload integrity and gives actionable errors
+ok 68 - validates upload integrity and gives actionable errors
+  ---
+  duration_ms: 0.224875
+  type: 'test'
+  ...
+# Subtest: processing run exposes every stage and skips OCR when native content is usable
+ok 69 - processing run exposes every stage and skips OCR when native content is usable
+  ---
+  duration_ms: 1.870667
+  type: 'test'
+  ...
+# Subtest: retry policy queues transient failures and eventually fails closed
+ok 70 - retry policy queues transient failures and eventually fails closed
+  ---
+  duration_ms: 0.121916
+  type: 'test'
+  ...
+# Subtest: cancellation is cooperative and terminal
+ok 71 - cancellation is cooperative and terminal
+  ---
+  duration_ms: 0.077
+  type: 'test'
+  ...
+# Subtest: engineering extraction envelope preserves structured tables and citations
+ok 72 - engineering extraction envelope preserves structured tables and citations
+  ---
+  duration_ms: 0.137333
+  type: 'test'
+  ...
+# Subtest: rejects flattened or untraceable extraction artifacts
+ok 73 - rejects flattened or untraceable extraction artifacts
+  ---
+  duration_ms: 0.069166
+  type: 'test'
+  ...
+# Subtest: publishes every Task 3 format and engineering category
+ok 74 - publishes every Task 3 format and engineering category
+  ---
+  duration_ms: 3.4055
+  type: 'test'
+  ...
+# Subtest: removes paths and control characters from original display names
+ok 75 - removes paths and control characters from original display names
+  ---
+  duration_ms: 0.253333
+  type: 'test'
+  ...
+# Subtest: creates tenant-independent project-isolated object keys
+ok 76 - creates tenant-independent project-isolated object keys
+  ---
+  duration_ms: 0.127417
+  type: 'test'
+  ...
+# Subtest: accepts real signatures and rejects renamed content
+ok 77 - accepts real signatures and rejects renamed content
+  ---
+  duration_ms: 0.576292
+  type: 'test'
+  ...
+# Subtest: blocks empty, oversized and protected PDF files with actionable codes
+ok 78 - blocks empty, oversized and protected PDF files with actionable codes
+  ---
+  duration_ms: 0.174709
+  type: 'test'
+  ...
+# Subtest: validates OOXML structure and unsafe ZIP paths
+ok 79 - validates OOXML structure and unsafe ZIP paths
+  ---
+  duration_ms: 4.5055
+  type: 'test'
+  ...
+# Subtest: generates stable SHA-256 content fingerprints
+ok 80 - generates stable SHA-256 content fingerprints
+  ---
+  duration_ms: 9.507209
+  type: 'test'
+  ...
+# Subtest: connects durable document APIs before the framework handler
+ok 81 - connects durable document APIs before the framework handler
+  ---
+  duration_ms: 5.193
+  type: 'test'
+  ...
+# Subtest: declares D1 and R2 bindings and authoritative document entities
+ok 82 - declares D1 and R2 bindings and authoritative document entities
+  ---
+  duration_ms: 3.106708
+  type: 'test'
+  ...
+# Subtest: enforces fact classification, provenance, normalization lineage and AI safety
+ok 83 - enforces fact classification, provenance, normalization lineage and AI safety
+  ---
+  duration_ms: 0.825291
+  type: 'test'
+  ...
+# Subtest: normalizes compatible units while retaining originals and fails closed
+ok 84 - normalizes compatible units while retaining originals and fails closed
+  ---
+  duration_ms: 0.525291
+  type: 'test'
+  ...
+# Subtest: resolves effective immutable versions
+ok 85 - resolves effective immutable versions
+  ---
+  duration_ms: 0.66175
+  type: 'test'
+  ...
+# Subtest: keeps project overrides scoped and ahead of global rules
+ok 86 - keeps project overrides scoped and ahead of global rules
+  ---
+  duration_ms: 0.199292
+  type: 'test'
+  ...
+# Subtest: creates suggestions from structured BOQ-to-requirement signals but never confirms them
+ok 87 - creates suggestions from structured BOQ-to-requirement signals but never confirms them
+  ---
+  duration_ms: 1.838375
+  type: 'test'
+  ...
+# Subtest: penalizes cross-equipment keyword collisions
+ok 88 - penalizes cross-equipment keyword collisions
+  ---
+  duration_ms: 0.130084
+  type: 'test'
+  ...
+# Subtest: assembles a Task 8 profile from confirmed links only
+ok 89 - assembles a Task 8 profile from confirmed links only
+  ---
+  duration_ms: 0.22425
+  type: 'test'
+  ...
+# Subtest: wires canonical persistence, publication, profiles and auditable applicability review
+ok 90 - wires canonical persistence, publication, profiles and auditable applicability review
+  ---
+  duration_ms: 6.080541
+  type: 'test'
+  ...
+# Subtest: Excel export API rejects anonymous access
+ok 91 - Excel export API rejects anonymous access
+  ---
+  duration_ms: 20.513541
+  type: 'test'
+  ...
+# Subtest: Task 14 schema persists templates, jobs, files, reconciliation and audit
+ok 92 - Task 14 schema persists templates, jobs, files, reconciliation and audit
+  ---
+  duration_ms: 25.153875
+  type: 'test'
+  ...
+# Subtest: export API locks versions, protects downloads and stores immutable files
+ok 93 - export API locks versions, protects downloads and stores immutable files
+  ---
+  duration_ms: 5.993334
+  type: 'test'
+  ...
+# Subtest: Excel export routes before review and pricing
+ok 94 - Excel export routes before review and pricing
+  ---
+  duration_ms: 5.350667
+  type: 'test'
+  ...
+# Subtest: formula injection is escaped without breaking negative numbers
+ok 95 - formula injection is escaped without breaking negative numbers
+  ---
+  duration_ms: 1.742958
+  type: 'test'
+  ...
+# Subtest: filename is sanitized and versioned
+ok 96 - filename is sanitized and versioned
+  ---
+  duration_ms: 1.849791
+  type: 'test'
+  ...
+# Subtest: client-safe mode removes protected internal fields and sheets
+ok 97 - client-safe mode removes protected internal fields and sheets
+  ---
+  duration_ms: 0.676208
+  type: 'test'
+  ...
+# Subtest: missing quantity and price are not replaced by zero
+ok 98 - missing quantity and price are not replaced by zero
+  ---
+  duration_ms: 1.119542
+  type: 'test'
+  ...
+# Subtest: Honeywell material discount remains material scoped
+ok 99 - Honeywell material discount remains material scoped
+  ---
+  duration_ms: 0.926
+  type: 'test'
+  ...
+# Subtest: margin and markup remain distinct
+ok 100 - margin and markup remain distinct
+  ---
+  duration_ms: 0.367541
+  type: 'test'
+  ...
+# Subtest: approved exports fail closed and draft exports show warnings
+ok 101 - approved exports fail closed and draft exports show warnings
+  ---
+  duration_ms: 0.222708
+  type: 'test'
+  ...
+# Subtest: totals and reconciliation use server-valued rows
+ok 102 - totals and reconciliation use server-valued rows
+  ---
+  duration_ms: 0.254
+  type: 'test'
+  ...
+# Subtest: generated workbook is a real multi-sheet OOXML package
+ok 103 - generated workbook is a real multi-sheet OOXML package
+  ---
+  duration_ms: 29.595125
+  type: 'test'
+  ...
+# Subtest: native XLSX parser preserves sheets, cells, merged ranges, and provenance
+ok 104 - native XLSX parser preserves sheets, cells, merged ranges, and provenance
+  ---
+  duration_ms: 7.838708
+  type: 'test'
+  ...
+# Subtest: native XLSX BOQ extraction retains cell-level source references
+ok 105 - native XLSX BOQ extraction retains cell-level source references
+  ---
+  duration_ms: 4.012875
+  type: 'test'
+  ...
+# Subtest: native XLSX parser fails closed for corrupted containers
+ok 106 - native XLSX parser fails closed for corrupted containers
+  ---
+  duration_ms: 2.390333
+  type: 'test'
+  ...
+# Subtest: PDF readiness routes native-text files without OCR
+ok 107 - PDF readiness routes native-text files without OCR
+  ---
+  duration_ms: 0.311334
+  type: 'test'
+  ...
+# Subtest: PDF readiness routes image-only files to selective OCR
+ok 108 - PDF readiness routes image-only files to selective OCR
+  ---
+  duration_ms: 0.109292
+  type: 'test'
+  ...
+# Subtest: PDF readiness blocks encrypted and non-PDF content
+ok 109 - PDF readiness blocks encrypted and non-PDF content
+  ---
+  duration_ms: 0.079458
+  type: 'test'
+  ...
+# Subtest: processing plan chooses real adapters and never auto-publishes
+ok 110 - processing plan chooses real adapters and never auto-publishes
+  ---
+  duration_ms: 0.257458
+  type: 'test'
+  ...
+# Subtest: recognizes the DWG filename convention as Drawing
+ok 111 - recognizes the DWG filename convention as Drawing
+  ---
+  duration_ms: 0.059917
+  type: 'test'
+  ...
+# Subtest: matching publication requires completed, accepted, source-proven assertions
+ok 112 - matching publication requires completed, accepted, source-proven assertions
+  ---
+  duration_ms: 0.125375
+  type: 'test'
+  ...
+# Subtest: pricing API rejects anonymous access
+ok 113 - pricing API rejects anonymous access
+  ---
+  duration_ms: 29.800709
+  type: 'test'
+  ...
+# Subtest: Task 12 schema persists scenarios, runs, lines, formulas, discounts, rates, allocations, approvals, exceptions and audit
+ok 114 - Task 12 schema persists scenarios, runs, lines, formulas, discounts, rates, allocations, approvals, exceptions and audit
+  ---
+  duration_ms: 9.07425
+  type: 'test'
+  ...
+# Subtest: pricing worker exposes protected calculation and review operations
+ok 115 - pricing worker exposes protected calculation and review operations
+  ---
+  duration_ms: 2.101166
+  type: 'test'
+  ...
+# Subtest: pricing API is routed ahead of safety, matching and framework handlers
+ok 116 - pricing API is routed ahead of safety, matching and framework handlers
+  ---
+  duration_ms: 1.288291
+  type: 'test'
+  ...
+# Subtest: Costing UI consumes server-authoritative scenarios and line results
+ok 117 - Costing UI consumes server-authoritative scenarios and line results
+  ---
+  duration_ms: 14.646375
+  type: 'test'
+  ...
+# Subtest: Task 11 authorization now uses durable project membership and controlled override decisions
+ok 118 - Task 11 authorization now uses durable project membership and controlled override decisions
+  ---
+  duration_ms: 1.996875
+  type: 'test'
+  ...
+# Subtest: sequential discounts use the reducing balance
+ok 119 - sequential discounts use the reducing balance
+  ---
+  duration_ms: 3.577625
+  type: 'test'
+  ...
+# Subtest: additive discounts use the original base
+ok 120 - additive discounts use the original base
+  ---
+  duration_ms: 0.369542
+  type: 'test'
+  ...
+# Subtest: Honeywell 65 percent discount is source and material scoped
+ok 121 - Honeywell 65 percent discount is source and material scoped
+  ---
+  duration_ms: 0.222875
+  type: 'test'
+  ...
+# Subtest: technically unapproved products are pricing blocked
+ok 122 - technically unapproved products are pricing blocked
+  ---
+  duration_ms: 1.852625
+  type: 'test'
+  ...
+# Subtest: expired sources cannot become selected
+ok 123 - expired sources cannot become selected
+  ---
+  duration_ms: 0.451125
+  type: 'test'
+  ...
+# Subtest: project-specific sources do not cross project scope
+ok 124 - project-specific sources do not cross project scope
+  ---
+  duration_ms: 0.838625
+  type: 'test'
+  ...
+# Subtest: price source is never selected silently
+ok 125 - price source is never selected silently
+  ---
+  duration_ms: 0.688833
+  type: 'test'
+  ...
+# Subtest: currency conversion requires an approved current rate
+ok 126 - currency conversion requires an approved current rate
+  ---
+  duration_ms: 0.427542
+  type: 'test'
+  ...
+# Subtest: currency conversion preserves original value
+ok 127 - currency conversion preserves original value
+  ---
+  duration_ms: 0.83325
+  type: 'test'
+  ...
+# Subtest: margin and markup remain mathematically distinct
+ok 128 - margin and markup remain mathematically distinct
+  ---
+  duration_ms: 0.188459
+  type: 'test'
+  ...
+# Subtest: negative and below-minimum margins are blocked
+ok 129 - negative and below-minimum margins are blocked
+  ---
+  duration_ms: 0.087541
+  type: 'test'
+  ...
+# Subtest: customer discount cannot silently breach minimum margin
+ok 130 - customer discount cannot silently breach minimum margin
+  ---
+  duration_ms: 0.123041
+  type: 'test'
+  ...
+# Subtest: VAT uses the project rule
+ok 131 - VAT uses the project rule
+  ---
+  duration_ms: 0.149417
+  type: 'test'
+  ...
+# Subtest: blank quantity is never treated as zero
+ok 132 - blank quantity is never treated as zero
+  ---
+  duration_ms: 0.058458
+  type: 'test'
+  ...
+# Subtest: shared costs reconcile without double counting rounding residue
+ok 133 - shared costs reconcile without double counting rounding residue
+  ---
+  duration_ms: 0.148417
+  type: 'test'
+  ...
+# Subtest: manual pricing requires source, reason, scope, role and technical approval
+ok 134 - manual pricing requires source, reason, scope, role and technical approval
+  ---
+  duration_ms: 0.102292
+  type: 'test'
+  ...
+# Subtest: project aggregation uses only approval-ready pricing lines
+ok 135 - project aggregation uses only approval-ready pricing lines
+  ---
+  duration_ms: 0.855958
+  type: 'test'
+  ...
+# Subtest: validity states distinguish expired and missing
+ok 136 - validity states distinguish expired and missing
+  ---
+  duration_ms: 0.057709
+  type: 'test'
+  ...
+# Subtest: matching API requires authenticated workspace identity
+ok 137 - matching API requires authenticated workspace identity
+  ---
+  duration_ms: 44.226167
+  type: 'test'
+  ...
+# Subtest: Task 10 persists immutable runs, candidates, comparisons, reviews and run comparisons
+ok 138 - Task 10 persists immutable runs, candidates, comparisons, reviews and run comparisons
+  ---
+  duration_ms: 5.413291
+  type: 'test'
+  ...
+# Subtest: worker exposes queue, history, comparison, evidence and feedback operations
+ok 139 - worker exposes queue, history, comparison, evidence and feedback operations
+  ---
+  duration_ms: 7.639958
+  type: 'test'
+  ...
+# Subtest: technical matching UI consumes persisted results and cannot approve price
+ok 140 - technical matching UI consumes persisted results and cannot approve price
+  ---
+  duration_ms: 12.912
+  type: 'test'
+  ...
+# Subtest: compares numeric requirements with canonical unit conversion
+ok 141 - compares numeric requirements with canonical unit conversion
+  ---
+  duration_ms: 0.640083
+  type: 'test'
+  ...
+# Subtest: exact identity search is staged ahead of structured discovery
+ok 142 - exact identity search is staged ahead of structured discovery
+  ---
+  duration_ms: 3.217
+  type: 'test'
+  ...
+# Subtest: mandatory technical failure overrides commercial availability
+ok 143 - mandatory technical failure overrides commercial availability
+  ---
+  duration_ms: 3.944792
+  type: 'test'
+  ...
+# Subtest: missing certification and compatibility cannot produce high confidence
+ok 144 - missing certification and compatibility cannot produce high confidence
+  ---
+  duration_ms: 0.499542
+  type: 'test'
+  ...
+# Subtest: an unstructured mandatory statement fails closed as missing product evidence
+ok 145 - an unstructured mandatory statement fails closed as missing product evidence
+  ---
+  duration_ms: 0.205666
+  type: 'test'
+  ...
+# Subtest: a compliant candidate is ranked with decomposable scoring and explanation
+ok 146 - a compliant candidate is ranked with decomposable scoring and explanation
+  ---
+  duration_ms: 0.251667
+  type: 'test'
+  ...
+# Subtest: an unready item returns structured no-match without fabricated candidates
+ok 147 - an unready item returns structured no-match without fabricated candidates
+  ---
+  duration_ms: 0.094041
+  type: 'test'
+  ...
+# Subtest: semantic-only discovery cannot become recommended
+ok 148 - semantic-only discovery cannot become recommended
+  ---
+  duration_ms: 0.174625
+  type: 'test'
+  ...
+# Subtest: library API rejects anonymous access
+ok 149 - library API rejects anonymous access
+  ---
+  duration_ms: 37.31475
+  type: 'test'
+  ...
+# Subtest: client-controlled identity and role headers cannot authorize the library
+ok 150 - client-controlled identity and role headers cannot authorize the library
+  ---
+  duration_ms: 0.326166
+  type: 'test'
+  ...
+# Subtest: Task 9 schema separates products, sources, lifecycle and prices
+ok 151 - Task 9 schema separates products, sources, lifecycle and prices
+  ---
+  duration_ms: 6.485167
+  type: 'test'
+  ...
+# Subtest: API exposes explicit safety gates rather than product matching
+ok 152 - API exposes explicit safety gates rather than product matching
+  ---
+  duration_ms: 2.796875
+  type: 'test'
+  ...
+# Subtest: ingests the supplied Honeywell workbook with real source provenance
+ok 153 - ingests the supplied Honeywell workbook with real source provenance
+  ---
+  duration_ms: 77.259291
+  type: 'test'
+  ...
+# Subtest: excludes scratch formulas and retains lifecycle evidence separately
+ok 154 - excludes scratch formulas and retains lifecycle evidence separately
+  ---
+  duration_ms: 67.843709
+  type: 'test'
+  ...
+# Subtest: keeps historical prices discovery-only and ineligible for costing
+ok 155 - keeps historical prices discovery-only and ineligible for costing
+  ---
+  duration_ms: 25.612625
+  type: 'test'
+  ...
+# Subtest: supports exact and partial structured product search without BOQ ranking
+ok 156 - supports exact and partial structured product search without BOQ ranking
+  ---
+  duration_ms: 20.409125
+  type: 'test'
+  ...
+# Subtest: production cannot be claimed without operational evidence
+ok 157 - production cannot be claimed without operational evidence
+  ---
+  duration_ms: 0.554083
+  type: 'test'
+  ...
+# Subtest: critical safety or integrity failure makes release not ready
+ok 158 - critical safety or integrity failure makes release not ready
+  ---
+  duration_ms: 1.22625
+  type: 'test'
+  ...
+# Subtest: sensitive structured-log fields are removed
+ok 159 - sensitive structured-log fields are removed
+  ---
+  duration_ms: 0.612291
+  type: 'test'
+  ...
+# Subtest: security headers cover core browser protections
+ok 160 - security headers cover core browser protections
+  ---
+  duration_ms: 0.073875
+  type: 'test'
+  ...
+# Subtest: health endpoint checks migrations without exposing secrets
+ok 161 - health endpoint checks migrations without exposing secrets
+  ---
+  duration_ms: 0.294084
+  type: 'test'
+  ...
+# Subtest: worker applies security headers to APIs and pages
+ok 162 - worker applies security headers to APIs and pages
+  ---
+  duration_ms: 0.112458
+  type: 'test'
+  ...
+# Subtest: local backup and restore require checksums and an empty target
+ok 163 - local backup and restore require checksums and an empty target
+  ---
+  duration_ms: 0.151958
+  type: 'test'
+  ...
+# Subtest: document prompt injection remains untrusted content and cannot authorize an action
+ok 164 - document prompt injection remains untrusted content and cannot authorize an action
+  ---
+  duration_ms: 8.905041
+  type: 'test'
+  ...
+# Subtest: production Worker build serves the current HTML application shell
+ok 165 - production Worker build serves the current HTML application shell
+  ---
+  duration_ms: 178.786458
+  type: 'test'
+  ...
+# Subtest: review API rejects anonymous access
+ok 166 - review API rejects anonymous access
+  ---
+  duration_ms: 21.114667
+  type: 'test'
+  ...
+# Subtest: Task 13 persists complete review entities
+ok 167 - Task 13 persists complete review entities
+  ---
+  duration_ms: 27.28175
+  type: 'test'
+  ...
+# Subtest: review controls are server enforced
+ok 168 - review controls are server enforced
+  ---
+  duration_ms: 8.854625
+  type: 'test'
+  ...
+# Subtest: review API routes before pricing
+ok 169 - review API routes before pricing
+  ---
+  duration_ms: 2.939791
+  type: 'test'
+  ...
+# Subtest: review status transitions reject premature flow
+ok 170 - review status transitions reject premature flow
+  ---
+  duration_ms: 0.813583
+  type: 'test'
+  ...
+# Subtest: priority is risk and deadline driven
+ok 171 - priority is risk and deadline driven
+  ---
+  duration_ms: 0.121708
+  type: 'test'
+  ...
+# Subtest: technical approval cannot bypass safety or roles
+ok 172 - technical approval cannot bypass safety or roles
+  ---
+  duration_ms: 0.161375
+  type: 'test'
+  ...
+# Subtest: commercial approval requires technical approval and pricing
+ok 173 - commercial approval requires technical approval and pricing
+  ---
+  duration_ms: 1.18925
+  type: 'test'
+  ...
+# Subtest: conditional approval requires owner and due date
+ok 174 - conditional approval requires owner and due date
+  ---
+  duration_ms: 0.322542
+  type: 'test'
+  ...
+# Subtest: dependencies block decisions
+ok 175 - dependencies block decisions
+  ---
+  duration_ms: 0.128792
+  type: 'test'
+  ...
+# Subtest: bulk action cannot mix safety states
+ok 176 - bulk action cannot mix safety states
+  ---
+  duration_ms: 0.174958
+  type: 'test'
+  ...
+# Subtest: readiness respects clarification, pricing, approvals and conditions
+ok 177 - readiness respects clarification, pricing, approvals and conditions
+  ---
+  duration_ms: 0.249208
+  type: 'test'
+  ...
+# Subtest: summary comes from records
+ok 178 - summary comes from records
+  ---
+  duration_ms: 0.175292
+  type: 'test'
+  ...
+# Subtest: preserves specification hierarchy and extracts source-traceable requirements
+ok 179 - preserves specification hierarchy and extracts source-traceable requirements
+  ---
+  duration_ms: 8.310375
+  type: 'test'
+  ...
+# Subtest: distinguishes mandatory, preferred, optional, conditional and prohibited language
+ok 180 - distinguishes mandatory, preferred, optional, conditional and prohibited language
+  ---
+  duration_ms: 0.170666
+  type: 'test'
+  ...
+# Subtest: extracts attributes, standards, manufacturers, compatibility and accessories without inventing values
+ok 181 - extracts attributes, standards, manufacturers, compatibility and accessories without inventing values
+  ---
+  duration_ms: 0.781792
+  type: 'test'
+  ...
+# Subtest: flags ambiguity and missing domain-critical information
+ok 182 - flags ambiguity and missing domain-critical information
+  ---
+  duration_ms: 0.341875
+  type: 'test'
+  ...
+# Subtest: detects conflicting structured technical values
+ok 183 - detects conflicting structured technical values
+  ---
+  duration_ms: 0.179459
+  type: 'test'
+  ...
+# Subtest: parses DOCX paragraph structure and rejects scanned PDF honestly
+ok 184 - parses DOCX paragraph structure and rejects scanned PDF honestly
+  ---
+  duration_ms: 5.116291
+  type: 'test'
+  ...
+# Subtest: compares revisions without overwriting historical requirements
+ok 185 - compares revisions without overwriting historical requirements
+  ---
+  duration_ms: 0.758333
+  type: 'test'
+  ...
+# Subtest: wires durable asynchronous specification extraction with persisted progress
+ok 186 - wires durable asynchronous specification extraction with persisted progress
+  ---
+  duration_ms: 21.321625
+  type: 'test'
+  ...
+# Subtest: 1 same identity from two sources does not duplicate
+ok 187 - 1 same identity from two sources does not duplicate
+  ---
+  duration_ms: 0.7135
+  type: 'test'
+  ...
+# Subtest: 2 voltage variant remains separate
+ok 188 - 2 voltage variant remains separate
+  ---
+  duration_ms: 0.11125
+  type: 'test'
+  ...
+# Subtest: 3 regional part number links as a variant
+ok 189 - 3 regional part number links as a variant
+  ---
+  duration_ms: 0.099584
+  type: 'test'
+  ...
+# Subtest: 4 product approval does not approve prices
+ok 190 - 4 product approval does not approve prices
+  ---
+  duration_ms: 0.086417
+  type: 'test'
+  ...
+# Subtest: 5 price approval does not approve a product
+ok 191 - 5 price approval does not approve a product
+  ---
+  duration_ms: 0.117292
+  type: 'test'
+  ...
+# Subtest: 6 expired price cannot become current costing
+ok 192 - 6 expired price cannot become current costing
+  ---
+  duration_ms: 0.189042
+  type: 'test'
+  ...
+# Subtest: 7 historical price cannot become global current
+ok 193 - 7 historical price cannot become global current
+  ---
+  duration_ms: 0.066416
+  type: 'test'
+  ...
+# Subtest: 8 no-validity price remains Discovery Only
+ok 194 - 8 no-validity price remains Discovery Only
+  ---
+  duration_ms: 0.054333
+  type: 'test'
+  ...
+# Subtest: 9 Honeywell 65 percent applies to approved material only
+ok 195 - 9 Honeywell 65 percent applies to approved material only
+  ---
+  duration_ms: 0.142792
+  type: 'test'
+  ...
+# Subtest: 10 Honeywell 65 percent does not apply to services
+ok 196 - 10 Honeywell 65 percent does not apply to services
+  ---
+  duration_ms: 0.115917
+  type: 'test'
+  ...
+# Subtest: 11 Honeywell 65 percent does not apply to another manufacturer
+ok 197 - 11 Honeywell 65 percent does not apply to another manufacturer
+  ---
+  duration_ms: 0.486041
+  type: 'test'
+  ...
+# Subtest: 12 Honeywell 65 percent does not make historical price current
+ok 198 - 12 Honeywell 65 percent does not make historical price current
+  ---
+  duration_ms: 0.416917
+  type: 'test'
+  ...
+# Subtest: 13 project-specific price cannot cross projects
+ok 199 - 13 project-specific price cannot cross projects
+  ---
+  duration_ms: 0.068209
+  type: 'test'
+  ...
+# Subtest: 14 supplier quote line maps to exact normalized identity
+ok 200 - 14 supplier quote line maps to exact normalized identity
+  ---
+  duration_ms: 0.063041
+  type: 'test'
+  ...
+# Subtest: 15 unmapped quote line remains Needs Review
+ok 201 - 15 unmapped quote line remains Needs Review
+  ---
+  duration_ms: 0.035083
+  type: 'test'
+  ...
+# Subtest: 16 conflicting part mappings create a review conflict
+ok 202 - 16 conflicting part mappings create a review conflict
+  ---
+  duration_ms: 0.041333
+  type: 'test'
+  ...
+# Subtest: 17 discontinued product exposes replacement evidence
+ok 203 - 17 discontinued product exposes replacement evidence
+  ---
+  duration_ms: 57.923792
+  type: 'test'
+  ...
+# Subtest: 18 certification without evidence is not Verified
+ok 204 - 18 certification without evidence is not Verified
+  ---
+  duration_ms: 0.119792
+  type: 'test'
+  ...
+# Subtest: 19 compatibility without evidence is not Verified
+ok 205 - 19 compatibility without evidence is not Verified
+  ---
+  duration_ms: 0.048625
+  type: 'test'
+  ...
+# Subtest: 20 required accessory remains separate without inclusion proof
+ok 206 - 20 required accessory remains separate without inclusion proof
+  ---
+  duration_ms: 0.052333
+  type: 'test'
+  ...
+# Subtest: 21 duplicate source checksum is idempotent by schema
+ok 207 - 21 duplicate source checksum is idempotent by schema
+  ---
+  duration_ms: 1.887667
+  type: 'test'
+  ...
+# Subtest: 22 new source version preserves the prior version
+ok 208 - 22 new source version preserves the prior version
+  ---
+  duration_ms: 1.287708
+  type: 'test'
+  ...
+# Subtest: 23 manual product requires reason and audit
+ok 209 - 23 manual product requires reason and audit
+  ---
+  duration_ms: 0.559292
+  type: 'test'
+  ...
+# Subtest: 24 manual price requires source validity and scope
+ok 210 - 24 manual price requires source validity and scope
+  ---
+  duration_ms: 0.1955
+  type: 'test'
+  ...
+# Subtest: 25 unauthorized user cannot mutate global data
+ok 211 - 25 unauthorized user cannot mutate global data
+  ---
+  duration_ms: 0.385583
+  type: 'test'
+  ...
+# Subtest: 26 search filters technical library safely
+ok 212 - 26 search filters technical library safely
+  ---
+  duration_ms: 0.10675
+  type: 'test'
+  ...
+# Subtest: 27 product search excludes records absent from the canonical library
+ok 213 - 27 product search excludes records absent from the canonical library
+  ---
+  duration_ms: 0.041417
+  type: 'test'
+  ...
+# Subtest: 28 pricing retrieval excludes unapproved sources
+ok 214 - 28 pricing retrieval excludes unapproved sources
+  ---
+  duration_ms: 0.041625
+  type: 'test'
+  ...
+# Subtest: 29 scanned source fails closed without OCR
+ok 215 - 29 scanned source fails closed without OCR
+  ---
+  duration_ms: 0.446333
+  type: 'test'
+  ...
+# Subtest: 30 retry preserves idempotency
+ok 216 - 30 retry preserves idempotency
+  ---
+  duration_ms: 0.140833
+  type: 'test'
+  ...
+# Subtest: 31 catalogue and datasheet enrich the same product
+ok 217 - 31 catalogue and datasheet enrich the same product
+  ---
+  duration_ms: 0.045042
+  type: 'test'
+  ...
+# Subtest: 32 merge and split decisions are reversible
+ok 218 - 32 merge and split decisions are reversible
+  ---
+  duration_ms: 0.571834
+  type: 'test'
+  ...
+# Subtest: 33 source reprocessing preserves history
+ok 219 - 33 source reprocessing preserves history
+  ---
+  duration_ms: 0.305542
+  type: 'test'
+  ...
+# Subtest: 34 Task 10 consumes reviewed canonical products only
+ok 220 - 34 Task 10 consumes reviewed canonical products only
+  ---
+  duration_ms: 0.592792
+  type: 'test'
+  ...
+# Subtest: 35 Task 12 consumes current eligible prices only
+ok 221 - 35 Task 12 consumes current eligible prices only
+  ---
+  duration_ms: 0.669584
+  type: 'test'
+  ...
+# Subtest: pilot taxonomy and processing stages are complete
+ok 222 - pilot taxonomy and processing stages are complete
+  ---
+  duration_ms: 0.157458
+  type: 'test'
+  ...
+# Subtest: legacy price helper remains fail closed
+ok 223 - legacy price helper remains fail closed
+  ---
+  duration_ms: 0.153834
+  type: 'test'
+  ...
+# Subtest: separates suggested applicability from confirmed applicability
+ok 224 - separates suggested applicability from confirmed applicability
+  ---
+  duration_ms: 1.038125
+  type: 'test'
+  ...
+# Subtest: consolidates equivalent requirements without losing source provenance
+ok 225 - consolidates equivalent requirements without losing source provenance
+  ---
+  duration_ms: 0.299
+  type: 'test'
+  ...
+# Subtest: detects blocking structured value conflicts
+ok 226 - detects blocking structured value conflicts
+  ---
+  duration_ms: 0.166209
+  type: 'test'
+  ...
+# Subtest: builds a traceable profile and blocks missing compatibility
+ok 227 - builds a traceable profile and blocks missing compatibility
+  ---
+  duration_ms: 4.046042
+  type: 'test'
+  ...
+# Subtest: marks derived accessories as derived and review-only
+ok 228 - marks derived accessories as derived and review-only
+  ---
+  duration_ms: 1.510542
+  type: 'test'
+  ...
+# Subtest: wires versioned persistence, APIs, audit, decisions and review UI
+ok 229 - wires versioned persistence, APIs, audit, decisions and review UI
+  ---
+  duration_ms: 13.278334
+  type: 'test'
+  ...
+1..229
+# tests 229
+# suites 0
+# pass 229
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 485.010709
