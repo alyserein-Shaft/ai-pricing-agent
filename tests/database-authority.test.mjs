@@ -28,7 +28,7 @@ test("ordered migrations recreate the authoritative database with critical forei
   const migrations = readdirSync(join(root, "drizzle")).filter((name) => name.endsWith(".sql")).sort();
   for (const migration of migrations) execFileSync("sqlite3", [database, `.read ${join(root, "drizzle", migration)}`]);
   const count = Number(execFileSync("sqlite3", [database, "SELECT count(*) FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"], { encoding: "utf8" }).trim());
-  assert.equal(count, 281);
+  assert.equal(count, 282);
   const relation = (table, parent, column) => JSON.parse(execFileSync("sqlite3", ["-json", database, `PRAGMA foreign_key_list('${table}')`], { encoding: "utf8" }) || "[]").some((row) => row.table === parent && row.from === column);
   assert.ok(relation("documents", "projects", "project_id"));
   assert.ok(relation("case_study_sources", "case_studies", "case_study_id"));

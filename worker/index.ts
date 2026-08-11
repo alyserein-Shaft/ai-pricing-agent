@@ -33,6 +33,7 @@ import { handleCaseStudyLearningApi } from "./case-study-learning-api.mjs";
 import { handleKnowledgeLibraryApi } from "./knowledge-library-api.mjs";
 import { handleProductIdentityApi } from "./product-identity-api.mjs";
 import { handlePresalesWorkflowApi } from "./presales-workflow-api.mjs";
+import { handleAiQuotationApi } from "./ai-quotation-api.mjs";
 import { handleProjectPricingLearningApi } from "./project-pricing-learning-api.mjs";
 import { handleEstimatorReadinessApi } from "./estimator-readiness-api.mjs";
 import { handleEstimatorUnderstandingApi } from "./estimator-understanding-api.mjs";
@@ -107,6 +108,9 @@ const worker = {
 
     const productIdentityResponse = await handleProductIdentityApi(request, env);
     if (productIdentityResponse) return secured(productIdentityResponse);
+
+    const aiQuotationResponse = await handleAiQuotationApi(request, env);
+    if (aiQuotationResponse) return secured(aiQuotationResponse);
 
     const presalesWorkflowResponse = await handlePresalesWorkflowApi(request, env);
     if (presalesWorkflowResponse) return secured(presalesWorkflowResponse);
