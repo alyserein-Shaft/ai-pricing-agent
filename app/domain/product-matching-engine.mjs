@@ -46,12 +46,14 @@ export const buildSearchScope = (profile) => ({ system: profile.boqItem?.system 
 export const generateCandidates = ({ profile, products }) => {
   const scope = buildSearchScope(profile); const descriptionTokens = tokens(profile.boqItem?.normalizedDescription || profile.boqItem?.description); const stages = [];
   for (const product of products) {
-    const exact = scope.partNumber && norm(product.partNumber) === norm(scope.partNumber); const family = scope.productFamily && (norm(product.family) === norm(scope.productFamily) || norm(product.family).includes(norm(scope.productFamily)) || norm(scope.productFamily).includes(norm(product.family))); const category = scope.category && norm(product.category) === norm(scope.category); const shared = descriptionTokens.filter((term) => norm(`${product.description} ${product.family}`).includes(term));
+    const exact = scope.partNumber && [product.partNumber, product.normalizedPartNumber].some((value) => norm(value) === norm(scope.partNumber)); const manufacturerModel = scope.manufacturer && scope.partNumber && valuesEqual(product.manufacturer, scope.manufacturer) && norm(`${product.partNumber} ${product.description}`).includes(norm(scope.partNumber)); const manufacturerFamily = scope.manufacturer && scope.productFamily && valuesEqual(product.manufacturer, scope.manufacturer) && norm(product.family).includes(norm(scope.productFamily)); const family = scope.productFamily && (norm(product.family) === norm(scope.productFamily) || norm(product.family).includes(norm(scope.productFamily)) || norm(scope.productFamily).includes(norm(product.family))); const category = scope.category && norm(product.category) === norm(scope.category); const shared = descriptionTokens.filter((term) => norm(`${product.description} ${product.family}`).includes(term));
     if (exact) stages.push({ product, stage: "Exact Identity", searchScore: 100, basis: ["Exact Part Number"] });
+    else if (manufacturerModel) stages.push({ product, stage: "Manufacturer Model", searchScore: 95, basis: ["Exact Manufacturer + Model"] });
+    else if (manufacturerFamily) stages.push({ product, stage: "Manufacturer Family", searchScore: 88, basis: ["Manufacturer + Product Family"] });
     else if (family || category) stages.push({ product, stage: "Structured", searchScore: family ? 80 : 65, basis: [family ? "Product Family" : "Category"] });
     else if (shared.length >= 2) stages.push({ product, stage: "Semantic Discovery", searchScore: Math.min(55, shared.length * 10), basis: ["Semantic Discovery"], discoveryOnly: true, sharedTerms: shared });
   }
-  return { scope, candidates: [...new Map(stages.sort((a, b) => b.searchScore - a.searchScore).map((entry) => [entry.product.id, entry])).values()] };
+  return { scope, candidates: [...new Map(stages.sort((a, b) => b.searchScore - a.searchScore || String(a.product.id).localeCompare(String(b.product.id))).map((entry) => [entry.product.id, entry])).values()].slice(0, 10) };
 };
 
 const standardKey = (value) => norm(`${value.body || value.issuingBody || ""} ${value.number || value.standard || ""} ${value.part || ""}`);

@@ -1,6 +1,6 @@
 import { BOQ_UNDERSTANDING_RESPONSE_SCHEMA } from "../app/domain/boq-understanding-engine.mjs";
 
-export function createConfiguredBoqUnderstandingProvider(env = {}, runtime = {}) {
+export function createConfiguredCloudflareStructuredProvider(env = {}, { schema, maxTokens = 1800, runtime = {} } = {}) {
   const providerName = String(env.BOQ_AI_PROVIDER || "").trim();
   const model = String(env.BOQ_AI_MODEL || "").trim();
   const nativeRun = env.AI?.run?.bind(env.AI);
@@ -27,12 +27,16 @@ export function createConfiguredBoqUnderstandingProvider(env = {}, runtime = {})
     async interpret({ prompt }) {
       const result = await run(model, {
         messages: [{ role: "system", content: prompt.system }, { role: "user", content: prompt.user }],
-        response_format: { type: "json_schema", json_schema: BOQ_UNDERSTANDING_RESPONSE_SCHEMA },
+        response_format: { type: "json_schema", json_schema: schema },
         temperature: 0,
-        max_tokens: 1800,
+        max_tokens: maxTokens,
       });
       const value = result?.response ?? result;
       return typeof value === "string" ? JSON.parse(value) : value;
     },
   };
+}
+
+export function createConfiguredBoqUnderstandingProvider(env = {}, runtime = {}) {
+  return createConfiguredCloudflareStructuredProvider(env, { schema: BOQ_UNDERSTANDING_RESPONSE_SCHEMA, maxTokens: 1800, runtime });
 }
