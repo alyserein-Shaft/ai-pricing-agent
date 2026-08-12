@@ -3,8 +3,8 @@ import { inspectPdfReadiness } from "../document-parsers/pdf-readiness.mjs";
 import { parseXlsxWorkbook } from "../document-parsers/xlsx.mjs";
 import { parseXlsWorkbook } from "../document-parsers/xls.mjs";
 
-export const BOQ_PARSER_VERSION = "boq-engine-1.0.0";
-export const BOQ_RULESET_VERSION = "construction-boq-2026-08-01";
+export const BOQ_PARSER_VERSION = "boq-engine-1.0.2";
+export const BOQ_RULESET_VERSION = "construction-boq-2026-08-12.2";
 export const BOQ_OCR_VERSION = "not-configured";
 export const BOQ_ROW_TYPES = ["BOQ Item", "Section Header", "Subsection Header", "Subtotal", "Grand Total", "Note", "Alternative Item", "Optional Item", "Provisional Sum", "Allowance", "Daywork", "Rate-Only Item", "Blank Separator", "Unknown"];
 export const BOQ_STAGES = ["Queued", "Loading File", "Detecting Structure", "Reading Sheets", "Reading Pages", "Running OCR", "Detecting Tables", "Mapping Columns", "Extracting Rows", "Validating", "Saving", "Completed", "Needs Review", "Failed", "Cancelled"];
@@ -87,12 +87,12 @@ const refineHeaderMapping = (rows, header) => {
   return header;
 };
 
-const rowType = ({ values, mapped, quantity, unit }) => {
+export const classifyBoqRowType = ({ values, mapped, quantity, unit }) => {
   const joined = text(values.join(" "));
   if (!joined) return "Blank Separator";
   if (/^notes?$/i.test(unit.original)) return "Note";
   if (/^grand\s+total\b/i.test(joined)) return "Grand Total";
-  if (/\bsub\s*total\b|^total\b/i.test(joined)) return "Subtotal";
+  if (/\bsub\s*total\b|^total\b|\bdivision\s+\d+\s+total\s+amount\b/i.test(joined)) return "Subtotal";
   if (/^note\b|^remarks?\b|^general notes?\b/i.test(joined)) return "Note";
   if (/\bdaywork\b/i.test(joined)) return "Daywork";
   if (/\bprovisional sum\b/i.test(joined)) return "Provisional Sum";
@@ -100,6 +100,8 @@ const rowType = ({ values, mapped, quantity, unit }) => {
   if (/\balternative\b|\balternate\b/i.test(joined)) return "Alternative Item";
   if (/\boptional\b/i.test(joined)) return "Optional Item";
   if (/rate\s*only/i.test(joined)) return "Rate-Only Item";
+  const scopeText = mapped.description || mapped.itemNumber;
+  if (scopeText && !quantity.original && !unit.original && scopeText.length >= 40 && /^(?:supply\b.*\b(?:installation|testing|commissioning)\b|installation\b.*\b(?:testing|commissioning)\b)/i.test(scopeText)) return "Note";
   if (!mapped.description && mapped.itemNumber && !quantity.original && !unit.original) return /^section\b|^\d+(?:\s|$)/i.test(mapped.itemNumber) ? "Section Header" : "Subsection Header";
   if (mapped.description && !quantity.original && !unit.original) return (mapped.itemNumber || mapped.description.match(/^\d+(?:\.\d+)*/)?.[0] || "").split(".").length > 1 ? "Subsection Header" : "Section Header";
   if (mapped.description && (quantity.original || unit.original || mapped.itemNumber)) return "BOQ Item";
@@ -130,14 +132,14 @@ const extractRows = ({ rows, header, sourceSheet = null, sourcePage = null, sour
     const formula = (field) => header.columns[field] === undefined ? null : row.formulas?.[header.columns[field]] || null;
     const mapped = Object.fromEntries(Object.keys(aliases).map((field) => [field, text(value(field))]));
     const quantity = parseQuantity(value("quantity"), formula("quantity")); const unit = normalizeUnit(value("unit"));
-    const type = rowType({ values: row.values, mapped, quantity, unit });
+    const type = classifyBoqRowType({ values: row.values, mapped, quantity, unit });
     if (type === "Blank Separator") continue;
     let depth = 0;
     if (["Section Header", "Subsection Header"].includes(type)) {
       const number = mapped.itemNumber || mapped.description.match(/^\d+(?:\.\d+)*/)?.[0] || ""; depth = Math.max(1, number ? number.split(".").length : type === "Subsection Header" ? 2 : 1);
       sectionStack.splice(depth - 1); sectionStack[depth - 1] = mapped.description || mapped.itemNumber;
     }
-    const description = mapped.description || (["Section Header", "Subsection Header"].includes(type) ? mapped.itemNumber : "");
+    const description = mapped.description || (["Section Header", "Subsection Header", "Note", "Subtotal", "Grand Total"].includes(type) ? mapped.itemNumber : "");
     const warnings = [];
     if (!description) warnings.push({ code: "MISSING_DESCRIPTION", message: "Description is missing" });
     if (type === "BOQ Item" && !unit.original) warnings.push({ code: "MISSING_UNIT", message: "Unit is missing" });

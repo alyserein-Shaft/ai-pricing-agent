@@ -921,6 +921,10 @@ type BoqReviewActionDraft = {
   quantity: string;
   field: string;
 };
+type BoqBulkReviewDraft = {
+  operation: "approve" | "reject";
+  reason: string;
+};
 type SpecificationExtractionRequestState = {
   documentId: string;
   loading: boolean;
@@ -2388,6 +2392,13 @@ export default function Home() {
   >({});
   const [boqReviewAction, setBoqReviewAction] =
     useState<BoqReviewActionDraft | null>(null);
+  const [selectedBoqReviewItemIds, setSelectedBoqReviewItemIds] = useState<
+    string[]
+  >([]);
+  const [boqReviewRangeStart, setBoqReviewRangeStart] = useState("");
+  const [boqReviewRangeEnd, setBoqReviewRangeEnd] = useState("");
+  const [boqBulkReviewAction, setBoqBulkReviewAction] =
+    useState<BoqBulkReviewDraft | null>(null);
   const [specificationExtractionRequest, setSpecificationExtractionRequest] =
     useState<SpecificationExtractionRequestState | null>(null);
   const [requirementReviewDocument, setRequirementReviewDocument] =
@@ -8242,6 +8253,10 @@ export default function Home() {
   const openBoqExtractionReview = async (document: ManagedDocument) => {
     try {
       setExtractedBoqItems(await loadAllExtractedBoqItems(document.id));
+      setSelectedBoqReviewItemIds([]);
+      setBoqReviewRangeStart("");
+      setBoqReviewRangeEnd("");
+      setBoqBulkReviewAction(null);
       setBoqReviewDocument(document);
     } catch (error) {
       showToast(
@@ -8250,6 +8265,46 @@ export default function Home() {
           : "Extracted BOQ rows could not be loaded",
       );
       return;
+    }
+  };
+
+  const submitBoqBulkReview = async () => {
+    if (
+      !boqReviewDocument ||
+      !boqBulkReviewAction ||
+      !selectedBoqReviewItemIds.length ||
+      boqBulkReviewAction.reason.trim().length < 3
+    )
+      return;
+    const response = await fetch("/api/boq-items/bulk-review", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        itemIds: selectedBoqReviewItemIds,
+        operation: boqBulkReviewAction.operation,
+        reason: boqBulkReviewAction.reason.trim(),
+      }),
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      showToast(result.error?.message || "Bulk BOQ review failed");
+      return;
+    }
+    try {
+      setExtractedBoqItems(
+        await loadAllExtractedBoqItems(boqReviewDocument.id),
+      );
+      setSelectedBoqReviewItemIds([]);
+      setBoqBulkReviewAction(null);
+      showToast(
+        `${result.reviewed || 0} BOQ rows reviewed with audit evidence`,
+      );
+    } catch (error) {
+      showToast(
+        error instanceof Error
+          ? error.message
+          : "Reviewed BOQ rows could not be refreshed",
+      );
     }
   };
 
@@ -21812,6 +21867,79 @@ export default function Home() {
         </div>
       )}
 
+      {boqBulkReviewAction && (
+        <div
+          className="match-overlay boq-review-action-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="boq-bulk-review-title"
+        >
+          <button
+            className="drawer-scrim"
+            onClick={() => setBoqBulkReviewAction(null)}
+            aria-label="Close bulk BOQ review"
+          />
+          <section className="match-panel">
+            <header className="match-header">
+              <div>
+                <small>GOVERNED BULK BOQ REVIEW</small>
+                <h2 id="boq-bulk-review-title">
+                  {boqBulkReviewAction.operation === "approve"
+                    ? "Bulk confirm extraction"
+                    : "Bulk reject extraction"}
+                </h2>
+                <p>
+                  {selectedBoqReviewItemIds.length} selected source rows · one
+                  shared evidence basis
+                </p>
+              </div>
+              <button
+                onClick={() => setBoqBulkReviewAction(null)}
+                aria-label="Close bulk BOQ review"
+              >
+                ×
+              </button>
+            </header>
+            <div className="document-control-fields">
+              <label>
+                Review reason / shared source evidence
+                <textarea
+                  value={boqBulkReviewAction.reason}
+                  onChange={(event) =>
+                    setBoqBulkReviewAction((current) =>
+                      current
+                        ? { ...current, reason: event.target.value }
+                        : current,
+                    )
+                  }
+                  placeholder="Required for every selected row audit record"
+                />
+              </label>
+              <p className="field-note">
+                The server verifies ownership and extraction scope before applying
+                the complete decision batch.
+              </p>
+            </div>
+            <footer className="preview-actions">
+              <button
+                className="secondary-action"
+                onClick={() => setBoqBulkReviewAction(null)}
+              >
+                Cancel
+              </button>
+              <button
+                disabled={boqBulkReviewAction.reason.trim().length < 3}
+                onClick={submitBoqBulkReview}
+              >
+                {boqBulkReviewAction.operation === "approve"
+                  ? "Confirm selected rows"
+                  : "Reject selected rows"}
+              </button>
+            </footer>
+          </section>
+        </div>
+      )}
+
       {boqReviewDocument && (
         <div
           className="match-overlay"
@@ -21877,10 +22005,94 @@ export default function Home() {
                 </strong>
               </span>
             </div>
+            <div className="boq-bulk-review-toolbar" aria-label="Bulk BOQ review controls">
+              <strong>{selectedBoqReviewItemIds.length} selected</strong>
+              <label>
+                From sequence
+                <input
+                  type="number"
+                  min="1"
+                  value={boqReviewRangeStart}
+                  onChange={(event) => setBoqReviewRangeStart(event.target.value)}
+                />
+              </label>
+              <label>
+                To sequence
+                <input
+                  type="number"
+                  min="1"
+                  value={boqReviewRangeEnd}
+                  onChange={(event) => setBoqReviewRangeEnd(event.target.value)}
+                />
+              </label>
+              <button
+                className="secondary-action"
+                onClick={() => {
+                  const start = Number(boqReviewRangeStart);
+                  const end = Number(boqReviewRangeEnd);
+                  if (!Number.isFinite(start) || !Number.isFinite(end)) return;
+                  const lower = Math.min(start, end);
+                  const upper = Math.max(start, end);
+                  setSelectedBoqReviewItemIds(
+                    extractedBoqItems
+                      .filter(
+                        (item) =>
+                          Number(item.sequence) >= lower &&
+                          Number(item.sequence) <= upper,
+                      )
+                      .slice(0, 50)
+                      .map((item) => item.id),
+                  );
+                }}
+              >
+                Select sequence range
+              </button>
+              <button
+                className="secondary-action"
+                onClick={() =>
+                  setSelectedBoqReviewItemIds(
+                    extractedBoqItems.slice(0, 50).map((item) => item.id),
+                  )
+                }
+              >
+                Select all visible rows
+              </button>
+              <button
+                className="secondary-action"
+                disabled={!selectedBoqReviewItemIds.length}
+                onClick={() => setSelectedBoqReviewItemIds([])}
+              >
+                Clear selection
+              </button>
+              <button
+                disabled={!selectedBoqReviewItemIds.length}
+                onClick={() =>
+                  setBoqBulkReviewAction({ operation: "reject", reason: "" })
+                }
+              >
+                Bulk reject
+              </button>
+              <button
+                disabled={
+                  !selectedBoqReviewItemIds.length ||
+                  extractedBoqItems
+                    .filter((item) =>
+                      selectedBoqReviewItemIds.includes(item.id),
+                    )
+                    .some((item) => item.row_type !== "BOQ Item")
+                }
+                onClick={() =>
+                  setBoqBulkReviewAction({ operation: "approve", reason: "" })
+                }
+              >
+                Bulk confirm
+              </button>
+            </div>
             <div className="compact-table boq-extraction-review-table">
               <table>
                 <thead>
                   <tr>
+                    <th>Select</th>
                     <th>Seq.</th>
                     <th>Type / source</th>
                     <th>Description</th>
@@ -21893,6 +22105,20 @@ export default function Home() {
                 <tbody>
                   {extractedBoqItems.map((item) => (
                     <tr key={item.id}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          aria-label={`Select row ${item.sequence}`}
+                          checked={selectedBoqReviewItemIds.includes(item.id)}
+                          onChange={(event) =>
+                            setSelectedBoqReviewItemIds((current) =>
+                              event.target.checked
+                                ? [...new Set([...current, item.id])].slice(0, 50)
+                                : current.filter((id) => id !== item.id),
+                            )
+                          }
+                        />
+                      </td>
                       <td>{item.sequence}</td>
                       <td>
                         <strong>{item.row_type}</strong>

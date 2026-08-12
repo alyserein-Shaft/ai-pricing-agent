@@ -80,6 +80,40 @@ export const handleBoqExtractionApi = async (request, env, ctx) => {
   const url = new URL(request.url); if (!url.pathname.includes("/boq-extraction") && !url.pathname.includes("/boq-items")) return null;
   if (!env.DB || !env.FILES) return json({ error: { code: "BOQ_ENGINE_UNAVAILABLE", message: "BOQ extraction storage is unavailable.", suggestedAction: "Verify DB and FILES bindings." } }, 503);
   await ensureBoqExtractionSchema(env.DB); const resolved = await resolveApplicationContext(request, env); if (resolved.error) return json({ error: resolved.error }, resolved.error.status); const user = applicationActor(resolved.context);
+  if (url.pathname === "/api/boq-items/bulk-review" && request.method === "POST") {
+    const body = await request.json().catch(() => ({}));
+    const itemIds = [...new Set((Array.isArray(body.itemIds) ? body.itemIds : []).map((value) => String(value || "").trim()).filter(Boolean))];
+    if (!itemIds.length) return json({ error: { code: "BULK_REVIEW_ITEMS_REQUIRED", message: "Select at least one BOQ row.", suggestedAction: "Select the source rows that share this review decision." } }, 422);
+    if (itemIds.length > 50) return json({ error: { code: "BULK_REVIEW_LIMIT_EXCEEDED", message: "A bulk review is limited to 50 rows.", suggestedAction: "Review a smaller source section or sequence range." } }, 422);
+    const reason = String(body.reason || "").trim();
+    if (reason.length < 3) return json({ error: { code: "REVIEW_REASON_REQUIRED", message: "Provide a reason for this bulk decision.", suggestedAction: "Explain the shared source evidence or exclusion basis." } }, 422);
+    const operation = String(body.operation || "");
+    if (!["approve", "reject"].includes(operation)) return json({ error: { code: "INVALID_BULK_REVIEW_OPERATION", message: "Choose bulk approve or bulk reject." } }, 422);
+
+    const items = [];
+    for (const itemId of itemIds) {
+      const item = await getItem(env.DB, itemId, user.id);
+      if (!item) return json({ error: { code: "BOQ_ITEM_NOT_FOUND", message: "A selected BOQ row is unavailable or not owned by this user.", suggestedAction: "Refresh the extraction review before retrying." } }, 404);
+      items.push(item);
+    }
+    if (new Set(items.map((item) => item.extraction_version_id)).size !== 1) return json({ error: { code: "BULK_REVIEW_EXTRACTION_MISMATCH", message: "Bulk decisions must belong to one extraction version.", suggestedAction: "Review one source document at a time." } }, 422);
+    if (operation === "approve" && items.some((item) => item.row_type !== "BOQ Item")) return json({ error: { code: "NON_ITEM_APPROVAL_BLOCKED", message: "Only BOQ Item rows can be approved downstream.", suggestedAction: "Remove headers, notes and totals from the approval selection." } }, 422);
+
+    const stamp = now();
+    const statements = [];
+    for (const item of items) {
+      const previous = parseJson(item.current_values, {});
+      const next = { ...previous };
+      const reviewStatus = operation === "approve" ? "Approved" : "Rejected";
+      statements.push(
+        env.DB.prepare("UPDATE boq_items SET review_status=?, approved_for_downstream=?, updated_at=? WHERE id=? AND extraction_version_id=?").bind(reviewStatus, operation === "approve" ? 1 : 0, stamp, item.id, item.extraction_version_id),
+        env.DB.prepare("INSERT INTO boq_review_decisions (id, extraction_version_id, item_id, action, previous_value, new_value, reason, decided_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(id("boqdecision"), item.extraction_version_id, item.id, operation, JSON.stringify(previous), JSON.stringify(next), reason, user.id),
+        env.DB.prepare("INSERT INTO document_audit_events (id, project_id, document_id, version_id, actor_user_id, action, old_value, new_value, reason, request_id) SELECT ?, i.project_id, i.source_document_id, e.document_version_id, ?, ?, ?, ?, ?, ? FROM boq_items i JOIN boq_extraction_versions e ON e.id=i.extraction_version_id WHERE i.id=?").bind(id("audit"), user.id, `BOQ bulk ${operation}`, JSON.stringify(previous), JSON.stringify(next), reason, id("request"), item.id),
+      );
+    }
+    await env.DB.batch(statements);
+    return json({ operation, reviewed: items.length, itemIds });
+  }
   const itemMatch = url.pathname.match(/^\/api\/boq-items\/([^/]+)(?:\/(update|restore|row-type|approve|reject|merge|split|evidence|warnings))?$/);
   if (itemMatch) {
     const item = await getItem(env.DB, decodeURIComponent(itemMatch[1]), user.id); if (!item) return json({ error: { code: "BOQ_ITEM_NOT_FOUND", message: "BOQ item not found.", suggestedAction: "Refresh the extraction review." } }, 404);

@@ -1319,6 +1319,10 @@ tbody tr:hover td { background: #f9fcff; }
 .boq-review-launcher span { color: var(--muted); font-size: 11px; }
 .boq-review-launcher button { justify-self: start; }
 .boq-review-action-overlay { z-index: 200; }
+.boq-bulk-review-toolbar { display:flex; flex-wrap:wrap; align-items:end; gap:8px; padding:12px 0; }
+.boq-bulk-review-toolbar label { display:grid; gap:4px; color:var(--muted); font-size:11px; }
+.boq-bulk-review-toolbar input[type="number"] { width:100px; padding:8px; border:1px solid var(--line); border-radius:7px; }
+.boq-bulk-review-toolbar button { min-height:36px; }
 .boq-extraction-review-panel { width: min(1320px, 97vw); }
 .boq-extraction-review-table { max-height: 64vh; overflow: auto; overscroll-behavior: contain; }
 .boq-extraction-review-table table { min-width: 1080px; }
