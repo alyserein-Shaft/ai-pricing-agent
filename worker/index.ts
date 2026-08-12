@@ -35,6 +35,7 @@ import { handleProductIdentityApi } from "./product-identity-api.mjs";
 import { handlePresalesWorkflowApi } from "./presales-workflow-api.mjs";
 import { handleAiQuotationApi } from "./ai-quotation-api.mjs";
 import { handleSupplierPriceIntakeApi } from "./supplier-price-intake-api.mjs";
+import { handleProjectContextApi } from "./project-context-api.mjs";
 import { handleProjectPricingLearningApi } from "./project-pricing-learning-api.mjs";
 import { handleEstimatorReadinessApi } from "./estimator-readiness-api.mjs";
 import { handleEstimatorUnderstandingApi } from "./estimator-understanding-api.mjs";
@@ -139,6 +140,9 @@ const worker = {
 
     const supplierPriceIntakeResponse = await handleSupplierPriceIntakeApi(request, env);
     if (supplierPriceIntakeResponse) return secured(supplierPriceIntakeResponse);
+
+    const projectContextResponse = await handleProjectContextApi(request, env);
+    if (projectContextResponse) return secured(projectContextResponse);
 
     const confidenceSafetyApiResponse = await handleConfidenceSafetyApi(request, env);
     if (confidenceSafetyApiResponse) return secured(confidenceSafetyApiResponse);

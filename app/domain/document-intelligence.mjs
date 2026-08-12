@@ -1,5 +1,5 @@
 export const DOCUMENT_TYPES = Object.freeze([
-  "BOQ", "Specification", "Drawing", "Price List", "Catalogue", "Supplier Quote",
+  "Project Context", "BOQ", "Specification", "Drawing", "Price List", "Catalogue", "Supplier Quote",
   "Cost Sheet", "Compliance", "Email", "Clarification", "Datasheet", "Tender Document", "Unknown",
 ]);
 

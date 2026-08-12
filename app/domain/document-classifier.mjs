@@ -4,7 +4,7 @@ import { parseXlsWorkbook } from "../document-parsers/xls.mjs";
 import { inspectPdfReadiness } from "../document-parsers/pdf-readiness.mjs";
 
 export const CLASSIFICATION_TAXONOMY = Object.freeze([
-  "BOQ", "Technical Specification", "Drawing", "Product Catalogue", "Product Datasheet", "Price List",
+  "Project Context", "BOQ", "Technical Specification", "Drawing", "Product Catalogue", "Product Datasheet", "Price List",
   "Supplier Quotation", "Cost Sheet", "RFQ", "Tender Document", "Compliance Document", "Clarification",
   "Approved Vendor List", "Previous Project Reference", "Project Email", "Commercial Offer", "Technical Offer",
   "Contract", "Other", "Unknown",
@@ -14,11 +14,12 @@ export const CLASSIFICATION_STATUSES = Object.freeze([
   "Not Classified", "Classification Queued", "Classifying", "Classified", "Needs Review", "Manually Confirmed", "Classification Failed", "Unknown",
 ]);
 
-export const CLASSIFIER_VERSION = "hybrid-engine-1.0.2";
-export const RULESET_VERSION = "construction-taxonomy-2026-08-04.2";
+export const CLASSIFIER_VERSION = "hybrid-engine-1.0.3";
+export const RULESET_VERSION = "construction-taxonomy-2026-08-12.3";
 export const PROMPT_VERSION = "classification-escalation-v1";
 
 export const DOWNSTREAM_ROUTES = Object.freeze({
+  "Project Context": "Project Context Extraction",
   BOQ: "BOQ Extraction", "Technical Specification": "Specification Extraction", Drawing: "Drawing Analysis",
   "Price List": "Price Library Import", "Supplier Quotation": "Supplier Quote Extraction", "Product Catalogue": "Product Library Extraction",
   "Product Datasheet": "Product Attribute Extraction", "Project Email": "Email and Attachment Parsing", "Cost Sheet": "Cost Sheet Extraction",
@@ -29,6 +30,7 @@ export const DOWNSTREAM_ROUTES = Object.freeze({
 });
 
 const CATEGORY_PROFILES = Object.freeze({
+  "Project Context": "lead qualification checklist project details project name project status project category contact information company role customer client budget authority decision maker stakeholders scope timeline urgency opportunity commercial instructions",
   BOQ: "bill item item no description unit quantity qty uom section boq reference material equipment",
   "Technical Specification": "section part general products execution standards submittals installation testing commissioning approved manufacturers shall specification",
   Drawing: "drawing number revision scale title block floor plan legend symbols zones layout riser schematic detail",
@@ -51,6 +53,14 @@ const CATEGORY_PROFILES = Object.freeze({
 });
 
 const STRONG_PATTERNS = Object.freeze({
+  "Project Context": [
+    [/\blead qualification checklist\b/i, 34, "Lead qualification heading"],
+    [/\bproject details\b/i, 20, "Project details section"],
+    [/\bcontact information\b/i, 16, "Project contact section"],
+    [/\b(project status|project category)\b/i, 12, "Project qualification field"],
+    [/\b(budget|authority|final purchasing decision)\b/i, 12, "Commercial decision context"],
+    [/\b(scope|timeline)\b/i, 10, "Project scope or timeline field"],
+  ],
   BOQ: [[/\b(item\s*(?:no|number|#)|bill\s*item)\b/i, 14, "Bill-item identifier"], [/\b(quantity|qty)\b/i, 12, "Quantity field"], [/\b(unit|uom)\b/i, 10, "Unit field"], [/\bdescription\b/i, 8, "Description field"]],
   "Technical Specification": [[/\bpart\s*1\s*[-–:]?\s*general\b/i, 20, "Part 1 General hierarchy"], [/\bpart\s*2\s*[-–:]?\s*products\b/i, 20, "Part 2 Products hierarchy"], [/\bpart\s*3\s*[-–:]?\s*execution\b/i, 20, "Part 3 Execution hierarchy"], [/\bsubmittals?|testing and commissioning|approved manufacturers?\b/i, 9, "Specification obligation language"]],
   Drawing: [[/\bdrawing\s*(?:no|number)\b/i, 16, "Drawing number field"], [/\bscale\s*[:=]/i, 14, "Drawing scale"], [/\b(title block|floor plan|riser diagram|schematic|legend)\b/i, 12, "Drawing layout terminology"], [/\bcause\s*(?:and|&)\s*effect\s*matrix\b/i, 26, "Cause-and-effect drawing matrix"]],

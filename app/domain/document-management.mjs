@@ -5,7 +5,7 @@ export const DOCUMENT_EXTENSIONS = Object.freeze([
 ]);
 
 export const DOCUMENT_TYPES = Object.freeze([
-  "Auto Detection", "BOQ", "Technical Specification", "Drawing", "Catalogue", "Datasheet", "Price List",
+  "Auto Detection", "Project Context", "BOQ", "Technical Specification", "Drawing", "Catalogue", "Datasheet", "Price List",
   "Supplier Quotation", "Cost Sheet", "RFQ", "Clarification", "Compliance Document", "Previous Project", "Email", "Other",
 ]);
 

@@ -7,6 +7,7 @@ import { executeBoqExtraction } from "./boq-extraction-api.mjs";
 import { createSpecificationJob, processSpecificationJob } from "./specification-extraction-background.mjs";
 import { applicationActor, resolveApplicationContext } from "./application-context.mjs";
 import { executeSupplierQuoteExtraction } from "./supplier-price-intake-api.mjs";
+import { executeProjectContextExtraction } from "./project-context-api.mjs";
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 const id = (prefix) => `${prefix}_${crypto.randomUUID()}`;
@@ -98,13 +99,50 @@ const executeConfirmedDownstreamExtraction = async (env, ctx, { documentId, user
     return created;
   }
   if (["Supplier Quotation", "Supplier Quote"].includes(primaryType)) return executeSupplierQuoteExtraction(env, { documentId, userId });
+  if (primaryType === "Project Context") return executeProjectContextExtraction(env, { documentId, userId });
   return undefined;
+};
+
+const recordDownstreamFailure = async (env, { classificationId, error }) => {
+  const classification = await env.DB.prepare(
+    "SELECT processing_run_id FROM document_classifications WHERE id=?",
+  ).bind(classificationId).first();
+  if (!classification?.processing_run_id) return;
+
+  const detail = {
+    code: error?.code || "DOWNSTREAM_EXTRACTION_FAILED",
+    userMessage: "The document was classified, but its downstream extraction failed.",
+    technicalDetails: error instanceof Error ? error.message : String(error),
+    suggestedAction: "Retry document processing or open the governed downstream review.",
+  };
+
+  await updateJob(env.DB, classification.processing_run_id, {
+    fromStatus: "Completed",
+    toStatus: "Failed",
+    progress: 100,
+    stage: "Downstream Extraction",
+    actor: "Automatic Downstream Router",
+    error: detail,
+    message: detail.userMessage,
+  });
 };
 
 export const scheduleAutomaticClassification = (env, ctx, { documentId, userId, runId }) => ctx.waitUntil(
   executeClassification(env, { documentId, userId, runId })
-    .then(({ result }) => !result.manualReviewRequired ? executeConfirmedDownstreamExtraction(env, ctx, { documentId, userId, primaryType: result.primaryType, reason: `Automatic extraction after confirmed high-confidence ${result.primaryType} classification` }) : undefined)
-    .catch(() => undefined),
+    .then(async ({ classificationId, result }) => {
+      if (result.manualReviewRequired) return undefined;
+      try {
+        return await executeConfirmedDownstreamExtraction(env, ctx, {
+          documentId,
+          userId,
+          primaryType: result.primaryType,
+          reason: `Automatic extraction after confirmed high-confidence ${result.primaryType} classification`,
+        });
+      } catch (error) {
+        await recordDownstreamFailure(env, { classificationId, error });
+        return undefined;
+      }
+    }),
 );
 
 const resultPayload = async (db, documentId) => {
@@ -216,7 +254,7 @@ const createManualClassification = async (request, env, ctx, document, user) => 
 
   if (
     body.startExtraction === true &&
-    ["BOQ", "Technical Specification", "Supplier Quotation", "Supplier Quote"].includes(selectedType)
+    ["BOQ", "Technical Specification", "Supplier Quotation", "Supplier Quote", "Project Context"].includes(selectedType)
   ) {
     ctx.waitUntil(
       Promise.resolve(
@@ -255,7 +293,7 @@ const confirmOrOverride = async (request, env, ctx, document, classification, us
     db.prepare("INSERT INTO classification_overrides (id, classification_id, document_id, previous_type, selected_type, secondary_types, reason, overridden_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(id("override"), classification.id, document.id, classification.primary_type, selectedType, JSON.stringify(secondaryTypes), reason || null, user.id),
     db.prepare("INSERT INTO document_audit_events (id, project_id, document_id, version_id, actor_user_id, action, old_value, new_value, reason, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(id("audit"), document.project_id, document.id, document.version_id, user.id, mode === "confirm" ? "Classification Confirmed" : "Classification Override", JSON.stringify({ primaryType: classification.primary_type, status: classification.status }), JSON.stringify({ primaryType: selectedType, secondaryTypes, status: "Manually Confirmed", route }), reason || "Classification confirmed", requestId),
   ]);
-  if (body.startExtraction === true && ["BOQ", "Technical Specification", "Supplier Quotation", "Supplier Quote"].includes(selectedType)) ctx.waitUntil(Promise.resolve(executeConfirmedDownstreamExtraction(env, ctx, { documentId: document.id, userId: user.id, primaryType: selectedType, reason: `Explicit extraction after ${selectedType} classification confirmation` })).catch(() => undefined));
+  if (body.startExtraction === true && ["BOQ", "Technical Specification", "Supplier Quotation", "Supplier Quote", "Project Context"].includes(selectedType)) ctx.waitUntil(Promise.resolve(executeConfirmedDownstreamExtraction(env, ctx, { documentId: document.id, userId: user.id, primaryType: selectedType, reason: `Explicit extraction after ${selectedType} classification confirmation` })).catch(() => undefined));
   return json({ classification: await resultPayload(db, document.id), requestId });
 };
 
@@ -300,8 +338,10 @@ export const handleClassificationApi = async (request, env, ctx) => {
   if (["start", "rerun"].includes(operation) && request.method === "POST") {
     const existing = await currentClassification(env.DB, document.id);
     if (operation === "start" && existing && !existing.superseded_at) return json({ classification: await resultPayload(env.DB, document.id), idempotent: true });
-    const scheduled = executeClassification(env, { documentId: document.id, userId: user.id, reason: operation === "rerun" ? "User requested reclassification" : "User started classification" });
-    ctx.waitUntil(scheduled.catch(() => undefined));
+    scheduleAutomaticClassification(env, ctx, {
+      documentId: document.id,
+      userId: user.id,
+    });
     return json({ status: "Classification Queued", documentId: document.id }, 202);
   }
   const classification = await currentClassification(env.DB, document.id);

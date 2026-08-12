@@ -36,6 +36,7 @@ import type {
 } from "./components/project/types";
 import { OverviewWorkspace } from "./components/workspaces/OverviewWorkspace";
 import { DocumentsWorkspace } from "./components/workspaces/DocumentsWorkspace";
+import { ProjectContextWorkspace } from "./components/workspaces/ProjectContextWorkspace";
 import { BoqReviewWorkspace } from "./components/workspaces/BoqReviewWorkspace";
 import { TechnicalRequirementsWorkspace } from "./components/workspaces/TechnicalRequirementsWorkspace";
 import { MatchingCandidateReview, MatchingWorkspace } from "./components/workspaces/MatchingWorkspace";
@@ -1745,6 +1746,7 @@ const money = (value: number) =>
   }).format(value);
 
 const documentClassificationTypes = [
+  "Project Context",
   "BOQ",
   "Technical Specification",
   "Drawing",
@@ -11240,6 +11242,7 @@ export default function Home() {
           if (first) classificationCommand(first, first.predicted_type && first.predicted_type !== "Unknown" ? "confirm" : "override");
         }}
       >
+        <ProjectContextWorkspace projectId={projectId} />
         {false && <div className="module-heading">
           <div>
             <small>STEP 01 · DOCUMENT INTAKE</small>
