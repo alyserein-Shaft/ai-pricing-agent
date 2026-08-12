@@ -119,6 +119,124 @@ const resultPayload = async (db, documentId) => {
   return { ...classification, secondary_types: JSON.parse(classification.secondary_types || "[]"), candidates: candidates.results || [], evidence: evidence.results || [], segments: (segments.results || []).map((segment) => ({ ...segment, evidence: JSON.parse(segment.evidence || "[]") })), route };
 };
 
+
+const createManualClassification = async (request, env, ctx, document, user) => {
+  const db = env.DB;
+  const body = await request.json();
+  const selectedType = String(body.selectedType || "").trim();
+  const secondaryTypes = Array.isArray(body.secondaryTypes)
+    ? body.secondaryTypes
+        .filter((type) => CLASSIFICATION_TAXONOMY.includes(type) && type !== selectedType)
+        .slice(0, 10)
+    : [];
+  const reason = String(body.reason || "").trim();
+
+  if (!CLASSIFICATION_TAXONOMY.includes(selectedType)) {
+    return json({
+      error: {
+        code: "INVALID_CLASSIFICATION",
+        message: "Select a supported document type.",
+        suggestedAction: "Choose from the classification taxonomy.",
+      },
+    }, 422);
+  }
+
+  if (reason.length < 3) {
+    return json({
+      error: {
+        code: "MANUAL_CLASSIFICATION_REASON_REQUIRED",
+        message: "Provide a substantive reason for the manual classification.",
+        suggestedAction: "Describe the visible file content that identifies the document type.",
+      },
+    }, 422);
+  }
+
+  const classificationId = id("class");
+  const modelVersionId = await modelVersion(db);
+  const stamp = now();
+  const route = DOWNSTREAM_ROUTES[selectedType] || DOWNSTREAM_ROUTES.Unknown;
+  const requestId = request.headers.get("x-request-id") || id("request");
+
+  await db.batch([
+    db.prepare(
+      "INSERT INTO document_classifications (id, document_id, document_version_id, processing_run_id, model_version_id, primary_type, secondary_types, confidence, confidence_state, status, method, extraction_method, extraction_quality_basis_points, mixed, manual_review_required, downstream_route, confirmed_by, confirmed_at, classified_at) VALUES (?, ?, ?, NULL, ?, ?, ?, 0, 'Human Confirmed', 'Manually Confirmed', 'Manual Confirmation', NULL, NULL, 0, 0, ?, ?, ?, ?)"
+    ).bind(
+      classificationId,
+      document.id,
+      document.version_id,
+      modelVersionId,
+      selectedType,
+      JSON.stringify(secondaryTypes),
+      route,
+      user.id,
+      stamp,
+      stamp,
+    ),
+    db.prepare(
+      "INSERT INTO downstream_routing_handoffs (id, classification_id, document_version_id, route, status, eligible, blocker) VALUES (?, ?, ?, ?, 'Decision Only', 1, NULL)"
+    ).bind(id("route"), classificationId, document.version_id, route),
+    db.prepare(
+      "UPDATE documents SET document_type=?, classification_source='Manual Confirmation', updated_at=? WHERE id=?"
+    ).bind(selectedType, stamp, document.id),
+    db.prepare(
+      "INSERT INTO classification_overrides (id, classification_id, document_id, previous_type, selected_type, secondary_types, reason, overridden_by) VALUES (?, ?, ?, 'Unknown', ?, ?, ?, ?)"
+    ).bind(
+      id("override"),
+      classificationId,
+      document.id,
+      selectedType,
+      JSON.stringify(secondaryTypes),
+      reason,
+      user.id,
+    ),
+    db.prepare(
+      "INSERT INTO document_audit_events (id, project_id, document_id, version_id, actor_user_id, action, old_value, new_value, reason, request_id) VALUES (?, ?, ?, ?, ?, 'Manual Classification Recovery', ?, ?, ?, ?)"
+    ).bind(
+      id("audit"),
+      document.project_id,
+      document.id,
+      document.version_id,
+      user.id,
+      JSON.stringify({
+        primaryType: "Unknown",
+        processingStatus: document.job_status || "Not Classified",
+      }),
+      JSON.stringify({
+        primaryType: selectedType,
+        secondaryTypes,
+        confidence: 0,
+        confidenceState: "Human Confirmed",
+        status: "Manually Confirmed",
+        route,
+      }),
+      reason,
+      requestId,
+    ),
+  ]);
+
+  if (
+    body.startExtraction === true &&
+    ["BOQ", "Technical Specification", "Supplier Quotation", "Supplier Quote"].includes(selectedType)
+  ) {
+    ctx.waitUntil(
+      Promise.resolve(
+        executeConfirmedDownstreamExtraction(env, ctx, {
+          documentId: document.id,
+          userId: user.id,
+          primaryType: selectedType,
+          reason: `Explicit extraction after manual ${selectedType} classification`,
+        }),
+      ).catch(() => undefined),
+    );
+  }
+
+  return json({
+    classification: await resultPayload(db, document.id),
+    requestId,
+    manualRecovery: true,
+  });
+};
+
 const confirmOrOverride = async (request, env, ctx, document, classification, user, mode) => {
   const db = env.DB;
   const body = await request.json();
@@ -187,6 +305,9 @@ export const handleClassificationApi = async (request, env, ctx) => {
     return json({ status: "Classification Queued", documentId: document.id }, 202);
   }
   const classification = await currentClassification(env.DB, document.id);
+  if (!classification && operation === "override" && request.method === "POST") {
+    return createManualClassification(request, env, ctx, document, user);
+  }
   if (!classification) return json({ error: { code: "CLASSIFICATION_REQUIRED", message: "Run classification first.", suggestedAction: "Start classification and wait for a result." } }, 409);
   if (operation === "confirm" && request.method === "POST") return confirmOrOverride(request, env, ctx, document, classification, user, "confirm");
   if (operation === "override" && request.method === "POST") return confirmOrOverride(request, env, ctx, document, classification, user, "override");

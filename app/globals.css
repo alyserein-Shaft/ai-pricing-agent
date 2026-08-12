@@ -1318,6 +1318,7 @@ tbody tr:hover td { background: #f9fcff; }
 .boq-review-launcher { position: relative; display: grid; align-content:start; gap: 8px; min-width:0; max-height:320px; overflow:auto; margin:0; padding: 16px; border: 1px solid #b7c7bd; border-radius: 12px; background: #fff; box-shadow: 0 4px 14px rgba(19, 37, 29, .06); }
 .boq-review-launcher span { color: var(--muted); font-size: 11px; }
 .boq-review-launcher button { justify-self: start; }
+.boq-review-action-overlay { z-index: 200; }
 .boq-extraction-review-panel { width: min(1320px, 97vw); }
 .boq-extraction-review-table { max-height: 64vh; overflow: auto; overscroll-behavior: contain; }
 .boq-extraction-review-table table { min-width: 1080px; }

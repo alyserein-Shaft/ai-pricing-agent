@@ -11742,13 +11742,11 @@ export default function Home() {
                   )}
                   {document.boq_extraction_id && (
                     <>
-                      <a
-                        href={`/api/documents/${encodeURIComponent(document.id)}/boq-extraction/items`}
-                        target="_blank"
-                        rel="noreferrer"
+                      <button
+                        onClick={() => void openBoqExtractionReview(document)}
                       >
                         Review extracted rows
-                      </a>
+                      </button>
                       <a
                         href={`/api/documents/${encodeURIComponent(document.id)}/boq-extraction/export`}
                       >
@@ -21671,7 +21669,7 @@ export default function Home() {
 
       {boqReviewAction && (
         <div
-          className="match-overlay"
+          className="match-overlay boq-review-action-overlay"
           role="dialog"
           aria-modal="true"
           aria-labelledby="boq-review-action-title"

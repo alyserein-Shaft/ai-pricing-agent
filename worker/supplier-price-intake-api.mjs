@@ -1,7 +1,12 @@
 import { extractSupplierQuote, exactProductCandidates, supplierPriceEligibility, SUPPLIER_PRICE_INTAKE_VERSION } from "../app/domain/supplier-price-intake.mjs";
+import { extractSupplierQuotePdf } from "../app/domain/supplier-price-pdf.mjs";
 import { applicationActor, resolveApplicationContext } from "./application-context.mjs";
 import { requireMigratedTables } from "./schema-requirements.mjs";
 import { CANONICAL_DISCOVERY_PRODUCT_PREDICATE } from "./canonical-product-authority.mjs";
+import {
+  persistSupplierQuoteKnowledgeMemory,
+  persistSupplierQuoteKnowledgeMemoryFromRun,
+} from "./supplier-price-memory.mjs";
 
 const TABLES = ["supplier_quote_intake_runs", "supplier_quote_intake_rows", "supplier_quote_intake_events", "library_products", "product_sources", "price_records", "suppliers"];
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
@@ -22,26 +27,45 @@ const ownedDocument = (db, projectId, documentId, userId) => db.prepare("SELECT 
 
 export const executeSupplierQuoteExtraction = async (env, { documentId, userId }) => {
   await requireMigratedTables(env.DB, TABLES);
-  const document = await env.DB.prepare("SELECT d.id,d.project_id,d.current_version_id,v.original_filename,v.extension,v.sha256,v.object_key FROM documents d JOIN projects p ON p.id=d.project_id JOIN document_versions v ON v.id=d.current_version_id WHERE d.id=? AND p.owner_user_id=? AND d.deleted_at IS NULL").bind(documentId, userId).first();
+  const document = await env.DB.prepare("SELECT d.id,d.project_id,d.current_version_id,p.organization_id,v.original_filename,v.extension,v.mime_type,v.byte_size,v.sha256,v.object_key FROM documents d JOIN projects p ON p.id=d.project_id JOIN document_versions v ON v.id=d.current_version_id WHERE d.id=? AND p.owner_user_id=? AND d.deleted_at IS NULL").bind(documentId, userId).first();
   if (!document) throw Object.assign(new Error("Supplier quotation document was not found in this project."), { code: "DOCUMENT_NOT_FOUND" });
-  if (!["xls", "xlsx", "csv"].includes(String(document.extension).toLowerCase())) throw Object.assign(new Error("Structured supplier quote extraction supports XLS, XLSX and CSV only."), { code: "UNSUPPORTED_SUPPLIER_QUOTE_FORMAT" });
+  if (!["xls", "xlsx", "csv", "pdf"].includes(String(document.extension).toLowerCase())) throw Object.assign(new Error("Supplier quote extraction supports XLS, XLSX, CSV and readable PDF files."), { code: "UNSUPPORTED_SUPPLIER_QUOTE_FORMAT" });
   const fingerprint = `${document.sha256}:${SUPPLIER_PRICE_INTAKE_VERSION}`;
   const duplicate = await env.DB.prepare("SELECT * FROM supplier_quote_intake_runs WHERE project_id=? AND document_version_id=? AND input_fingerprint=?").bind(document.project_id, document.current_version_id, fingerprint).first();
-  if (duplicate) return { run: duplicate, idempotent: true };
+  if (duplicate) {
+    const memory = await persistSupplierQuoteKnowledgeMemoryFromRun(env, {
+      document,
+      run: duplicate,
+      userId,
+    });
+    return { run: duplicate, memory, idempotent: true };
+  }
   const object = await env.FILES.get(document.object_key);
   if (!object) throw Object.assign(new Error("Stored supplier quotation is unavailable."), { code: "STORAGE_OBJECT_MISSING" });
-  const result = extractSupplierQuote(new Uint8Array(await object.arrayBuffer()), { extension: document.extension, fileName: document.original_filename });
+  const bytes = new Uint8Array(await object.arrayBuffer());
+  const result = String(document.extension).toLowerCase() === "pdf"
+    ? await extractSupplierQuotePdf(bytes, { fileName: document.original_filename })
+    : extractSupplierQuote(bytes, { extension: document.extension, fileName: document.original_filename });
   const runId = makeId("supplierquoteintake");
   const candidateCount = result.rows.filter(row => row.rowType === "SUPPLIER_LINE").length;
   const statements = [env.DB.prepare("INSERT INTO supplier_quote_intake_runs (id,project_id,document_id,document_version_id,source_checksum,parser_version,input_fingerprint,status,supplier_name,quotation_reference,issue_date,valid_until,currency,row_count,candidate_count,created_by,completed_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(runId, document.project_id, document.id, document.current_version_id, document.sha256, `${result.parser}:${result.parserVersion}`, fingerprint, "NEEDS REVIEW", result.metadata.supplier, result.metadata.quotationReference, result.metadata.issueDate, result.metadata.validUntil, result.metadata.currency, result.rows.length, candidateCount, userId, now())];
   for (const row of result.rows) statements.push(env.DB.prepare("INSERT INTO supplier_quote_intake_rows (id,intake_run_id,project_id,document_id,document_version_id,row_type,sheet_name,row_number,item_number,supplier_name,quotation_reference,manufacturer,part_number,description,unit,quantity,currency,list_price_minor,unit_price_minor,discount_basis_points,net_price_minor,issue_date,valid_until,raw_values,review_status) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, 'Needs Review')").bind(makeId("supplierquoteline"), runId, document.project_id, document.id, document.current_version_id, row.rowType, row.sheet, row.rowNumber, row.itemNumber, row.supplier, row.quotationReference, row.manufacturer, row.partNumber, row.description, row.unit, row.quantity, row.currency, minor(row.listPrice), minor(row.unitPrice), basisPoints(row.discount), minor(row.netUnitPrice), row.issueDate, row.validUntil, JSON.stringify(row.raw)));
   statements.push(env.DB.prepare("INSERT INTO supplier_quote_intake_events (id,project_id,intake_run_id,action,new_value,reason,actor_user_id,request_id) VALUES (?,?,?,?,?,?,?,?)").bind(makeId("supplierquoteevent"), document.project_id, runId, "EXTRACT", JSON.stringify({ rowCount: result.rows.length, candidateCount, parser: result.parser }), "Structured supplier quotation extraction", userId, makeId("request")));
   await env.DB.batch(statements);
-  return { run: await env.DB.prepare("SELECT * FROM supplier_quote_intake_runs WHERE id=?").bind(runId).first(), idempotent: false };
+  const memory = await persistSupplierQuoteKnowledgeMemory(env, {
+    document,
+    result,
+    userId,
+  });
+  return {
+    run: await env.DB.prepare("SELECT * FROM supplier_quote_intake_runs WHERE id=?").bind(runId).first(),
+    memory,
+    idempotent: false,
+  };
 };
 
 const lineView = row => {
-  const eligibility = supplierPriceEligibility({ rowType: row.row_type, productId: row.product_id, mappingActorId: row.mapped_by, mappingBasis: row.mapping_basis, currency: row.currency, netUnitPrice: row.net_price_minor, unitPrice: row.unit_price_minor, supplier: row.supplier_name, supplierId: row.supplier_id, documentId: row.document_id, documentVersionId: row.document_version_id, issueDate: row.issue_date, validUntil: row.valid_until, reviewStatus: row.review_status, downstreamUse: row.promoted_price_record_id ? "Costing Eligible" : "Discovery Only" });
+  const eligibility = supplierPriceEligibility({ rowType: row.row_type, productId: row.product_id, mappingActorId: row.mapped_by, mappingBasis: row.mapping_basis, currency: row.currency, netUnitPrice: row.net_price_minor, unitPrice: row.unit_price_minor, supplier: row.supplier_name, supplierId: row.supplier_id, quotationReference: row.quotation_reference, documentId: row.document_id, documentVersionId: row.document_version_id, issueDate: row.issue_date, validUntil: row.valid_until, reviewStatus: row.review_status, downstreamUse: row.promoted_price_record_id ? "Costing Eligible" : "Discovery Only" });
   return { ...row, raw_values: JSON.parse(row.raw_values || "{}"), eligibility };
 };
 
