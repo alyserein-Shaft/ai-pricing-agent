@@ -1313,6 +1313,17 @@ tbody tr:hover td { background: #f9fcff; }
 .classification-summary > span { justify-self: start; }
 .boq-extraction-summary { display: grid; gap: 4px; margin-top: 8px; padding: 10px; border: 1px solid #d8cfae; border-radius: 10px; background: #fffaf0; }
 .boq-extraction-summary > span { justify-self: start; }
+.price-library-import-summary { display: grid; gap: 7px; margin-top: 8px; padding: 10px; border: 1px solid #b9d6c7; border-radius: 10px; background: #f4fbf7; }
+.price-library-import-summary > span { justify-self: start; }
+.price-library-import-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 12px; font-size: 11px; color: var(--muted); }
+.price-library-import-warnings { display: grid; gap: 3px; color: #8a5311; }
+.price-library-import-links { display: flex; flex-wrap: wrap; gap: 6px; }
+.price-library-import-links button { border: 1px solid #9bbbac; border-radius: 7px; background: #fff; color: #155b38; padding: 6px 9px; cursor: pointer; }
+.source-unresolved-rows { display: grid; gap: 6px; max-height: 280px; overflow: auto; }
+.source-unresolved-rows article { display: grid; gap: 2px; padding: 7px; border: 1px solid #d8e3dd; border-radius: 7px; background: #fff; }
+.library-pagination { display: flex; justify-content: center; align-items: center; gap: 10px; padding: 12px; }
+.library-pagination button { min-height: 34px; border: 1px solid #ccd8df; border-radius: 7px; background: #fff; padding: 6px 12px; cursor: pointer; }
+.library-pagination button:disabled { cursor: not-allowed; opacity: .5; }
 .review-launcher-stack { position:static; z-index:auto; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; width:auto; max-width:none; margin:16px 28px 24px 216px; align-items:start; }
 .main-content { padding-bottom:24px; }
 .boq-review-launcher { position: relative; display: grid; align-content:start; gap: 8px; min-width:0; max-height:320px; overflow:auto; margin:0; padding: 16px; border: 1px solid #b7c7bd; border-radius: 12px; background: #fff; box-shadow: 0 4px 14px rgba(19, 37, 29, .06); }
@@ -1431,6 +1442,8 @@ tbody tr:hover td { background: #f9fcff; }
 .managed-document-actions::before { content: "FILE ACTIONS"; flex-basis: 100%; color: var(--muted); font-size: 9px; font-weight: 800; letter-spacing: .08em; }
 .managed-document-actions a, .managed-document-actions button { min-height: 34px; border: 1px solid #ccd8df; border-radius: 7px; background: #fff; color: #21313b; padding: 6px 8px; font: inherit; font-size: 10px; text-decoration: none; cursor: pointer; }
 .managed-document-actions a:hover, .managed-document-actions button:hover { border-color: #6f9fc9; background: #f3f8fc; }
+.managed-document-actions .price-library-import-primary { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 800; }
+.managed-document-actions .price-library-import-primary:disabled { cursor: wait; opacity: .65; }
 .managed-document-row > div:first-child > p { margin: 5px 0; }
 .managed-document-row > div:first-child > small { line-height: 1.5; }
 .managed-document-state { align-self: center; }

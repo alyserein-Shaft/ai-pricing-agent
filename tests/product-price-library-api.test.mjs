@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { handleProductPriceLibraryApi } from "../worker/product-price-library-api.mjs";
+import { handleProductPriceLibraryApi, persistGeneralXlsxPriceList } from "../worker/product-price-library-api.mjs";
 
 test("library API fails closed when the server single-user context is unavailable", async () => {
   const response = await handleProductPriceLibraryApi(new Request("https://local/api/library/products"), { DB: {}, IDENTITY_AUTH_MODE: "sites" });
@@ -30,4 +30,20 @@ test("API exposes explicit safety gates rather than product matching", async () 
   assert.match(source, /PRICE_VALIDITY_REQUIRED/);
   assert.match(source, /approval_status === "Approved"/);
   assert.match(source, /downstream_use === "Costing"/);
+});
+
+test("general price-list persistence is idempotent by document SHA-256", async () => {
+  const DB = { prepare(sql) { assert.match(sql, /product_sources WHERE checksum/); return { bind(checksum) { assert.equal(checksum, "sha-existing"); return { first: async () => ({ id: "source-existing" }) }; } }; } };
+  const result = await persistGeneralXlsxPriceList({ DB }, { bytes: new Uint8Array(), document: { sha256: "sha-existing" }, user: { id: "user-a" } });
+  assert.deepEqual(result, { sourceId: "source-existing", idempotent: true, duplicateBasis: "SHA-256" });
+});
+
+test("confirmed catalogue and price-list ingestion selects structure-specific or general importer without BOQ extraction", async () => {
+  const source = await readFile(new URL("../worker/product-price-library-api.mjs", import.meta.url), "utf8");
+  assert.match(source, /hasHoneywellFarenhytWorkbookStructure\(bytes\)/);
+  assert.match(source, /persistGeneralXlsxPriceList/);
+  assert.match(source, /price list\|product catalogue/);
+  assert.doesNotMatch(source, /persistGeneralXlsxPriceList[\s\S]{0,250}BOQ extraction/i);
+  assert.match(source, /costingEligiblePrices: 0/);
+  assert.match(source, /approved_for_discovery,created_by[\s\S]*'Needs Review',0/);
 });

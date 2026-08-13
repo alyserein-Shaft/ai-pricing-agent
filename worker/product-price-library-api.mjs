@@ -11,6 +11,71 @@ const decision = async (db, user, entityType, entityId, action, previousValue, n
 const visibleProduct = async (db, productId) => db.prepare("SELECT p.*, m.name manufacturer, b.name brand, f.name family FROM canonical_library_products p JOIN product_manufacturers m ON m.id=p.manufacturer_id LEFT JOIN product_brands b ON b.id=p.brand_id LEFT JOIN product_families f ON f.id=p.family_id WHERE p.requested_product_id=?").bind(productId).first();
 const mapProduct = (row) => ({ ...row, attributes: parse(row.attributes, []), standards: parse(row.standards, []), approvedForDiscovery: Boolean(row.approved_for_discovery) });
 
+export const queryLibraryProducts = async (db, { query = "", discovery = false, sourceId = null, page = 1, pageSize = 50 } = {}) => {
+  const safePage = Math.max(1, Number(page) || 1);
+  const safePageSize = Math.min(200, Math.max(1, Number(pageSize) || 50));
+  const q = `%${String(query || "").trim().toLowerCase()}%`;
+  const sourceJoin = sourceId
+    ? "JOIN (SELECT DISTINCT product_id FROM product_source_evidence WHERE source_id=?) source_scope ON source_scope.product_id=requested.id"
+    : "";
+  const where = `WHERE (?='%%' OR lower(requested.part_number) LIKE ? OR lower(requested.description) LIKE ? OR lower(c.part_number) LIKE ?
+    OR lower(c.description) LIKE ? OR lower(m.name) LIKE ?
+    OR EXISTS (SELECT 1 FROM product_aliases a WHERE a.product_id IN (requested.id,c.id) AND a.deleted_at IS NULL AND lower(a.alias) LIKE ?)
+    OR EXISTS (SELECT 1 FROM manufacturer_order_code_observations o WHERE o.canonical_product_id=c.id AND o.status='Active' AND lower(o.original_order_code) LIKE ?))
+    AND (?=0 OR c.approved_for_discovery=1)`;
+  const commonBindings = [q, q, q, q, q, q, q, q, discovery ? 1 : 0];
+  const sourceBindings = sourceId ? [sourceId] : [];
+  const count = await db.prepare(`SELECT COUNT(DISTINCT requested.id) total_products
+    FROM library_products requested
+    ${sourceJoin}
+    JOIN canonical_library_products c ON c.requested_product_id=requested.id
+    JOIN product_manufacturers m ON m.id=c.manufacturer_id
+    LEFT JOIN product_brands b ON b.id=c.brand_id LEFT JOIN product_families f ON f.id=c.family_id
+    ${where}`).bind(...sourceBindings, ...commonBindings).first();
+  const totalProducts = Number(count?.total_products || 0);
+  const result = await db.prepare(`SELECT DISTINCT c.*, requested.id requested_product_id, requested.part_number requested_part_number,
+    requested.identity_status requested_identity_status, requested.review_status requested_review_status,
+    requested.approved_for_discovery requested_approved_for_discovery,
+    m.name manufacturer, b.name brand, f.name family,
+    EXISTS (SELECT 1 FROM product_lifecycle_events lifecycle WHERE lifecycle.product_id=c.id AND lower(lifecycle.lifecycle_status)='active') lifecycle_evidence_supported
+    FROM library_products requested
+    ${sourceJoin}
+    JOIN canonical_library_products c ON c.requested_product_id=requested.id
+    JOIN product_manufacturers m ON m.id=c.manufacturer_id
+    LEFT JOIN product_brands b ON b.id=c.brand_id LEFT JOIN product_families f ON f.id=c.family_id
+    ${where}
+    ORDER BY CASE WHEN lower(requested.part_number)=lower(trim(?,'%')) THEN 0 ELSE 1 END, m.name, requested.part_number
+    LIMIT ? OFFSET ?`).bind(...sourceBindings, ...commonBindings, q, safePageSize, (safePage - 1) * safePageSize).all();
+  return {
+    products: (result.results || []).map((row) => ({
+      ...mapProduct(row),
+      canonicalProductId: row.id,
+      canonicalPartNumber: row.part_number,
+      requestedProductId: row.requested_product_id,
+      requestedPartNumber: row.requested_part_number,
+      requestedIdentityStatus: row.requested_identity_status,
+      reviewStatus: row.requested_review_status,
+      approvedForDiscovery: Boolean(row.requested_approved_for_discovery),
+      lifecycleEvidenceSupported: Boolean(row.lifecycle_evidence_supported),
+      resolvesToCanonical: row.requested_product_id !== row.id,
+    })),
+    page: safePage,
+    pageSize: safePageSize,
+    totalProducts,
+    totalPages: Math.max(1, Math.ceil(totalProducts / safePageSize)),
+  };
+};
+
+export const visibleLibrarySource = async (db, { sourceId, projectId = null, userId }) => {
+  if (!sourceId) return null;
+  const source = await db.prepare("SELECT id,scope_type,project_id FROM product_sources WHERE id=?").bind(sourceId).first();
+  if (!source) return null;
+  if (projectId && !(await ownedProject(db, projectId, userId))) return null;
+  if (source.scope_type === "Global") return source;
+  if (!source.project_id || (projectId && source.project_id !== projectId)) return null;
+  return await ownedProject(db, source.project_id, userId) ? source : null;
+};
+
 export const persistHoneywellLibrary = async (env, { bytes, document, user }) => {
   const sourceExists = await env.DB.prepare("SELECT id FROM product_sources WHERE checksum=? AND scope_type='Global' AND project_id IS NULL").bind(document.sha256).first();
   if (sourceExists) return { sourceId: sourceExists.id, idempotent: true };
@@ -36,6 +101,27 @@ export const persistHoneywellLibrary = async (env, { bytes, document, user }) =>
   for (const event of extracted.lifecycle) statements.push(env.DB.prepare("INSERT INTO product_lifecycle_events (id, source_id, product_id, obsolete_part_number, lifecycle_status, replacement_candidates, review_status, source_location) VALUES (?, ?, (SELECT id FROM library_products WHERE manufacturer_id=? AND normalized_part_number=?), ?, ?, ?, 'Needs Review', ?)").bind(id("lifecycle"), sourceId, resolvedManufacturerId, event.obsoletePart.toUpperCase().replace(/\s+/g, ""), event.obsoletePart, event.lifecycleStatus, JSON.stringify(event.replacementCandidates), JSON.stringify(event.source)));
   for (let offset = 0; offset < statements.length; offset += 50) await env.DB.batch(statements.slice(offset, offset + 50));
   return { sourceId, idempotent: false, summary: extracted.summary, safety: { productsApproved: 0, currentPricesApproved: 0, downstreamUse: "Discovery Only" } };
+};
+
+export const persistGeneralXlsxPriceList = async (env, { bytes, document, user }) => {
+  const existing = await env.DB.prepare("SELECT id FROM product_sources WHERE checksum=? AND scope_type='Global' AND project_id IS NULL").bind(document.sha256).first();
+  if (existing) return { sourceId: existing.id, idempotent: true, duplicateBasis: "SHA-256" };
+  const extracted = ingestGeneralXlsxPriceList(bytes, { documentId: document.document_id, documentVersionId: document.id, fileName: document.original_filename, sha256: document.sha256 });
+  const sourceId = id("productsource"), statements = [], manufacturerIds = new Map(), brandIds = new Map(), productIds = new Map();
+  statements.push(env.DB.prepare("INSERT INTO product_sources (id, project_id, document_id, document_version_id, checksum, source_type, authority, scope_type, file_name, release_version, effective_from, valid_until, currency, validity_state, review_status, downstream_use, metadata, created_by) VALUES (?, NULL, ?, ?, ?, ?, 'Source Document — Review Required', 'Global', ?, NULL, NULL, NULL, ?, 'Validity Review Required', 'Needs Review', 'Discovery Only', ?, ?)").bind(sourceId, document.document_id, document.id, document.sha256, document.document_type, document.original_filename, extracted.priceSource.currency, JSON.stringify({ importer: extracted.importer, parserVersion: extracted.parserVersion, summary: extracted.summary, warnings: extracted.warnings, unresolvedRows: extracted.unresolvedRows, unknownCurrencyPriceCandidates: extracted.prices.filter(price => !price.currency) }), user.id));
+  for (const product of extracted.products) {
+    const manufacturerKey = String(product.manufacturer).toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim();
+    let manufacturerId = manufacturerIds.get(manufacturerKey);
+    if (!manufacturerId) { const existingManufacturer = await env.DB.prepare("SELECT id FROM product_manufacturers WHERE normalized_name=?").bind(manufacturerKey).first(); manufacturerId = existingManufacturer?.id || id("manufacturer"); manufacturerIds.set(manufacturerKey, manufacturerId); if (!existingManufacturer) statements.push(env.DB.prepare("INSERT INTO product_manufacturers (id,name,normalized_name,status,created_by) VALUES (?,?,?,'Needs Review',?)").bind(manufacturerId, product.manufacturer, manufacturerKey, user.id)); }
+    let brandId = null;
+    if (product.brand) { const brandKey = `${manufacturerId}:${String(product.brand).toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim()}`; brandId = brandIds.get(brandKey); if (!brandId) { const normalizedBrand = brandKey.slice(brandKey.indexOf(":") + 1), existingBrand = await env.DB.prepare("SELECT id FROM product_brands WHERE manufacturer_id=? AND normalized_name=?").bind(manufacturerId, normalizedBrand).first(); brandId = existingBrand?.id || id("brand"); brandIds.set(brandKey, brandId); if (!existingBrand) statements.push(env.DB.prepare("INSERT INTO product_brands (id,manufacturer_id,name,normalized_name,status) VALUES (?,?,?,?,'Needs Review')").bind(brandId, manufacturerId, product.brand, normalizedBrand)); } }
+    let productId = productIds.get(product.id);
+    if (!productId) { const existingProduct = await env.DB.prepare("SELECT id FROM canonical_library_products WHERE requested_product_id=id AND manufacturer_id=? AND normalized_part_number=? LIMIT 1").bind(manufacturerId, product.normalizedPartNumber).first(); productId = existingProduct?.id || id("product"); productIds.set(product.id, productId); if (!existingProduct) statements.push(env.DB.prepare("INSERT OR IGNORE INTO library_products (id,manufacturer_id,brand_id,family_id,part_number,normalized_part_number,description,lifecycle_status,attributes,standards,review_status,approved_for_discovery,created_by) VALUES (?,?,?,NULL,?,?,?,'Unknown — Review Required',?,'[]','Needs Review',0,?)").bind(productId, manufacturerId, brandId, product.partNumber, product.normalizedPartNumber, product.description, JSON.stringify([{ name: "source_quantity", value: product.quantity, authority: "Source Fact Only" }, { name: "source_unit", value: product.unit, authority: "Source Fact Only" }, { name: "source_code", value: product.code, authority: "Source Fact Only" }, { name: "source_cd", value: product.cd, authority: "Source Fact Only" }, { name: "source_discount", value: product.discount, authority: "Source Fact Only — Not a Discount Rule" }, { name: "source_section", value: product.section, authority: "Source Fact Only" }]), user.id)); }
+    statements.push(env.DB.prepare("INSERT OR IGNORE INTO product_source_evidence (id,product_id,source_id,sheet,row_number,cells,original_text,parser_version) VALUES (?,?,?,?,?,?,?,?)").bind(id("evidence"), productId, sourceId, product.source.sheet, product.source.row, JSON.stringify({ references: product.source.cells, originalValues: product.source.originalValues }), product.description, GENERAL_XLSX_PRICE_LIST_VERSION));
+  }
+  for (const price of extracted.prices) { if (!price.currency) continue; const productId = productIds.get(price.productId); if (!productId) continue; statements.push(env.DB.prepare("INSERT OR IGNORE INTO price_records (id,product_id,source_id,amount_minor,currency,price_type,effective_from,valid_until,validity_state,approval_status,downstream_use,source_location) VALUES (?,?,?,?,?,?,NULL,NULL,'Validity Review Required','Needs Review','Discovery Only',?)").bind(id("price"), productId, sourceId, Math.round(price.amount * 100), price.currency, price.priceType, JSON.stringify({ ...price.source, quantity: price.quantity, unit: price.unit, code: price.code, cd: price.cd, discount: price.discount, discountAuthority: "Source Fact Only — Not an Approved Rule" })) ); }
+  for (let offset = 0; offset < statements.length; offset += 50) await env.DB.batch(statements.slice(offset, offset + 50));
+  return { sourceId, idempotent: false, importer: extracted.importer, summary: extracted.summary, warnings: extracted.warnings, safety: { productsApproved: 0, validCurrentPrices: 0, costingEligiblePrices: 0, downstreamUse: "Discovery Only", boqRecordsModified: 0, matchingInvoked: false } };
 };
 
 export const persistIfp75Datasheet = async (env, { document, user }) => {
@@ -81,20 +167,19 @@ export const handleProductPriceLibraryApi = async (request, env) => {
   if (url.pathname === "/api/library/taxonomy" && request.method === "GET") return json({ version: FIRE_ALARM_LIBRARY_VERSION, engineeringDomain: "Fire Alarm", taxonomy: FIRE_ALARM_TAXONOMY, attributeProfiles: FIRE_ALARM_ATTRIBUTE_PROFILES });
 
   if (url.pathname === "/api/library/products" && request.method === "GET") {
-    const q = `%${String(url.searchParams.get("q") || "").trim().toLowerCase()}%`; const discovery = url.searchParams.get("discovery") === "true";
-    const result = await env.DB.prepare(`SELECT c.*, requested.id requested_product_id, requested.part_number requested_part_number,
-      requested.identity_status requested_identity_status, m.name manufacturer, b.name brand, f.name family
-      FROM library_products requested
-      JOIN canonical_library_products c ON c.requested_product_id=requested.id
-      JOIN product_manufacturers m ON m.id=c.manufacturer_id
-      LEFT JOIN product_brands b ON b.id=c.brand_id LEFT JOIN product_families f ON f.id=c.family_id
-      WHERE (?='%%' OR lower(requested.part_number) LIKE ? OR lower(requested.description) LIKE ? OR lower(c.part_number) LIKE ?
-        OR lower(c.description) LIKE ? OR lower(m.name) LIKE ?
-        OR EXISTS (SELECT 1 FROM product_aliases a WHERE a.product_id IN (requested.id,c.id) AND a.deleted_at IS NULL AND lower(a.alias) LIKE ?)
-        OR EXISTS (SELECT 1 FROM manufacturer_order_code_observations o WHERE o.canonical_product_id=c.id AND o.status='Active' AND lower(o.original_order_code) LIKE ?))
-      AND (?=0 OR c.approved_for_discovery=1)
-      ORDER BY CASE WHEN lower(requested.part_number)=lower(trim(?,'%')) THEN 0 ELSE 1 END, m.name, requested.part_number LIMIT 200`).bind(q, q, q, q, q, q, q, q, discovery ? 1 : 0, q).all();
-    return json({ products: (result.results || []).map((row) => ({ ...mapProduct(row), canonicalProductId: row.id, canonicalPartNumber: row.part_number, requestedProductId: row.requested_product_id, requestedPartNumber: row.requested_part_number, requestedIdentityStatus: row.requested_identity_status, resolvesToCanonical: row.requested_product_id !== row.id })), safety: { matchingPerformed: false, priceEligibilityInferred: false } });
+    const sourceId = url.searchParams.get("sourceId");
+    if (sourceId) {
+      const requestedProjectId = url.searchParams.get("projectId");
+      if (!(await visibleLibrarySource(env.DB, { sourceId, projectId: requestedProjectId, userId: user.id }))) return json({ error: { code: "PRODUCT_SOURCE_NOT_FOUND", message: "Product source not found." } }, 404);
+    }
+    const result = await queryLibraryProducts(env.DB, {
+      query: url.searchParams.get("q") || "",
+      discovery: url.searchParams.get("discovery") === "true",
+      sourceId,
+      page: url.searchParams.get("page") || 1,
+      pageSize: url.searchParams.get("pageSize") || 50,
+    });
+    return json({ ...result, sourceId: sourceId || null, safety: { matchingPerformed: false, priceEligibilityInferred: false, commercialApprovalInferred: false } });
   }
   if (url.pathname === "/api/library/sources" && request.method === "GET") {
     const projectId = url.searchParams.get("projectId"); if (!(await ownedProject(env.DB, projectId, user.id))) return json({ error: { code: "PROJECT_NOT_FOUND", message: "Project not found." } }, 404);
@@ -108,7 +193,7 @@ export const handleProductPriceLibraryApi = async (request, env) => {
     return json({ page, pageSize, prices: rows.results || [], safety: { finalPriceSelectionPerformed: false, costingEligibilityInferred: false } });
   }
   const ingestMatch = url.pathname.match(/^\/api\/library\/document-versions\/([^/]+)\/ingest$/);
-  if (ingestMatch && request.method === "POST") { if (!canGovernGlobal(user.role)) return json({ error: { code: "LIBRARY_ROLE_REQUIRED", message: "A Library Manager or Administrator must ingest global product sources." } }, 403); const document = await env.DB.prepare("SELECT v.*, d.document_type, d.project_id FROM document_versions v JOIN documents d ON d.id=v.document_id JOIN projects p ON p.id=d.project_id WHERE v.id=? AND p.owner_user_id=?").bind(decodeURIComponent(ingestMatch[1]), user.id).first(); if (!document) return json({ error: { code: "DOCUMENT_VERSION_NOT_FOUND", message: "Document version not found." } }, 404); if (!/price list|product catalogue|product datasheet/i.test(document.document_type)) return json({ error: { code: "SOURCE_CLASSIFICATION_REQUIRED", message: "Confirm this document as a Price List, Product Catalogue, or Product Datasheet before ingestion." } }, 409); const object = await env.FILES.get(document.object_key); if (!object) return json({ error: { code: "SOURCE_OBJECT_MISSING", message: "The source file is unavailable." } }, 409); try { if (/product datasheet/i.test(document.document_type)) return json(await persistIfp75Datasheet(env, { document, user }), 201); return json(await persistHoneywellLibrary(env, { bytes: new Uint8Array(await object.arrayBuffer()), document, user }), 201); } catch (error) { return json({ error: { code: error.code || "PRODUCT_LIBRARY_INGESTION_FAILED", message: error.message } }, 422); } }
+  if (ingestMatch && request.method === "POST") { if (!canGovernGlobal(user.role)) return json({ error: { code: "LIBRARY_ROLE_REQUIRED", message: "A Library Manager or Administrator must ingest global product sources." } }, 403); const document = await env.DB.prepare("SELECT v.*, d.document_type, d.project_id FROM document_versions v JOIN documents d ON d.id=v.document_id JOIN projects p ON p.id=d.project_id WHERE v.id=? AND p.owner_user_id=?").bind(decodeURIComponent(ingestMatch[1]), user.id).first(); if (!document) return json({ error: { code: "DOCUMENT_VERSION_NOT_FOUND", message: "Document version not found." } }, 404); if (!/price list|product catalogue|product datasheet/i.test(document.document_type)) return json({ error: { code: "SOURCE_CLASSIFICATION_REQUIRED", message: "Confirm this document as a Price List, Product Catalogue, or Product Datasheet before ingestion." } }, 409); const object = await env.FILES.get(document.object_key); if (!object) return json({ error: { code: "SOURCE_OBJECT_MISSING", message: "The source file is unavailable." } }, 409); try { if (/product datasheet/i.test(document.document_type)) return json(await persistIfp75Datasheet(env, { document, user }), 201); const bytes = new Uint8Array(await object.arrayBuffer()); return json(hasHoneywellFarenhytWorkbookStructure(bytes) ? await persistHoneywellLibrary(env, { bytes, document, user }) : await persistGeneralXlsxPriceList(env, { bytes, document, user }), 201); } catch (error) { return json({ error: { code: error.code || "PRODUCT_LIBRARY_INGESTION_FAILED", message: error.message } }, 422); } }
   const productMatch = url.pathname.match(/^\/api\/products\/([^/]+)(?:\/(prices|history|approve-discovery))?$/);
   if (productMatch) {
     const product = await visibleProduct(env.DB, decodeURIComponent(productMatch[1])); if (!product) return json({ error: { code: "PRODUCT_NOT_FOUND", message: "Product not found." } }, 404); const operation = productMatch[2] || "detail";
@@ -150,5 +235,5 @@ export const handleProductPriceLibraryApi = async (request, env) => {
   }
   return json({ error: { code: "PRODUCT_LIBRARY_API_NOT_FOUND", message: "Product library operation not found." } }, 404);
 };
-import { FIRE_ALARM_ATTRIBUTE_PROFILES, FIRE_ALARM_LIBRARY_VERSION, FIRE_ALARM_TAXONOMY, ingestHoneywellFarenhytWorkbook, PRODUCT_LIBRARY_VERSION } from "../app/domain/product-price-library.mjs";
+import { FIRE_ALARM_ATTRIBUTE_PROFILES, FIRE_ALARM_LIBRARY_VERSION, FIRE_ALARM_TAXONOMY, GENERAL_XLSX_PRICE_LIST_VERSION, hasHoneywellFarenhytWorkbookStructure, ingestGeneralXlsxPriceList, ingestHoneywellFarenhytWorkbook, PRODUCT_LIBRARY_VERSION } from "../app/domain/product-price-library.mjs";
 import { extractIfp75Datasheet, IFP75_DATASHEET_PARSER_VERSION, IFP75_DATASHEET_SOURCE_VERSION } from "../app/domain/ifp75-datasheet.mjs";

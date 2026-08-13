@@ -70,5 +70,72 @@ export const ingestHoneywellFarenhytWorkbook = (bytes, metadata = {}) => {
   return { libraryVersion: PRODUCT_LIBRARY_VERSION, rulesetVersion: PRICE_INGESTION_RULESET, manufacturer: { name: "Honeywell", normalizedName: "HONEYWELL", reliability: "Historical Reference" }, brand: { name: "Farenhyt", manufacturer: "Honeywell" }, priceSource: { sourceType: "Manufacturer Price List", documentId: metadata.documentId || null, fileName: metadata.fileName || null, releaseVersion: version, effectiveFrom: effective, validUntil: null, currency: "USD", validityState: "Historical — Validity End Missing", reliability: "Historical Reference", approvalStatus: "Needs Review", downstreamUse: "Discovery Only" }, families, products, prices, lifecycle, excludedSheets: workbook.sheets.filter((sheet) => ![catalogue.name, release.name, archive?.name].includes(sheet.name)).map((sheet) => ({ name: sheet.name, reason: "Not a classified catalogue, release-note, or lifecycle sheet" })), summary: { sheetsReviewed: workbook.sheets.length, productFamilies: families.length, productsDetected: products.length, pricesDetected: prices.length, lifecycleRecords: lifecycle.length, validCurrentPrices: 0, historicalPrices: prices.length, currency: "USD", releaseVersion: version, effectiveFrom: effective } };
 };
 
+export const GENERAL_XLSX_PRICE_LIST_VERSION = "general-xlsx-price-list-1.0.0";
+const generalHeaderAliases = Object.freeze({
+  partNumber: ["partnumber", "partno", "itemnumber", "itemno", "model", "modelnumber", "modelno", "sku"],
+  code: ["code", "productcode", "itemcode"], cd: ["cd"], description: ["description", "productdescription", "itemdescription", "details"],
+  listPrice: ["listprice", "manufacturerlistprice", "msrp"], price: ["price", "unitprice"], quantity: ["qty", "quantity"],
+  unit: ["unit", "uom"], discount: ["discount", "discountpercent", "discountpercentage"], manufacturer: ["manufacturer", "mfr", "maker"],
+  brand: ["brand", "productbrand"], currency: ["currency", "curr", "currencycode"],
+});
+const generalHeader = value => text(value).toLowerCase().replace(/[^a-z0-9]/g, "");
+const generalNumber = value => { if (typeof value === "number") return Number.isFinite(value) ? value : null; const normalized = text(value).replace(/,/g, "").replace(/\s*(?:%|[A-Z]{3})\s*$/i, ""); const number = Number(normalized); return normalized && Number.isFinite(number) ? number : null; };
+const generalCurrency = value => { const match = text(value).toUpperCase().match(/\b(USD|SAR|AED|EUR|GBP|QAR|KWD|BHD|OMR)\b/); return match?.[1] || null; };
+const rowText = row => row.cells.map(entry => text(entry.value)).filter(Boolean).join(" ");
+const mappedHeaders = row => { const columns = {}; for (const entry of row.cells) { const normalized = generalHeader(entry.value); for (const [field, aliases] of Object.entries(generalHeaderAliases)) if (!columns[field] && aliases.includes(normalized)) columns[field] = entry.column; } return columns; };
+const isGeneralPriceHeader = columns => Boolean(columns.description && (columns.listPrice || columns.price) && (columns.partNumber || columns.code));
+const generalValue = (row, column) => column ? row.cells.find(entry => entry.column === column)?.value ?? null : null;
+const explicitWorkbookCurrency = workbook => { const found = new Set(); for (const sheet of workbook.sheets) for (const row of sheet.rows) for (const entry of row.cells) { const currency = generalCurrency(entry.value); if (currency) found.add(currency); } return found.size === 1 ? [...found][0] : null; };
+const contextLabel = row => { const values = row?.cells.map(entry => text(entry.value)).filter(Boolean) || []; return values.length === 1 && values[0].length <= 100 && !/^\d+(?:\.\d+)?$/.test(values[0]) ? values[0] : null; };
+
+export const hasHoneywellFarenhytWorkbookStructure = bytes => { try { const workbook = parseXlsxWorkbook(bytes); return Boolean(workbook.sheets.some(sheet => sheet.name === "2023 Farenhyt") && workbook.sheets.some(sheet => sheet.name === "Release Notes")); } catch { return false; } };
+
+export const ingestGeneralXlsxPriceList = (bytes, metadata = {}) => {
+  const workbook = parseXlsxWorkbook(bytes, { fileName: metadata.fileName, sha256: metadata.sha256 });
+  const workbookCurrency = explicitWorkbookCurrency(workbook), products = [], prices = [], unresolvedRows = [], warnings = [], manufacturers = new Set(), brands = new Set(), processedSheets = new Set();
+  for (const sheet of workbook.sheets) {
+    const headerIndexes = sheet.rows.map((row, index) => ({ index, row, columns: mappedHeaders(row) })).filter(entry => isGeneralPriceHeader(entry.columns));
+    if (!headerIndexes.length) { warnings.push({ code: "PRICE_TABLE_NOT_DETECTED", sheet: sheet.name, message: "No supported price-list header was detected." }); continue; }
+    for (let tableIndex = 0; tableIndex < headerIndexes.length; tableIndex += 1) {
+      const header = headerIndexes[tableIndex], endIndex = headerIndexes[tableIndex + 1]?.index ?? sheet.rows.length;
+      const priorRows = sheet.rows.slice(Math.max(0, header.index - 3), header.index).reverse();
+      let contextManufacturer = priorRows.map(contextLabel).find(Boolean) || null, contextBrand = null, section = null;
+      if (!contextManufacturer && header.index === 0 && !/^(sheet|data|price|catalog)/i.test(sheet.name)) contextManufacturer = text(sheet.name) || null;
+      for (const row of sheet.rows.slice(header.index + 1, endIndex)) {
+        const nonempty = row.cells.filter(entry => text(entry.value));
+        if (!nonempty.length) continue;
+        if (nonempty.length <= 2 && !generalValue(row, header.columns.description) && !generalValue(row, header.columns.listPrice || header.columns.price)) { section = rowText(row); continue; }
+        const explicitManufacturer = text(generalValue(row, header.columns.manufacturer)) || null, explicitBrand = text(generalValue(row, header.columns.brand)) || null;
+        const manufacturer = explicitManufacturer || contextManufacturer, brand = explicitBrand || contextBrand;
+        let partNumber = text(generalValue(row, header.columns.partNumber)) || null, code = text(generalValue(row, header.columns.code)) || null;
+        const description = text(generalValue(row, header.columns.description)) || null, rawPrice = generalValue(row, header.columns.listPrice || header.columns.price), amount = generalNumber(rawPrice);
+        if (!partNumber && code && header.columns.code !== header.columns.quantity) partNumber = code;
+        const currency = generalCurrency(generalValue(row, header.columns.currency)) || generalCurrency(rawPrice) || workbookCurrency;
+        const quantityRaw = generalValue(row, header.columns.quantity), discountRaw = generalValue(row, header.columns.discount), cdRaw = generalValue(row, header.columns.cd), unit = text(generalValue(row, header.columns.unit)) || null;
+        const sourceCells = Object.fromEntries(Object.entries(header.columns).map(([field, column]) => [field, row.cells.find(entry => entry.column === column)?.reference || null]).filter(([, reference]) => reference));
+        const originalValues = Object.fromEntries(Object.entries(header.columns).map(([field, column]) => [field, generalValue(row, column)]));
+        const reasons = [];
+        if (!manufacturer) reasons.push("Manufacturer is not explicitly available from a cell, section heading, or worksheet context.");
+        if (!partNumber) reasons.push("Part number/model/code is missing.");
+        if (!description) reasons.push("Description is missing.");
+        if (!(amount > 0)) reasons.push("A positive explicit price is missing.");
+        if (amount > 0 && !currency) reasons.push("Currency is not explicitly provided.");
+        const provenance = { documentId: metadata.documentId || null, documentVersionId: metadata.documentVersionId || null, sha256: metadata.sha256 || null, sheet: sheet.name, row: row.sourceRow, cells: sourceCells, originalValues, extractionMethod: "native-xlsx-structure", parserVersion: GENERAL_XLSX_PRICE_LIST_VERSION };
+        if (reasons.length) unresolvedRows.push({ sheet: sheet.name, row: row.sourceRow, partNumber, code, description, manufacturer, brand, amount, currency, reasons, source: provenance });
+        if (!manufacturer || !partNumber || !description) continue;
+        processedSheets.add(sheet.name); manufacturers.add(manufacturer); if (brand) brands.add(brand);
+        const productKey = `${normalizePartNumber(manufacturer)}:${normalizePartNumber(partNumber)}`;
+        const cd = generalNumber(cdRaw) ?? (text(cdRaw) || null);
+        products.push({ id: `general-product:${productKey}`, manufacturer, brand, section, partNumber, normalizedPartNumber: normalizePartNumber(partNumber), code, cd, description, quantity: generalNumber(quantityRaw), unit, discount: generalNumber(discountRaw), reviewStatus: "Needs Review", approvedForDiscovery: false, source: provenance });
+        if (amount > 0) prices.push({ id: `general-price:${productKey}:${sheet.name}:${row.sourceRow}`, productId: `general-product:${productKey}`, amount, currency, priceType: header.columns.listPrice ? "Manufacturer List Price Candidate" : "Price Candidate", quantity: generalNumber(quantityRaw), unit, code, cd, discount: generalNumber(discountRaw), approvalStatus: "Needs Review", downstreamUse: "Discovery Only", costingEligible: false, validityState: "Validity Review Required", source: provenance });
+      }
+    }
+  }
+  if (!workbookCurrency) warnings.push({ code: "CURRENCY_NOT_EXPLICIT", message: "Workbook currency is absent or ambiguous; affected prices remain unresolved metadata only." });
+  if (unresolvedRows.some(row => !row.manufacturer)) warnings.push({ code: "MANUFACTURER_NOT_EXPLICIT", message: "Rows without explicit manufacturer evidence were not converted into products." });
+  const uniqueProductIdentities = new Set(products.map(product => product.id)).size;
+  return { libraryVersion: PRODUCT_LIBRARY_VERSION, parserVersion: GENERAL_XLSX_PRICE_LIST_VERSION, importer: "General XLSX Price List", priceSource: { documentId: metadata.documentId || null, documentVersionId: metadata.documentVersionId || null, fileName: metadata.fileName || null, checksum: metadata.sha256 || null, currency: workbookCurrency, reviewStatus: "Needs Review", downstreamUse: "Discovery Only" }, manufacturers: [...manufacturers], brands: [...brands], products, prices, unresolvedRows, warnings, summary: { sheetsReviewed: workbook.sheets.length, sheetsExtracted: processedSheets.size, manufacturersDetected: manufacturers.size, brandsDetected: brands.size, productObservationsProcessed: products.length, uniqueProductIdentities, repeatedObservationsConsolidated: products.length - uniqueProductIdentities, priceObservationsDetected: prices.length, productsDetected: products.length, pricesDetected: prices.length, explicitCurrencyPrices: prices.filter(price => Boolean(price.currency)).length, unresolvedRows: unresolvedRows.length, validCurrentPrices: 0, costingEligiblePrices: 0 } };
+};
+
 export const searchProductLibrary = (products, query, filters = {}) => { const needle = text(query).toLowerCase(); return products.filter((product) => (!needle || [product.partNumber, product.description, product.family, product.manufacturer, product.brand].some((value) => text(value).toLowerCase().includes(needle))) && (!filters.manufacturer || product.manufacturer === filters.manufacturer) && (!filters.family || product.family === filters.family) && (!filters.lifecycleStatus || product.lifecycleStatus === filters.lifecycleStatus) && (!filters.reviewStatus || product.reviewStatus === filters.reviewStatus)); };
 export const eligiblePrices = (prices, { at = new Date(), projectId = null } = {}) => prices.filter((price) => price.approvalStatus === "Approved" && price.validUntil && new Date(price.validUntil) >= at && (!price.projectId || price.projectId === projectId));

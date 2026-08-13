@@ -445,6 +445,39 @@ type DurableLibrarySource = {
   valid_until?: string | null;
   review_status: string;
   downstream_use: string;
+  document_version_id?: string | null;
+  currency?: string | null;
+  metadata?: {
+    importer?: string;
+    summary?: {
+      sheetsReviewed?: number;
+      sheetsExtracted?: number;
+      manufacturersDetected?: number;
+      productObservationsProcessed?: number;
+      uniqueProductIdentities?: number;
+      repeatedObservationsConsolidated?: number;
+      priceObservationsDetected?: number;
+      productsDetected?: number;
+      pricesDetected?: number;
+      explicitCurrencyPrices?: number;
+      unresolvedRows?: number;
+      costingEligiblePrices?: number;
+    };
+    warnings?: Array<{ code?: string; message?: string }>;
+    unresolvedRows?: Array<Record<string, any>>;
+    unknownCurrencyPriceCandidates?: unknown[];
+  } | null;
+};
+type PriceLibraryImportState = {
+  status: "Importing" | "Import failed" | "Imported" | "Already imported";
+  sourceId?: string;
+  error?: string;
+  result?: {
+    sourceId: string;
+    idempotent?: boolean;
+    summary?: Record<string, number>;
+    warnings?: Array<{ code?: string; message?: string }>;
+  };
 };
 type ClassificationReviewDraft = {
   document: ManagedDocument;
@@ -650,6 +683,9 @@ type LibraryProduct = {
   requestedPartNumber: string;
   requestedIdentityStatus: string;
   resolvesToCanonical: boolean;
+  approvedForDiscovery: boolean;
+  lifecycleEvidenceSupported: boolean;
+  reviewStatus?: string;
 };
 type LibraryProductDetail = {
   product: LibraryProduct & { attributes?: unknown[]; standards?: unknown[] };
@@ -2344,11 +2380,26 @@ export default function Home() {
   const [structureReviewError, setStructureReviewError] = useState("");
   const [librarySearch, setLibrarySearch] = useState("");
   const [libraryProducts, setLibraryProducts] = useState<LibraryProduct[]>([]);
+  const [libraryPage, setLibraryPage] = useState(1);
+  const [libraryPagination, setLibraryPagination] = useState({
+    page: 1,
+    pageSize: 50,
+    totalProducts: 0,
+    totalPages: 1,
+  });
   const [libraryLoading, setLibraryLoading] = useState(false);
   const [libraryError, setLibraryError] = useState("");
   const [selectedLibraryProduct, setSelectedLibraryProduct] =
     useState<LibraryProductDetail | null>(null);
   const [libraryDetailLoading, setLibraryDetailLoading] = useState(false);
+  const selectedLibrarySourceId =
+    typeof window === "undefined"
+      ? ""
+      : new URLSearchParams(window.location.search).get("sourceId") || "";
+  const selectedLibraryView =
+    typeof window === "undefined"
+      ? ""
+      : new URLSearchParams(window.location.search).get("libraryView") || "";
   const [caseStudySearch, setCaseStudySearch] = useState("");
   const [caseStudies, setCaseStudies] = useState<CaseStudySummary[]>([]);
   const [caseStudyLoading, setCaseStudyLoading] = useState(false);
@@ -2527,6 +2578,9 @@ export default function Home() {
     [],
   );
   const [durableLibrarySources, setDurableLibrarySources] = useState<DurableLibrarySource[]>([]);
+  const [priceLibraryImportByVersion, setPriceLibraryImportByVersion] = useState<
+    Record<string, PriceLibraryImportState>
+  >({});
   const durablePriceSourceHashes = durableLibrarySources.map((source) => source.checksum).filter(Boolean);
   const [indexedTechnicalHashes, setIndexedTechnicalHashes] = useState<
     string[]
@@ -7196,8 +7250,17 @@ export default function Home() {
       setLibraryLoading(true);
       setLibraryError("");
       try {
+        const query = new URLSearchParams({
+          q: librarySearch.trim(),
+          page: String(libraryPage),
+          pageSize: "50",
+        });
+        if (selectedLibrarySourceId) {
+          query.set("sourceId", selectedLibrarySourceId);
+          if (projectId) query.set("projectId", projectId);
+        }
         const response = await fetch(
-          `/api/library/products?q=${encodeURIComponent(librarySearch.trim())}`,
+          `/api/library/products?${query.toString()}`,
           { cache: "no-store", signal: controller.signal },
         );
         const result = await response.json();
@@ -7208,6 +7271,12 @@ export default function Home() {
         setLibraryProducts(
           Array.isArray(result.products) ? result.products : [],
         );
+        setLibraryPagination({
+          page: Number(result.page || 1),
+          pageSize: Number(result.pageSize || 50),
+          totalProducts: Number(result.totalProducts || 0),
+          totalPages: Number(result.totalPages || 1),
+        });
       } catch (error) {
         if (!controller.signal.aborted) {
           setLibraryProducts([]);
@@ -7225,7 +7294,11 @@ export default function Home() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [activeModule, librarySearch]);
+  }, [activeModule, librarySearch, libraryPage, selectedLibrarySourceId, projectId]);
+
+  useEffect(() => {
+    setLibraryPage(1);
+  }, [librarySearch, selectedLibrarySourceId]);
 
   useEffect(() => {
     if (activeModule !== "Case Studies") return;
@@ -7954,6 +8027,72 @@ export default function Home() {
             : document.processing_status === "Completed"
               ? "Available to downstream modules"
               : "Monitor processing";
+
+  const isPriceLibraryDocument = (document: ManagedDocument) =>
+    ["Price List", "Product Catalogue"].includes(
+      document.predicted_type || document.document_type || "",
+    );
+
+  const isPriceLibraryClassificationConfirmed = (document: ManagedDocument) =>
+    document.classification_status === "Manually Confirmed" ||
+    (document.classification_status === "Classified" &&
+      Number(document.classification_confidence || 0) >= 80 &&
+      !document.manual_review_required);
+
+  const importedSourceForDocument = (document: ManagedDocument) =>
+    durableLibrarySources.find(
+      (source) =>
+        (document.version_id && source.document_version_id === document.version_id) ||
+        source.checksum === document.sha256,
+    );
+
+  const importDocumentToPriceLibrary = async (document: ManagedDocument) => {
+    if (!document.version_id) return;
+    const versionId = document.version_id;
+    if (priceLibraryImportByVersion[versionId]?.status === "Importing") return;
+    setPriceLibraryImportByVersion((current) => ({
+      ...current,
+      [versionId]: { status: "Importing" },
+    }));
+    try {
+      const result = await requestJson<NonNullable<PriceLibraryImportState["result"]>>(
+        commercialApi.ingestLibraryDocument(versionId),
+        { method: "POST" },
+      );
+      await refreshDurableLibrarySources();
+      setPriceLibraryImportByVersion((current) => ({
+        ...current,
+        [versionId]: {
+          status: result.idempotent ? "Already imported" : "Imported",
+          sourceId: result.sourceId,
+          result,
+        },
+      }));
+      showToast(
+        result.idempotent
+          ? "This file was already imported; the persisted result was restored"
+          : "Price Library import completed — review is required",
+      );
+    } catch (error) {
+      setPriceLibraryImportByVersion((current) => ({
+        ...current,
+        [versionId]: {
+          status: "Import failed",
+          error: error instanceof Error ? error.message : "Price Library import failed",
+        },
+      }));
+    }
+  };
+
+  const openPriceLibrarySource = (sourceId: string, unresolved = false) => {
+    setActiveModule("Product Library");
+    const base = buildProjectLocation(projectId, "Product Library");
+    window.history.pushState(
+      null,
+      "",
+      `${base}&sourceId=${encodeURIComponent(sourceId)}${unresolved ? "&libraryView=unresolved" : ""}`,
+    );
+  };
 
   const classificationCommand = async (
     document: ManagedDocument,
@@ -10354,6 +10493,9 @@ export default function Home() {
     }
     window.history.pushState(null, "", buildProjectLocation(projectId, module));
   };
+  const selectedLibrarySource = durableLibrarySources.find(
+    (source) => source.id === selectedLibrarySourceId,
+  );
   const sourceLifecycleSummary = (
     <div className="source-lifecycle-summary">
       <span>
@@ -11525,6 +11667,30 @@ export default function Home() {
           ))}
           {managedDocuments.map((document) => {
             const boqSummary = boqSummaryFor(document);
+            const importedPriceSource = importedSourceForDocument(document);
+            const priceImportState = document.version_id
+              ? priceLibraryImportByVersion[document.version_id]
+              : undefined;
+            const priceImportSummary =
+              importedPriceSource?.metadata?.summary ||
+              priceImportState?.result?.summary ||
+              {};
+            const priceImportWarnings =
+              importedPriceSource?.metadata?.warnings ||
+              priceImportState?.result?.warnings ||
+              [];
+            const canImportPriceLibrary =
+              isPriceLibraryDocument(document) &&
+              isPriceLibraryClassificationConfirmed(document) &&
+              Boolean(document.version_id) &&
+              !importedPriceSource;
+            const priceImportIsRunning =
+              priceImportState?.status === "Importing";
+            const importedSourceId =
+              importedPriceSource?.id || priceImportState?.sourceId;
+            const explicitCurrencyPrices = Number(
+              priceImportSummary.explicitCurrencyPrices || 0,
+            );
             return (
               <article
                 className={`managed-document-row ${document.archived_at ? "managed-document-archived" : ""}`}
@@ -11703,9 +11869,92 @@ export default function Home() {
                       )}
                     </div>
                   )}
-                  <small>
-                    Next action: {managedDocumentNextAction(document)}
-                  </small>
+                  {isPriceLibraryDocument(document) &&
+                    isPriceLibraryClassificationConfirmed(document) && (
+                      <div className="price-library-import-summary">
+                        <span
+                          className={
+                            priceImportState?.status === "Import failed"
+                              ? "review-blocked"
+                              : importedPriceSource ||
+                                  ["Imported", "Already imported"].includes(
+                                    priceImportState?.status || "",
+                                  )
+                                ? "review-ready"
+                                : "review-pending"
+                          }
+                        >
+                          {priceImportIsRunning
+                            ? "Importing"
+                            : priceImportState?.status === "Import failed"
+                              ? "Import failed"
+                              : priceImportState?.status === "Already imported"
+                                ? "Already imported / idempotent"
+                                : importedPriceSource ||
+                                    priceImportState?.status === "Imported"
+                                  ? "Imported — Needs Review"
+                                  : "Ready to import"}
+                        </span>
+                        {priceImportState?.error && (
+                          <small className="managed-document-error">
+                            {priceImportState.error}
+                          </small>
+                        )}
+                        {(importedPriceSource ||
+                          ["Imported", "Already imported"].includes(
+                            priceImportState?.status || "",
+                          )) && (
+                          <>
+                            <strong>Price Library import result</strong>
+                            <div className="price-library-import-stats">
+                              <span>
+                                Worksheets reviewed / extracted: {Number(priceImportSummary.sheetsReviewed || 0)} / {Number(priceImportSummary.sheetsExtracted || 0)}
+                              </span>
+                              <span>Manufacturers detected: {Number(priceImportSummary.manufacturersDetected || 0)}</span>
+                              <span>Product observations processed: {Number(priceImportSummary.productObservationsProcessed ?? priceImportSummary.productsDetected ?? 0)}</span>
+                              <span>Unique product identities persisted: {Number(priceImportSummary.uniqueProductIdentities ?? priceImportSummary.productsDetected ?? 0)}</span>
+                              <span>Repeated observations consolidated: {Number(priceImportSummary.repeatedObservationsConsolidated || 0)}</span>
+                              <span>Price observations detected: {Number(priceImportSummary.priceObservationsDetected ?? priceImportSummary.pricesDetected ?? 0)}</span>
+                              <span>Unresolved rows: {Number(priceImportSummary.unresolvedRows || 0)}</span>
+                              <span>Explicit-currency prices: {explicitCurrencyPrices}</span>
+                            </div>
+                            {priceImportWarnings.length > 0 && (
+                              <div className="price-library-import-warnings">
+                                {priceImportWarnings.map((warning, index) => (
+                                  <small key={`${warning.code || "warning"}-${index}`}>
+                                    {warning.code ? `${warning.code}: ` : ""}
+                                    {warning.message || "Source evidence requires review."}
+                                  </small>
+                                ))}
+                              </div>
+                            )}
+                            {explicitCurrencyPrices === 0 && (
+                              <small className="managed-document-error">
+                                Currency required before any price can be approved or used for costing.
+                              </small>
+                            )}
+                            <small>
+                              Safety state: Needs Review / Discovery Only · Costing-eligible prices: 0
+                            </small>
+                            {importedSourceId && (
+                              <div className="price-library-import-links">
+                                <button onClick={() => openPriceLibrarySource(importedSourceId)}>
+                                  Review in Product Library
+                                </button>
+                                <button onClick={() => openPriceLibrarySource(importedSourceId, true)}>
+                                  View unresolved rows
+                                </button>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    )}
+                  {!isPriceLibraryDocument(document) && (
+                    <small>
+                      Next action: {managedDocumentNextAction(document)}
+                    </small>
+                  )}
                 </div>
                 <div className="managed-document-state">
                   <span
@@ -11729,6 +11978,17 @@ export default function Home() {
                   />
                 </div>
                 <div className="managed-document-actions">
+                  {canImportPriceLibrary && (
+                    <button
+                      className="price-library-import-primary"
+                      disabled={priceImportIsRunning}
+                      onClick={() => void importDocumentToPriceLibrary(document)}
+                    >
+                      {priceImportIsRunning
+                        ? "Importing…"
+                        : "Import to Price Library"}
+                    </button>
+                  )}
                   <a
                     href={`/api/documents/${encodeURIComponent(document.id)}/download`}
                   >
@@ -12612,6 +12872,41 @@ export default function Home() {
             separately approved with a current validity end date.
           </span>
         </div>
+        {selectedLibrarySourceId && (
+          <div className="price-library-import-summary" role="status">
+            <span className="review-pending">
+              {selectedLibraryView === "unresolved"
+                ? "Unresolved source rows"
+                : "Selected Price Library source"}
+            </span>
+            {selectedLibrarySource ? (
+              <>
+                <strong>{selectedLibrarySource.file_name}</strong>
+                <small>
+                  Source {selectedLibrarySource.id} · {selectedLibrarySource.review_status} / {selectedLibrarySource.downstream_use}
+                </small>
+                {selectedLibraryView === "unresolved" && (
+                  <div className="source-unresolved-rows">
+                    <small>
+                      {selectedLibrarySource.metadata?.summary?.unresolvedRows || 0} unresolved row(s) retained with source provenance for review.
+                    </small>
+                    {(selectedLibrarySource.metadata?.unresolvedRows || []).map(
+                      (row: any, index: number) => (
+                        <article key={`${row.sheet || "sheet"}-${row.row || index}`}>
+                          <strong>{row.sheet || "Unknown sheet"} · row {row.row || "unknown"}</strong>
+                          <small>{row.partNumber || row.code || row.description || "Unresolved source candidate"}</small>
+                          <small>{Array.isArray(row.reasons) ? row.reasons.join(" · ") : "Identity or commercial evidence requires review."}</small>
+                        </article>
+                      ),
+                    )}
+                  </div>
+                )}
+              </>
+            ) : (
+              <small>Loading the persisted source record…</small>
+            )}
+          </div>
+        )}
         <label className="library-search">
           <span>
             Search by part number, alias, original code or description
@@ -12637,10 +12932,14 @@ export default function Home() {
                 <strong>
                   {libraryLoading
                     ? "Searching…"
-                    : `${libraryProducts.length} record${libraryProducts.length === 1 ? "" : "s"}`}
+                    : selectedLibrarySourceId
+                      ? `${libraryPagination.totalProducts} unique product identities from this source`
+                      : `${libraryPagination.totalProducts} canonical server record${libraryPagination.totalProducts === 1 ? "" : "s"}`}
                 </strong>
               </div>
-              <span>Canonical server records</span>
+              <span>
+                Page {libraryPagination.page} of {libraryPagination.totalPages}
+              </span>
             </div>
             {!libraryLoading &&
               libraryProducts.map((product) => (
@@ -12664,28 +12963,55 @@ export default function Home() {
                   </span>
                   <span>
                     <b
-                      className={
-                        product.requestedIdentityStatus === "Superseded"
-                          ? "review-pending"
-                          : "review-ready"
-                      }
+                      className="review-pending"
                     >
-                      {product.requestedIdentityStatus ||
-                        product.identity_status}
+                      {product.reviewStatus || product.review_status || "Needs Review"}
                     </b>
+                    <small>
+                      {product.approvedForDiscovery
+                        ? "Approved for discovery"
+                        : "Not approved for discovery"}
+                    </small>
+                    {product.lifecycleEvidenceSupported &&
+                      product.lifecycle_status === "Active" && (
+                        <small>Lifecycle: Active</small>
+                      )}
                     {product.resolvesToCanonical && (
                       <small>Resolves to {product.canonicalPartNumber}</small>
                     )}
+                    <small>No commercial approval implied</small>
                   </span>
                 </button>
               ))}
             {!libraryLoading && !libraryProducts.length && !libraryError && (
               <div className="empty-state">
-                <strong>No matching product record</strong>
+                <strong>
+                  {selectedLibrarySourceId
+                    ? "No persisted products in this source"
+                    : "No matching product record"}
+                </strong>
                 <p>
-                  Try an exact manufacturer code, preserved original code, alias
-                  or technical description.
+                  {selectedLibrarySourceId
+                    ? "This source has no product evidence matching the current search. Other library products are intentionally excluded."
+                    : "Try an exact manufacturer code, preserved original code, alias or technical description."}
                 </p>
+              </div>
+            )}
+            {!libraryLoading && libraryPagination.totalPages > 1 && (
+              <div className="library-pagination" aria-label="Product Library pagination">
+                <button
+                  disabled={libraryPagination.page <= 1}
+                  onClick={() => setLibraryPage((current) => Math.max(1, current - 1))}
+                >
+                  Previous
+                </button>
+                <span>Page {libraryPagination.page} of {libraryPagination.totalPages}</span>
+                <button
+                  disabled={libraryPagination.page >= libraryPagination.totalPages}
+                  onClick={() => setLibraryPage((current) => Math.min(libraryPagination.totalPages, current + 1))}
+                >
+                  Next
+                </button>
               </div>
             )}
           </div>
