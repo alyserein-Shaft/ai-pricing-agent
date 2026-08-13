@@ -7,7 +7,7 @@ import {
   prepareBoqUnderstandingInput,
 } from "../app/domain/boq-understanding-engine.mjs";
 import { resolveApplicationContext } from "./application-context.mjs";
-import { createConfiguredBoqUnderstandingProvider } from "./boq-understanding-provider.mjs";
+import { boqUnderstandingProviderReadiness, createConfiguredBoqUnderstandingProvider } from "./boq-understanding-provider.mjs";
 import { currentBoqEvidenceFrom, currentBoqItemPredicate } from "./current-evidence-scope.mjs";
 
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
@@ -67,6 +67,7 @@ const listLatest = async (db, projectId) => {
 
 async function executeRun(env, context, projectId, rows) {
   const provider = createConfiguredBoqUnderstandingProvider(env);
+  const initialReadiness = boqUnderstandingProviderReadiness(env);
   const metadata = provider?.metadata || { provider: "unavailable", model: "unavailable", modelVersion: "unavailable" };
   const configFingerprint = interpretationConfigFingerprint(metadata);
   const runId = id("understandingrun");
@@ -81,12 +82,13 @@ async function executeRun(env, context, projectId, rows) {
     },
     save: async (record) => {
       const prior = await env.DB.prepare(`SELECT COALESCE(MAX(version_number),0) version FROM estimator_item_interpretations WHERE boq_item_id=?`).bind(record.boqItemId).first();
-      await env.DB.prepare(`INSERT INTO estimator_item_interpretations(id,run_id,project_id,boq_item_id,version_number,input_fingerprint,config_fingerprint,provider,model,model_version,prompt_version,schema_version,status,raw_response,validated_interpretation,error_code,error_message,created_by) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id("understanding"), runId, projectId, record.boqItemId, Number(prior?.version || 0) + 1, record.inputFingerprint, record.configFingerprint, metadata.provider, metadata.model, metadata.modelVersion, BOQ_UNDERSTANDING_PROMPT_VERSION, BOQ_UNDERSTANDING_SCHEMA_VERSION, record.status, record.raw ? JSON.stringify(record.raw) : null, record.interpretation ? JSON.stringify(record.interpretation) : null, record.error?.code || null, record.error?.message || null, context.userId).run();
+      await env.DB.prepare(`INSERT INTO estimator_item_interpretations(id,run_id,project_id,boq_item_id,version_number,input_fingerprint,config_fingerprint,provider,model,model_version,prompt_version,schema_version,status,raw_response,validated_interpretation,error_code,error_message,created_by) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).bind(id("understanding"), runId, projectId, record.boqItemId, Number(prior?.version || 0) + 1, record.inputFingerprint, record.configFingerprint, metadata.provider, metadata.model, metadata.modelVersion, BOQ_UNDERSTANDING_PROMPT_VERSION, BOQ_UNDERSTANDING_SCHEMA_VERSION, record.status, record.usageMetadata ? JSON.stringify({ usage: record.usageMetadata }) : null, record.interpretation ? JSON.stringify(record.interpretation) : null, record.error?.code || null, record.error?.message || null, context.userId).run();
     },
   });
   const runStatus = !provider ? "AI_UNAVAILABLE" : outcome.summary.failed === rows.length ? "FAILED" : "COMPLETED";
   await env.DB.prepare(`UPDATE estimator_understanding_runs SET status=?,processed_items=?,successful_items=?,review_items=?,failed_items=?,completed_at=CURRENT_TIMESTAMP WHERE id=?`).bind(runStatus, outcome.summary.processed, outcome.summary.successful, outcome.summary.review, outcome.summary.failed + outcome.summary.unavailable, runId).run();
-  return { runId, status: runStatus, ...outcome };
+  const providerFailed = outcome.items.some((item) => item.error?.code === "AI_PROVIDER_ERROR");
+  return { runId, status: runStatus, providerReadiness: providerFailed ? { ...initialReadiness, state: "Provider error", detail: "Workers AI could not complete the request." } : initialReadiness, ...outcome };
 }
 
 export const handleEstimatorUnderstandingApi = async (request, env) => {
@@ -100,7 +102,7 @@ export const handleEstimatorUnderstandingApi = async (request, env) => {
   if (projectMatch) {
     const projectId = decodeURIComponent(projectMatch[1]);
     if (!(await projectAccess(env.DB, projectId, resolved.context))) return json({ error: { code: "PROJECT_NOT_FOUND", message: "Project not found." } }, 404);
-    if (request.method === "GET" && !pathname.endsWith("/run")) return json({ projectId, items: await listLatest(env.DB, projectId) });
+    if (request.method === "GET" && !pathname.endsWith("/run")) return json({ projectId, providerReadiness: boqUnderstandingProviderReadiness(env), items: await listLatest(env.DB, projectId) });
     if (request.method !== "POST" || !pathname.endsWith("/run")) return json({ error: { code: "METHOD_NOT_ALLOWED", message: "Use GET or POST /run." } }, 405);
     return json(await executeRun(env, resolved.context, projectId, await activeRows(env.DB, projectId)), 200);
   }

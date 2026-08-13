@@ -1,4 +1,7 @@
-export const REQUIREMENT_INTELLIGENCE_VERSION = "requirement-intelligence-1.0.1";
+import { FIRE_ALARM_TAXONOMY, FIRE_ALARM_TAXONOMY_VERSION, buildFireAlarmTaxonomyContext } from "./fire-alarm-taxonomy.mjs";
+export { FIRE_ALARM_TAXONOMY, FIRE_ALARM_TAXONOMY_VERSION } from "./fire-alarm-taxonomy.mjs";
+
+export const REQUIREMENT_INTELLIGENCE_VERSION = "requirement-intelligence-1.0.2";
 
 const clean = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
 const lower = (value) => clean(value).toLowerCase();
@@ -6,15 +9,8 @@ const unique = (values) => [...new Set(values.filter(Boolean))];
 const modality = (requirement) => requirement.requirementType === "Optional" || /\b(?:may|optional)\b/i.test(requirement.originalText || "") ? "Optional" : requirement.requirementType === "Preferred" || /\bpreferred\b/i.test(requirement.originalText || "") ? "Preferred" : "Mandatory";
 
 const equipment = (value) => {
-  const text = lower(value);
-  if (/fire alarm (?:control )?panel|building fire alarm panel|repeater panel/.test(text)) return "Fire Alarm Panel";
-  if (/monitor(?:ing)? (?:or control )?module|interface module/.test(text)) return "Monitor Module";
-  if (/sounder/.test(text) && /strobe/.test(text)) return "Sounder/Strobe";
-  if (/duct smoke detector/.test(text)) return "Duct Smoke Detector";
-  if (/smoke detector|photoelectric detector/.test(text)) return "Smoke Detector";
-  if (/heat detector/.test(text)) return "Heat Detector";
-  if (/detector base/.test(text)) return "Detector Base";
-  return null;
+  const family = buildFireAlarmTaxonomyContext({ description: value }).families[0]?.family || null;
+  return family === "Fire Alarm Control Panel" ? "Fire Alarm Panel" : family;
 };
 
 const add = (facts, requirement, type, value, options = {}) => {

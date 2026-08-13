@@ -39,6 +39,7 @@ import { handleProjectContextApi } from "./project-context-api.mjs";
 import { handleProjectPricingLearningApi } from "./project-pricing-learning-api.mjs";
 import { handleEstimatorReadinessApi } from "./estimator-readiness-api.mjs";
 import { handleEstimatorUnderstandingApi } from "./estimator-understanding-api.mjs";
+import { handleBoqAiDiagnosticApi } from "./boq-ai-diagnostic-api.mjs";
 import { securityHeaders } from "../app/domain/production-readiness.mjs";
 
 interface Env {
@@ -60,9 +61,7 @@ interface Env {
   BOQ_AI_PROVIDER?: "cloudflare";
   BOQ_AI_MODEL?: string;
   BOQ_AI_MODEL_VERSION?: string;
-  BOQ_AI_REST_ENABLED?: "1";
-  CLOUDFLARE_ACCOUNT_ID?: string;
-  CLOUDFLARE_AI_API_TOKEN?: string;
+  BOQ_AI_DIAGNOSTIC_SMOKE_ENABLED?: "1";
   AI?: { run(model: string, input: Record<string, unknown>): Promise<unknown> };
   IMAGES: {
     input(stream: ReadableStream): {
@@ -95,6 +94,9 @@ const worker = {
 
     const healthResponse = await handleProductionReadinessApi(request, env);
     if (healthResponse) return secured(healthResponse);
+
+    const boqAiDiagnosticResponse = await handleBoqAiDiagnosticApi(request, env);
+    if (boqAiDiagnosticResponse) return secured(boqAiDiagnosticResponse);
 
     const authContextResponse = await handleAuthContextApi(request, env);
     if (authContextResponse) return secured(authContextResponse);

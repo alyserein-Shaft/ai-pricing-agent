@@ -14,7 +14,7 @@
     "test:phase6a": "node --test tests/supplier-price-intake.test.mjs tests/supplier-price-intake-db.test.mjs",
     "test:ai-smoke": "node scripts/run-real-boq-understanding-smoke.mjs",
     "dev": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vite",
-    "dev:ai": "BOQ_AI_REST_ENABLED=1 WRANGLER_LOG_PATH=.wrangler/wrangler-ai.log vite",
+    "dev:ai": "WRANGLER_LOG_PATH=.wrangler/wrangler-ai.log vite",
     "build": "bash scripts/build-verified.sh",
     "start": "WRANGLER_LOG_PATH=.wrangler/wrangler.log vinext start",
     "test": "npm run build && node --test tests/ai-quotation-engineer.test.mjs tests/quotation-authority.test.mjs tests/estimator-row-readiness.test.mjs tests/task9-fire-alarm-library.test.mjs tests/production-readiness.test.mjs tests/dashboard-workflow-engine.test.mjs tests/dashboard-api.test.mjs tests/excel-export-engine.test.mjs tests/excel-export-api.test.mjs tests/excel-export-review-scope.test.mjs tests/excel-export-pricing-scope.test.mjs tests/review-workflow.test.mjs tests/review-workflow-api.test.mjs tests/boq-extractor.test.mjs tests/specification-extractor.test.mjs tests/engineering-knowledge.test.mjs tests/technical-requirement-engine.test.mjs tests/product-price-library.test.mjs tests/product-price-library-api.test.mjs tests/product-matching-engine.test.mjs tests/product-matching-api.test.mjs tests/confidence-safety-engine.test.mjs tests/confidence-safety-api.test.mjs tests/pricing-engine.test.mjs tests/pricing-api.test.mjs tests/pricing-scenario-authority.test.mjs tests/pricing-input-authority.test.mjs tests/document-classifier.test.mjs tests/document-management.test.mjs tests/document-intelligence.test.mjs tests/native-document-parsers.test.mjs tests/behavioral-safety-regression.test.mjs tests/rendered-html.test.mjs",

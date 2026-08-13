@@ -1,5 +1,7 @@
 import { parseXlsxWorkbook } from "../document-parsers/xlsx.mjs";
 import { extractAttributes, extractStandards } from "./specification-extractor.mjs";
+import { FIRE_ALARM_ATTRIBUTE_PROFILES, FIRE_ALARM_TAXONOMY } from "./fire-alarm-taxonomy.mjs";
+export { FIRE_ALARM_ATTRIBUTE_PROFILES, FIRE_ALARM_TAXONOMY, FIRE_ALARM_TAXONOMY_VERSION } from "./fire-alarm-taxonomy.mjs";
 
 export const PRODUCT_LIBRARY_VERSION = "product-price-library-1.0.0";
 export const PRICE_INGESTION_RULESET = "price-source-rules-2026-08-02";
@@ -10,19 +12,6 @@ export const PRICE_STATES = ["Current Approved", "Project-Specific Approved", "S
 export const IDENTITY_RELATIONSHIPS = ["Exact same product", "Same product from another source", "Product variant", "Regional variant", "Revision", "Replacement", "Commercial package", "Possible duplicate", "Different product"];
 export const ACCESSORY_RELATIONSHIPS = ["Required accessory", "Included accessory", "Optional accessory", "Installation accessory", "Replacement accessory", "Licensing dependency", "Mounting dependency", "Power dependency", "Network dependency", "Product package component"];
 export const ACCESSORY_QUANTITY_RULES = ["One per item", "One per N devices", "One per loop", "One per panel", "One per zone", "One per system", "Optional", "Included", "Manual review required"];
-
-export const FIRE_ALARM_TAXONOMY = Object.freeze({
-  "Control Equipment": ["Fire Alarm Control Panel", "Repeater Panel", "Annunciator", "Network Node", "Loop Card", "Communication Card", "Printer", "Graphic Interface"],
-  "Detection Devices": ["Addressable Smoke Detector", "Addressable Heat Detector", "Multi-Criteria Detector", "Beam Detector", "Duct Detector", "Flame Detector", "Conventional Detector", "Detector Base", "Sounder Base", "Isolator Base"],
-  "Notification Devices": ["Sounder", "Strobe", "Sounder/Strobe", "Bell", "Horn", "Speaker", "Speaker/Strobe"],
-  "Modules and Interfaces": ["Monitor Module", "Control Module", "Input Module", "Output Module", "Relay Module", "Isolator Module", "Zone Module", "Interface Module"],
-  "Manual Initiation": ["Manual Call Point", "Pull Station", "Break Glass Unit"],
-  "Power and Batteries": ["Fire Alarm Power Supply", "Booster Power Supply", "Battery", "Battery Cabinet", "Charger"],
-  Accessories: ["Mounting Base", "Back Box", "Weatherproof Box", "Guard", "Bracket", "End-of-Line Device", "Enclosure", "Cable Accessory", "Programming Tool", "Software License"],
-});
-
-const commonFireAlarmAttributes = ["product_type", "addressing", "protocol", "compatible_panel_family", "loop_compatibility", "loop_capacity", "zone_capacity", "device_capacity", "input_voltage", "operating_voltage", "standby_current", "alarm_current", "power_rating", "battery_capacity", "battery_autonomy", "sound_output", "flash_rate", "candela_rating", "frequency", "environmental_rating", "ip_rating", "ik_rating", "temperature_range", "humidity_range", "mounting_type", "indoor_outdoor", "detector_technology", "detection_principle", "sensitivity_settings", "isolation_capability", "network_capability", "redundancy", "communication_interface", "enclosure_type", "dimensions", "weight", "warranty", "regional_variant", "firmware_generation", "included_components"];
-export const FIRE_ALARM_ATTRIBUTE_PROFILES = Object.freeze(Object.fromEntries(Object.values(FIRE_ALARM_TAXONOMY).flat().map((family) => [family, { family, attributes: commonFireAlarmAttributes, unknownPolicy: "null", evidenceRequired: true, matchingImportance: Object.fromEntries(commonFireAlarmAttributes.map((name) => [name, ["product_type", "protocol", "compatible_panel_family", "loop_compatibility", "operating_voltage"].includes(name) ? "Mandatory" : "Comparison"])) }])));
 
 export const normalizePartNumber = (value) => text(value).toUpperCase().replace(/[^A-Z0-9]/g, "");
 export const certificationDecision = (record = {}) => ({ ...record, status: record.evidenceDocumentId && (record.evidencePage || record.evidenceRow) ? (record.reviewDecision === "Approved" ? "Verified" : "Needs Review") : "Unverified", confidence: record.evidenceDocumentId ? Number(record.confidence || 0) : 0 });

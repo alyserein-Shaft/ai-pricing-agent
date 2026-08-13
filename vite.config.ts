@@ -9,8 +9,6 @@ const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
 
 const { d1, r2 } = hostingConfig;
 const goldenE2e = process.env.GOLDEN_E2E === "1";
-const boqAiRemote = process.env.BOQ_AI_REMOTE === "1";
-const boqAiRestEnabled = process.env.BOQ_AI_REST_ENABLED === "1";
 const boqAiModel =
   process.env.BOQ_AI_MODEL || "@cf/meta/llama-3.1-8b-instruct-fast";
 
@@ -24,7 +22,8 @@ const localBindingConfig = {
     BOQ_AI_PROVIDER: "cloudflare",
     BOQ_AI_MODEL: boqAiModel,
     BOQ_AI_MODEL_VERSION: boqAiModel,
-    ...(boqAiRestEnabled ? { BOQ_AI_REST_ENABLED: "1" } : {}),
+    BOQ_AI_ESCALATION_MODEL: process.env.BOQ_AI_ESCALATION_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+    BOQ_AI_DIAGNOSTIC_SMOKE_ENABLED: "1",
     ...(goldenE2e
       ? {
           APP_ACCESS_MODE: "single-user",
@@ -33,11 +32,10 @@ const localBindingConfig = {
           APP_USER_NAME: "Golden E2E User",
           APP_ORGANIZATION_ID: "golden-e2e-organization",
           GOLDEN_E2E: "1",
-          GOLDEN_BOQ_UNDERSTANDING_PROVIDER: "deterministic",
         }
       : {}),
   },
-  ...(boqAiRemote ? { ai: { binding: "AI", remote: true } } : {}),
+  ai: { binding: "AI", remote: true },
   d1_databases: d1
     ? [
         {
