@@ -1,15 +1,22 @@
 import type { EstimatorReadiness, PreSalesWorkflow, ServerProjectDashboard } from "../project/types";
 import { EmptyState } from "../shared/WorkspaceStates";
+import { userFacingProjectReference } from "../../lib/project-navigation.mjs";
 
 export function OverviewWorkspace({ dashboard, workflow, estimatorReadiness, onOpenRoute, money }: {
   dashboard: ServerProjectDashboard; workflow: PreSalesWorkflow;
   estimatorReadiness: EstimatorReadiness | null;
   onOpenRoute: (route: string) => void; money: (value: number) => string;
 }) {
+  const projectReference = userFacingProjectReference(dashboard.project.tenderNumber || dashboard.project.id);
+  const projectStatusClass = /completed|approved/i.test(dashboard.project.status)
+    ? "review-ready"
+    : /failed|blocked|overdue/i.test(dashboard.project.status)
+      ? "review-blocked"
+      : "review-pending";
   return <section className="module-page operational-project-dashboard">
     <div className="module-heading"><div><small>PROJECT OVERVIEW</small><h1>{dashboard.project.name}</h1>
-      <p>{dashboard.project.client || "Client not recorded"} · {dashboard.project.tenderNumber || dashboard.project.id} · Updated {new Date(dashboard.updatedAt).toLocaleString()}</p></div>
-      <span className={dashboard.workflow.ready ? "review-ready" : "review-pending"}>{dashboard.project.status}</span></div>
+      <p>{dashboard.project.client || "Client not recorded"} · {projectReference} · Updated {new Date(dashboard.updatedAt).toLocaleString()}</p></div>
+      <span className={projectStatusClass}>Project status: {dashboard.project.status}</span></div>
     <div className="summary-grid">
       <article><span>Documents</span><strong>{dashboard.facts.documents || 0}</strong><small>{dashboard.facts.processing || 0} processing · {dashboard.facts.failedJobs || 0} failed</small></article>
       <article><span>BOQ items</span><strong>{dashboard.facts.boqItems || 0}</strong><small>{dashboard.facts.matchedItems || 0} matched · {dashboard.facts.technicalApproved || 0} technically approved</small></article>

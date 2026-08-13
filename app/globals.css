@@ -916,7 +916,13 @@ tbody tr:hover td { background: #f9fcff; }
 .workspace-context-seal small { margin-left: auto; color: #55708e; }
 .project-strip > div:first-child { display: grid; grid-template-columns: 10px auto; column-gap: 9px; align-items: center; }
 .project-strip small { grid-column: 2; display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
-.status-dot { width: 9px; height: 9px; border-radius: 50%; background: #1a9a62; }
+.status-dot { width: 9px; height: 9px; border-radius: 50%; background: #7c8795; }
+.status-dot.status-complete { background: #1a9a62; }
+.status-dot.status-blocked { background: #b83232; }
+.status-dot.status-neutral { background: #7c8795; }
+.project-context-confidence-note { margin: 0 0 14px; border-left: 3px solid #2b6cb0; background: #edf5ff; padding: 9px 12px; color: #405a75; font-size: 11px; }
+.price-library-status-dimensions { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 6px 12px; margin-top: 6px; }
+.price-library-status-dimensions small { color: #405a75; }
 .strip-progress { height: 6px; overflow: hidden; border-radius: 999px; background: #e7edf5; }
 .strip-progress span { display: block; height: 100%; border-radius: inherit; background: var(--blue); }
 .project-strip button { border: 0; background: transparent; color: var(--blue); font-weight: 800; cursor: pointer; white-space: nowrap; }
@@ -1556,6 +1562,31 @@ button:disabled, [aria-disabled="true"] { cursor: not-allowed; }
   align-content: start;
   gap: 5px;
   text-align: right;
+}
+.project-context-compact {
+  gap: 12px;
+  padding: 16px 18px;
+}
+.project-context-compact-source {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.project-context-compact-source strong {
+  color: var(--ink);
+}
+.document-content-review-status {
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+}
+.document-content-review-status > span {
+  width: fit-content;
+}
+.document-content-review-status > small {
+  color: var(--muted);
 }
 .project-context-summary {
   display: grid;

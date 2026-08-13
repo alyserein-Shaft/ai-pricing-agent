@@ -3,7 +3,7 @@ import test from "node:test";
 import { deriveProjectDashboard } from "../app/domain/dashboard-workflow-engine.mjs";
 import { derivePresalesWorkflow } from "../app/domain/presales-workflow-engine.mjs";
 import { quotationActionState } from "../app/components/workspaces/commercial-models.mjs";
-import { buildProjectLocation, parseProjectLocation, projectShellModel, reconcileFailedDocumentFilter } from "../app/lib/project-navigation.mjs";
+import { buildProjectLocation, globalWorkspacePresentation, parseProjectLocation, projectShellModel, reconcileFailedDocumentFilter } from "../app/lib/project-navigation.mjs";
 
 const project = { id: "golden-project", name: "Golden", organizationId: "golden-org", systemDomain: "Fire Alarm" };
 const complete = { documents: 2, classified: 2, boqItems: 2, specificationExtractions: 1, requirementProfiles: 2, matchedItems: 2, technicalApproved: 2, pricedItems: 2, commercialApproved: 2, finalReviewApproved: 2 };
@@ -12,6 +12,38 @@ const workflow = (facts = {}, projectPatch = {}) => derivePresalesWorkflow({ pro
 test("project module and selected item survive URL round trip", () => {
   const location = buildProjectLocation(project.id, "Technical Matching", "boq-2");
   assert.deepEqual(parseProjectLocation(location), { projectId: project.id, workspace: "Technical Matching", selectedItemId: "boq-2", selectedScenarioId: "", selectedRevisionId: "" });
+});
+
+test("Project Context review survives a project URL round trip", () => {
+  const location = buildProjectLocation(project.id, "Project Context");
+  assert.equal(parseProjectLocation(location).workspace, "Project Context");
+  assert.equal(parseProjectLocation(location).projectId, project.id);
+});
+
+test("every global workspace survives URL round trip with matching presentation", () => {
+  const expected = {
+    Dashboard: { topLevelArea: "Dashboard", activeModule: "Overview", showAllProjects: true },
+    Projects: { topLevelArea: "Projects", activeModule: "Overview", showAllProjects: true },
+    "Knowledge Library": { topLevelArea: "Dashboard", activeModule: "Knowledge Library", showAllProjects: false },
+    "Product Library": { topLevelArea: "Dashboard", activeModule: "Product Library", showAllProjects: false },
+    Reports: { topLevelArea: "Dashboard", activeModule: "Reports", showAllProjects: false },
+  };
+  for (const [workspace, presentation] of Object.entries(expected)) {
+    const location = parseProjectLocation(buildProjectLocation("", workspace));
+    assert.equal(location.projectId, "");
+    assert.equal(location.workspace, workspace);
+    assert.deepEqual(globalWorkspacePresentation(location.workspace), presentation);
+  }
+});
+
+test("unknown global workspace falls back explicitly to the dashboard presentation", () => {
+  const location = parseProjectLocation("?workspace=not-a-workspace");
+  assert.equal(location.workspace, "Overview");
+  assert.deepEqual(globalWorkspacePresentation(location.workspace), {
+    topLevelArea: "Dashboard",
+    activeModule: "Overview",
+    showAllProjects: true,
+  });
 });
 
 test("dashboard and project shell expose the canonical workflow stage", () => {

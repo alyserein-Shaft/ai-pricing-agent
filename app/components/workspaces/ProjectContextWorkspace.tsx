@@ -76,7 +76,7 @@ const contactKeys = new Set([
 
 const groupFor = (fact: ProjectContextFact) => {
   if (generalKeys.has(fact.fact_key)) return "Project overview";
-  if (contactKeys.has(fact.fact_key)) return "Client and authority";
+  if (contactKeys.has(fact.fact_key)) return "Client and contacts";
   if (fact.fact_key.endsWith("_available")) {
     return "Available project evidence";
   }
@@ -85,8 +85,12 @@ const groupFor = (fact: ProjectContextFact) => {
 
 export function ProjectContextWorkspace({
   projectId,
+  compact = false,
+  onReview,
 }: {
   projectId: string;
+  compact?: boolean;
+  onReview?: () => void;
 }) {
   const [data, setData] = useState<ProjectContextResponse | null>(
     null,
@@ -269,16 +273,56 @@ export function ProjectContextWorkspace({
   const activeFacts = data.facts.filter(
     fact => fact.extraction_version_id === extraction.id,
   );
+  const needsReviewFacts = activeFacts.filter(
+    fact => fact.review_status === "Needs Review",
+  );
+  const rejectedFacts = activeFacts.filter(
+    fact => fact.review_status === "Rejected",
+  );
+  const reviewedFacts = activeFacts.filter(
+    fact => !["Needs Review", "Rejected"].includes(fact.review_status),
+  );
+  const interpretationReviewCount = activeFacts.filter(
+    fact => Number(fact.requires_ai_interpretation) === 1,
+  ).length;
+  const missingContextCount = extraction.summary?.missingFields?.length || 0;
 
-  const groups = [
-    "Project overview",
-    "Client and authority",
-    "Commercial instructions",
-    "Available project evidence",
-  ].map(name => ({
-    name,
-    facts: activeFacts.filter(fact => groupFor(fact) === name),
-  })).filter(group => group.facts.length);
+  if (compact) {
+    return (
+      <section
+        className="project-context-workspace project-context-compact"
+        aria-labelledby="project-context-summary-title"
+      >
+        <header className="project-context-heading">
+          <div>
+            <small>PROJECT CONTEXT</small>
+            <h2 id="project-context-summary-title">Project information review</h2>
+            <p>Extracted project facts are reviewed separately from the document register.</p>
+          </div>
+          <button onClick={onReview}>Review project context</button>
+        </header>
+        <div className="project-context-compact-source">
+          <strong>{extraction.original_filename}</strong>
+          <span>Extraction version {extraction.version_number}</span>
+        </div>
+        <div className="project-context-summary">
+          <article><small>Extracted facts</small><strong>{activeFacts.length}</strong></article>
+          <article><small>Needs Review</small><strong>{needsReviewFacts.length}</strong></article>
+          <article><small>Reviewed</small><strong>{reviewedFacts.length}</strong></article>
+          <article><small>Interpretation review</small><strong>{interpretationReviewCount}</strong></article>
+          {missingContextCount > 0 && (
+            <article><small>Missing context</small><strong>{missingContextCount}</strong></article>
+          )}
+        </div>
+      </section>
+    );
+  }
+
+  const reviewSections = [
+    { name: "Needs Review", facts: needsReviewFacts },
+    { name: "Reviewed", facts: reviewedFacts },
+    { name: "Rejected", facts: rejectedFacts },
+  ].filter(section => section.facts.length);
 
   return (
     <section
@@ -287,7 +331,7 @@ export function ProjectContextWorkspace({
     >
       <header className="project-context-heading">
         <div>
-          <small>GOVERNED PROJECT CONTEXT</small>
+          <small>PROJECT CONTEXT</small>
           <h2 id="project-context-title">Extracted project information</h2>
           <p>
             These facts are separate from BOQ items. They remain review-only
@@ -313,23 +357,15 @@ export function ProjectContextWorkspace({
         </article>
         <article>
           <small>Needs review</small>
-          <strong>
-            {
-              activeFacts.filter(
-                fact => fact.review_status === "Needs Review",
-              ).length
-            }
-          </strong>
+          <strong>{needsReviewFacts.length}</strong>
         </article>
         <article>
-          <small>AI interpretation</small>
-          <strong>
-            {
-              activeFacts.filter(
-                fact => Number(fact.requires_ai_interpretation) === 1,
-              ).length
-            }
-          </strong>
+          <small>Reviewed</small>
+          <strong>{reviewedFacts.length}</strong>
+        </article>
+        <article>
+          <small>Interpretation review required</small>
+          <strong>{interpretationReviewCount}</strong>
         </article>
         <article>
           <small>Source sheet</small>
@@ -339,15 +375,21 @@ export function ProjectContextWorkspace({
         </article>
       </div>
 
-      {groups.map(group => (
-        <section className="project-context-group" key={group.name}>
+      <p className="project-context-confidence-note">
+        Extraction confidence measures how reliably the source was read. It is
+        not factual, technical, or commercial approval—including when shown as
+        100%.
+      </p>
+
+      {reviewSections.map(section => (
+        <section className="project-context-group" key={section.name}>
           <header>
-            <h3>{group.name}</h3>
-            <span>{group.facts.length} fact(s)</span>
+            <h3>{section.name}</h3>
+            <span>{section.facts.length} fact(s)</span>
           </header>
 
           <div className="project-context-facts">
-            {group.facts.map(fact => (
+            {section.facts.map(fact => (
               <article
                 key={fact.id}
                 className={
@@ -377,16 +419,16 @@ export function ProjectContextWorkspace({
 
                 <footer>
                   <span>
-                    Source: {fact.source_sheet} · {fact.source_cell}
+                    {groupFor(fact)} · Source: {fact.source_sheet} · {fact.source_cell}
                     {fact.source_row ? ` · row ${fact.source_row}` : ""}
                   </span>
-                  <span>Confidence: {fact.confidence}%</span>
+                  <span>Extraction confidence: {fact.confidence}%</span>
                 </footer>
 
                 {Number(fact.requires_ai_interpretation) === 1 && (
                   <p className="project-context-ai-note">
-                    Requires AI interpretation and human confirmation before
-                    commercial use.
+                    The extracted value is ambiguous and needs human review.
+                    No interpretation has been approved.
                   </p>
                 )}
 
@@ -540,7 +582,7 @@ export function ProjectContextWorkspace({
               )}
 
               <p className="project-context-review-safety">
-                This decision updates only the governed Project Context fact.
+                This decision updates only the reviewed Project Context fact.
                 It does not alter the original extraction, BOQ rows or project
                 metadata automatically.
               </p>

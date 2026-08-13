@@ -97,6 +97,29 @@ const upload = async (request, env, ctx, projectId, user) => {
 
 const dbProject = (db, projectId) => db.prepare("SELECT * FROM projects WHERE id=?").bind(projectId).first();
 
+export const attachExactProjectContextReview = (documents = [], reviews = []) => {
+  const bySource = new Map(
+    reviews.map((review) => [
+      `${review.document_id}:${review.document_version_id}`,
+      review,
+    ]),
+  );
+  return documents.map((document) => {
+    const review = bySource.get(`${document.id}:${document.version_id}`);
+    if (!review) return document;
+    return {
+      ...document,
+      project_context_extraction_id: review.project_context_extraction_id,
+      project_context_extraction_version: review.project_context_extraction_version,
+      project_context_extraction_status: review.project_context_extraction_status,
+      project_context_fact_count: review.project_context_fact_count,
+      project_context_facts_pending: review.project_context_facts_pending,
+      project_context_facts_reviewed: review.project_context_facts_reviewed,
+      project_context_facts_rejected: review.project_context_facts_rejected,
+    };
+  });
+};
+
 const listDocuments = async (request, db, projectId, user) => {
   await ensureBoqExtractionSchema(db);
   if (!await getOwnedProject(db, projectId, user.id)) return json({ error: { code: "PROJECT_NOT_FOUND", message: "Project not found.", suggestedAction: "Open an available project." } }, 404);
@@ -119,7 +142,8 @@ const listDocuments = async (request, db, projectId, user) => {
   const base = `FROM documents d JOIN document_versions v ON v.id=d.current_version_id LEFT JOIN document_processing_runs r ON r.id=(SELECT id FROM document_processing_runs WHERE document_version_id=v.id ORDER BY created_at DESC LIMIT 1) LEFT JOIN document_classifications c ON c.id=(SELECT id FROM document_classifications WHERE document_id=d.id AND superseded_at IS NULL ORDER BY classified_at DESC LIMIT 1) LEFT JOIN boq_extraction_versions bx ON bx.id=(SELECT id FROM boq_extraction_versions WHERE document_id=d.id AND superseded_at IS NULL ORDER BY version_number DESC LIMIT 1) LEFT JOIN specification_extraction_versions sx ON sx.id=(SELECT id FROM specification_extraction_versions WHERE document_id=d.id AND superseded_at IS NULL ORDER BY version_number DESC LIMIT 1) LEFT JOIN specification_extraction_jobs sj ON sj.id=(SELECT id FROM specification_extraction_jobs WHERE document_id=d.id ORDER BY created_at DESC LIMIT 1) WHERE ${where}`;
   const total = await db.prepare(`SELECT COUNT(*) AS count ${base}`).bind(...values).first();
   const rows = await db.prepare(`SELECT d.*, v.id AS version_id, v.version_number, v.original_filename, v.extension, v.mime_type, v.byte_size, v.sha256, v.revision, v.uploaded_by, v.uploaded_at, v.quarantine_status, r.id AS job_id, r.status AS processing_status, r.progress, r.error_code, r.error_message, r.suggested_action, r.started_at, r.completed_at, r.last_retry_at, c.id AS classification_id, c.primary_type AS predicted_type, c.secondary_types, c.confidence AS classification_confidence, c.confidence_state, c.status AS classification_status, c.manual_review_required, c.downstream_route, c.error_code AS classification_error_code, c.error_message AS classification_error_message, bx.id AS boq_extraction_id, bx.version_number AS boq_extraction_version, bx.status AS boq_extraction_status, bx.summary AS boq_extraction_summary, bx.error_code AS boq_extraction_error_code, bx.error_message AS boq_extraction_error_message, bx.suggested_action AS boq_extraction_suggested_action, sx.id AS specification_extraction_id, sx.version_number AS specification_extraction_version, sx.status AS specification_extraction_status, sx.summary AS specification_extraction_summary, sx.error_code AS specification_extraction_error_code, sx.error_message AS specification_extraction_error_message, sx.suggested_action AS specification_extraction_suggested_action, sj.id AS specification_job_id, sj.status AS specification_job_status, sj.total_pages AS specification_total_pages, sj.processed_pages AS specification_processed_pages, sj.current_page AS specification_current_page, sj.current_chunk AS specification_current_chunk, sj.completed_chunks AS specification_completed_chunks, sj.remaining_chunks AS specification_remaining_chunks, sj.extracted_clauses AS specification_live_clauses, sj.extracted_requirements AS specification_live_requirements, sj.elapsed_seconds AS specification_elapsed_seconds, sj.estimated_remaining_seconds AS specification_eta_seconds ${base} ORDER BY d.updated_at DESC LIMIT ? OFFSET ?`).bind(...values, pageSize, (page - 1) * pageSize).all();
-  return json({ documents: rows.results || [], pagination: { page, pageSize, total: Number(total?.count || 0), totalPages: Math.ceil(Number(total?.count || 0) / pageSize) } });
+  const contextReviews = await db.prepare("SELECT pcx.id AS project_context_extraction_id,pcx.document_id,pcx.document_version_id,pcx.version_number AS project_context_extraction_version,pcx.status AS project_context_extraction_status,COUNT(pcf.id) AS project_context_fact_count,SUM(CASE WHEN pcf.review_status='Needs Review' THEN 1 ELSE 0 END) AS project_context_facts_pending,SUM(CASE WHEN pcf.review_status NOT IN ('Needs Review','Rejected') THEN 1 ELSE 0 END) AS project_context_facts_reviewed,SUM(CASE WHEN pcf.review_status='Rejected' THEN 1 ELSE 0 END) AS project_context_facts_rejected FROM project_context_extraction_versions pcx LEFT JOIN project_context_facts pcf ON pcf.extraction_version_id=pcx.id WHERE pcx.project_id=? AND pcx.superseded_at IS NULL GROUP BY pcx.id,pcx.document_id,pcx.document_version_id,pcx.version_number,pcx.status").bind(projectId).all();
+  return json({ documents: attachExactProjectContextReview(rows.results || [], contextReviews.results || []), pagination: { page, pageSize, total: Number(total?.count || 0), totalPages: Math.ceil(Number(total?.count || 0) / pageSize) } });
 };
 
 const updateDocument = async (request, db, documentId, user) => {

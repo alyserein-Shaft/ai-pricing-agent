@@ -76,6 +76,40 @@ export const visibleLibrarySource = async (db, { sourceId, projectId = null, use
   return await ownedProject(db, source.project_id, userId) ? source : null;
 };
 
+const mapLibrarySource = (row) => {
+  const metadata = parse(row.metadata, {});
+  const productObservationsProcessed = Number(row.persisted_product_observations || 0);
+  const uniqueProductIdentities = Number(row.persisted_unique_product_identities || 0);
+  return {
+    ...row,
+    metadata: {
+      ...metadata,
+      summary: {
+        ...(metadata.summary || {}),
+        productObservationsProcessed,
+        uniqueProductIdentities,
+        repeatedObservationsConsolidated: Math.max(
+          0,
+          productObservationsProcessed - uniqueProductIdentities,
+        ),
+      },
+    },
+  };
+};
+
+export const queryLibrarySources = async (db, { projectId = null } = {}) => {
+  const sql = `SELECT s.*,
+    (SELECT COUNT(*) FROM product_source_evidence evidence WHERE evidence.source_id=s.id) persisted_product_observations,
+    (SELECT COUNT(DISTINCT evidence.product_id) FROM product_source_evidence evidence WHERE evidence.source_id=s.id) persisted_unique_product_identities
+    FROM product_sources s
+    ${projectId ? "WHERE s.scope_type='Global' OR s.project_id=?" : "WHERE s.scope_type='Global'"}
+    ORDER BY s.created_at DESC`;
+  const rows = projectId
+    ? await db.prepare(sql).bind(projectId).all()
+    : await db.prepare(sql).all();
+  return (rows.results || []).map(mapLibrarySource);
+};
+
 export const persistHoneywellLibrary = async (env, { bytes, document, user }) => {
   const sourceExists = await env.DB.prepare("SELECT id FROM product_sources WHERE checksum=? AND scope_type='Global' AND project_id IS NULL").bind(document.sha256).first();
   if (sourceExists) return { sourceId: sourceExists.id, idempotent: true };
@@ -183,8 +217,7 @@ export const handleProductPriceLibraryApi = async (request, env) => {
   }
   if (url.pathname === "/api/library/sources" && request.method === "GET") {
     const projectId = url.searchParams.get("projectId"); if (!(await ownedProject(env.DB, projectId, user.id))) return json({ error: { code: "PROJECT_NOT_FOUND", message: "Project not found." } }, 404);
-    const rows = projectId ? await env.DB.prepare("SELECT * FROM product_sources WHERE scope_type='Global' OR project_id=? ORDER BY created_at DESC").bind(projectId).all() : await env.DB.prepare("SELECT * FROM product_sources WHERE scope_type='Global' ORDER BY created_at DESC").all();
-    return json({ sources: (rows.results || []).map((row) => ({ ...row, metadata: parse(row.metadata, {}) })) });
+    return json({ sources: await queryLibrarySources(env.DB, { projectId }) });
   }
   if (url.pathname === "/api/library/prices" && request.method === "GET") {
     const projectId = url.searchParams.get("projectId"); if (!(await ownedProject(env.DB, projectId, user.id))) return json({ error: { code: "PROJECT_NOT_FOUND", message: "Project not found." } }, 404);

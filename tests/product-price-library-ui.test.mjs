@@ -31,10 +31,12 @@ test("Price Library result renders persisted statistics, warnings and safety sta
     "Unique product identities persisted",
     "Repeated observations consolidated",
     "Price observations detected",
-    "Unresolved rows",
+    "Unresolved observations",
     "Explicit-currency prices",
-    "Safety state: Needs Review / Discovery Only",
-    "Costing-eligible prices: 0",
+    "Processing: Completed",
+    "Review: Needs Review",
+    "Permitted use: Discovery Only",
+    "Can be used in costing: 0",
   ]) assert.match(page, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   assert.match(page, /Currency required before any price can be approved or used for costing\./);
 });
@@ -65,6 +67,6 @@ test("Product Library search, pagination and badges remain source scoped and non
   assert.match(page, /Not approved for discovery/);
   assert.match(page, /Lifecycle: Active/);
   assert.match(page, /lifecycleEvidenceSupported/);
-  assert.match(page, /No commercial approval implied/);
+  assert.match(page, /Blocker: No commercial approval/);
   assert.doesNotMatch(page, />\s*\{product\.requestedIdentityStatus \|\|[\s\S]{0,80}product\.identity_status\}/);
 });

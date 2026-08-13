@@ -23,10 +23,17 @@ import {
 import { requestJson, commandThenRefresh, projectApi, technicalApi, commercialApi } from "./lib/api-client";
 import {
   buildProjectLocation,
+  globalWorkspacePresentation,
   parseProjectLocation,
   reconcileFailedDocumentFilter,
+  userFacingProjectReference,
   visibleProductProjects,
 } from "./lib/project-navigation.mjs";
+import {
+  documentClassificationPresentation,
+  documentProcessingPresentation,
+  extractedContentReviewPresentation,
+} from "./lib/document-status-presentation.mjs";
 import { ProjectShell } from "./components/project/ProjectShell";
 import type {
   DashboardAction,
@@ -45,7 +52,6 @@ import { SupplierPriceIntakeWorkspace } from "./components/workspaces/SupplierPr
 import { CommercialReviewWorkspace } from "./components/workspaces/CommercialReviewWorkspace";
 import { QuotationWorkspace } from "./components/workspaces/QuotationWorkspace";
 import { TechnicalReviewWorkspace } from "./components/workspaces/TechnicalReviewWorkspace";
-import { RfqAuthorityWorkspace } from "./components/workspaces/RfqAuthorityWorkspace";
 import { HistoricalLearningWorkspace } from "./components/workspaces/HistoricalLearningWorkspace";
 import { CaseStudiesWorkspace } from "./components/workspaces/CaseStudiesWorkspace";
 import { KnowledgeLibraryWorkspace } from "./components/workspaces/KnowledgeLibraryWorkspace";
@@ -182,6 +188,7 @@ type MatchDiagnostic = {
 type ModuleName =
   | "Overview"
   | "Documents"
+  | "Project Context"
   | "BOQ"
   | "Technical Matching"
   | "Product Library"
@@ -433,6 +440,13 @@ type ManagedDocument = {
   specification_live_requirements?: number | null;
   specification_elapsed_seconds?: number | null;
   specification_eta_seconds?: number | null;
+  project_context_extraction_id?: string | null;
+  project_context_extraction_version?: number | null;
+  project_context_extraction_status?: string | null;
+  project_context_fact_count?: number | null;
+  project_context_facts_pending?: number | null;
+  project_context_facts_reviewed?: number | null;
+  project_context_facts_rejected?: number | null;
 };
 type DurableLibrarySource = {
   id: string;
@@ -2146,6 +2160,11 @@ export default function Home() {
   );
   const [showAllProjects, setShowAllProjects] = useState(true);
   const isOrganizationLibrary = activeModule === "Knowledge Library";
+  const isGlobalWorkspace = [
+    "Knowledge Library",
+    "Product Library",
+    "Reports",
+  ].includes(activeModule);
   const [showNewProject, setShowNewProject] = useState(false);
   const [draftProjectName, setDraftProjectName] = useState("");
   const [draftClientName, setDraftClientName] = useState("");
@@ -2828,7 +2847,22 @@ export default function Home() {
   useEffect(() => {
     const restoreLocation = () => {
       const location = parseProjectLocation(window.location.search);
-      if (!location.projectId && location.workspace !== "Knowledge Library") return;
+      if (!location.projectId) {
+        const presentation = globalWorkspacePresentation(location.workspace);
+        if (!presentation) {
+          setTopLevelArea("Dashboard");
+          setActiveModule("Overview");
+          setShowAllProjects(true);
+          return;
+        }
+        setTopLevelArea(presentation.topLevelArea);
+        setActiveModule(presentation.activeModule as ModuleName);
+        setShowAllProjects(presentation.showAllProjects);
+        setSelectedMatchingItemId(null);
+        setPricingScenarioId("");
+        setProjectOpen(false);
+        return;
+      }
       if (location.projectId) setProjectId(location.projectId);
       setActiveModule(location.workspace as ModuleName);
       setSelectedMatchingItemId(
@@ -2854,6 +2888,7 @@ export default function Home() {
     const moduleMap: Record<string, ModuleName> = {
       Overview: "Overview",
       Documents: "Documents",
+      "Project Context": "Project Context",
       BOQ: "BOQ",
       Requirements: "Technical Matching",
       Matching: "Technical Matching",
@@ -4529,11 +4564,13 @@ export default function Home() {
     setProjectDueDate(projectDetailsDraft.dueDate);
     setProjectStatus(projectDetailsDraft.status);
     recordAudit(
-      "Project details updated",
+      "Browser-only project draft updated",
       `${previous} → ${projectDetailsDraft.name.trim()} · ${projectDetailsDraft.client.trim() || "Client not assigned"} · ${projectDetailsDraft.code.trim()} · ${projectDetailsDraft.status}`,
     );
     setShowProjectEditor(false);
-    showToast("Project details applied with an audit entry");
+    showToast(
+      "Draft updated in this browser only — server project details were not changed",
+    );
   };
 
   const confirmPricingSettings = () => {
@@ -8023,9 +8060,9 @@ export default function Home() {
         : document.processing_status === "Waiting"
           ? "Waiting for the Task 4 processor"
           : document.processing_status === "Needs Review"
-            ? "Open the downstream review"
+            ? "Open the review workspace"
             : document.processing_status === "Completed"
-              ? "Available to downstream modules"
+              ? "Available for the next reviewed workflow step"
               : "Monitor processing";
 
   const isPriceLibraryDocument = (document: ManagedDocument) =>
@@ -10487,7 +10524,7 @@ export default function Home() {
     setActiveModule(module);
     if (module !== "Technical Matching") setSelectedMatchingItemId(null);
     setSidebarOpen(false);
-    if (module === "Knowledge Library") {
+    if (["Knowledge Library", "Product Library", "Reports"].includes(module)) {
       window.history.pushState(null, "", buildProjectLocation("", module));
       return;
     }
@@ -11077,8 +11114,9 @@ export default function Home() {
             <h1>{serverProjectDashboard.project.name}</h1>
             <p>
               {serverProjectDashboard.project.client || "Client not recorded"} ·{" "}
-              {serverProjectDashboard.project.tenderNumber ||
-                serverProjectDashboard.project.id}{" "}
+              {userFacingProjectReference(
+                serverProjectDashboard.project.tenderNumber,
+              )}{" "}
               · Updated{" "}
               {new Date(serverProjectDashboard.updatedAt).toLocaleString()}
             </p>
@@ -11370,6 +11408,8 @@ export default function Home() {
           </aside>
         </div>
       </section>
+    ) : activeModule === "Project Context" ? (
+      <ProjectContextWorkspace projectId={projectId} />
     ) : activeModule === "Overview" ? (
       dashboardError ? <ErrorState message={dashboardError} /> : <LoadingState label="Loading verified project overview…" />
     ) : activeModule === "Documents" ? (
@@ -11384,7 +11424,11 @@ export default function Home() {
           if (first) classificationCommand(first, first.predicted_type && first.predicted_type !== "Unknown" ? "confirm" : "override");
         }}
       >
-        <ProjectContextWorkspace projectId={projectId} />
+        <ProjectContextWorkspace
+          projectId={projectId}
+          compact
+          onReview={() => navigate("Project Context")}
+        />
         {false && <div className="module-heading">
           <div>
             <small>STEP 01 · DOCUMENT INTAKE</small>
@@ -11667,6 +11711,16 @@ export default function Home() {
           ))}
           {managedDocuments.map((document) => {
             const boqSummary = boqSummaryFor(document);
+            const specificationSummary = specificationSummaryFor(document);
+            const classificationPresentation =
+              documentClassificationPresentation(document);
+            const processingPresentation =
+              documentProcessingPresentation(document);
+            const contentReviewPresentation =
+              extractedContentReviewPresentation(document, {
+                boqSummary,
+                specificationSummary,
+              });
             const importedPriceSource = importedSourceForDocument(document);
             const priceImportState = document.version_id
               ? priceLibraryImportByVersion[document.version_id]
@@ -11734,21 +11788,18 @@ export default function Home() {
                   <div className="classification-summary">
                     <span
                       className={
-                        document.classification_status === "Classified" ||
-                        document.classification_status === "Manually Confirmed"
+                        classificationPresentation.confirmed
                           ? "review-ready"
                           : "review-pending"
                       }
                     >
-                      {document.classification_status ||
-                        "Classification Queued"}
+                      {classificationPresentation.label}
                     </span>
                     <strong>
-                      {document.predicted_type || "Unknown"} ·{" "}
-                      {document.classification_confidence || 0}%
+                      {classificationPresentation.confidence}
                     </strong>
                     <small>
-                      {document.confidence_state || "Pending evidence"} · Route:{" "}
+                      Processing route:{" "}
                       {document.downstream_route || "Not selected"}
                     </small>
                     {document.classification_error_message && (
@@ -11770,6 +11821,7 @@ export default function Home() {
                               : "review-pending"
                         }
                       >
+                        Extraction:{" "}
                         {document.boq_extraction_status ||
                           "Awaiting confirmed BOQ classification"}
                       </span>
@@ -11803,13 +11855,14 @@ export default function Home() {
                               : "review-pending"
                         }
                       >
+                        Extraction:{" "}
                         {document.specification_extraction_status ||
                           "Ready to start"}
                       </span>
                       <strong>
-                        {specificationSummaryFor(document).requirements || 0}{" "}
+                        {specificationSummary.requirements || 0}{" "}
                         requirements ·{" "}
-                        {specificationSummaryFor(document).clauses || 0} clauses
+                        {specificationSummary.clauses || 0} clauses
                       </strong>
                       <small>
                         Extraction v
@@ -11869,6 +11922,25 @@ export default function Home() {
                       )}
                     </div>
                   )}
+                  {contentReviewPresentation && (
+                    <div className="document-content-review-status">
+                      <span
+                        className={
+                          contentReviewPresentation.pending > 0
+                            ? "review-pending"
+                            : contentReviewPresentation.total > 0
+                              ? "review-ready"
+                              : "review-pending"
+                        }
+                      >
+                        {contentReviewPresentation.label}
+                      </span>
+                      <small>
+                        Successful processing and extraction do not approve the
+                        extracted content.
+                      </small>
+                    </div>
+                  )}
                   {isPriceLibraryDocument(document) &&
                     isPriceLibraryClassificationConfirmed(document) && (
                       <div className="price-library-import-summary">
@@ -11915,7 +11987,7 @@ export default function Home() {
                               <span>Unique product identities persisted: {Number(priceImportSummary.uniqueProductIdentities ?? priceImportSummary.productsDetected ?? 0)}</span>
                               <span>Repeated observations consolidated: {Number(priceImportSummary.repeatedObservationsConsolidated || 0)}</span>
                               <span>Price observations detected: {Number(priceImportSummary.priceObservationsDetected ?? priceImportSummary.pricesDetected ?? 0)}</span>
-                              <span>Unresolved rows: {Number(priceImportSummary.unresolvedRows || 0)}</span>
+                              <span>Unresolved observations: {Number(priceImportSummary.unresolvedRows || 0)}</span>
                               <span>Explicit-currency prices: {explicitCurrencyPrices}</span>
                             </div>
                             {priceImportWarnings.length > 0 && (
@@ -11933,9 +12005,14 @@ export default function Home() {
                                 Currency required before any price can be approved or used for costing.
                               </small>
                             )}
-                            <small>
-                              Safety state: Needs Review / Discovery Only · Costing-eligible prices: 0
-                            </small>
+                            <div className="price-library-status-dimensions">
+                              <small>Processing: Completed</small>
+                              <small>Review: Needs Review</small>
+                              <small>Permitted use: Discovery Only</small>
+                              <small>Lifecycle: Not established by this import</small>
+                              <small>Blocker: Price evidence is not approved for costing</small>
+                              <small>Can be used in costing: 0</small>
+                            </div>
                             {importedSourceId && (
                               <div className="price-library-import-links">
                                 <button onClick={() => openPriceLibrarySource(importedSourceId)}>
@@ -11959,20 +12036,18 @@ export default function Home() {
                 <div className="managed-document-state">
                   <span
                     className={
-                      document.processing_status === "Failed"
+                      processingPresentation.status === "Failed"
                         ? "review-blocked"
-                        : document.processing_status === "Completed"
+                        : processingPresentation.status === "Completed"
                           ? "review-ready"
                           : "review-pending"
                     }
                   >
-                    {document.archived_at
-                      ? "Archived"
-                      : document.processing_status || "Uploaded"}{" "}
-                    · {document.progress || 0}%
+                    {processingPresentation.label} ·{" "}
+                    {processingPresentation.progress}%
                   </span>
                   <progress
-                    value={document.progress || 0}
+                    value={processingPresentation.progress}
                     max="100"
                     aria-label={`${document.logical_name} processing progress`}
                   />
@@ -12478,8 +12553,8 @@ export default function Home() {
             <small>STEP 02 · EXTRACTION REVIEW</small>
             <h1>Bill of quantities</h1>
             <p>
-              Review the persisted, source-traceable extraction before
-              downstream use.
+              Review the persisted, source-traceable extraction before it can
+              be used in later workflow steps.
             </p>
           </div>
         </div>}
@@ -12857,7 +12932,7 @@ export default function Home() {
       <section className="module-page product-library-page">
         <div className="module-heading">
           <div>
-            <small>CANONICAL PRODUCT & EVIDENCE REGISTER</small>
+            <small>PRODUCT RECORDS & SOURCE EVIDENCE</small>
             <h1>Product Library</h1>
             <p>
               Search active products, superseded order codes and reviewed source
@@ -12883,12 +12958,12 @@ export default function Home() {
               <>
                 <strong>{selectedLibrarySource.file_name}</strong>
                 <small>
-                  Source {selectedLibrarySource.id} · {selectedLibrarySource.review_status} / {selectedLibrarySource.downstream_use}
+                  Review: {selectedLibrarySource.review_status || "Needs Review"} · Permitted use: {selectedLibrarySource.downstream_use || "Discovery Only"}
                 </small>
                 {selectedLibraryView === "unresolved" && (
                   <div className="source-unresolved-rows">
                     <small>
-                      {selectedLibrarySource.metadata?.summary?.unresolvedRows || 0} unresolved row(s) retained with source provenance for review.
+                      {selectedLibrarySource.metadata?.summary?.unresolvedRows || 0} unresolved observation(s) retained with source evidence for review.
                     </small>
                     {(selectedLibrarySource.metadata?.unresolvedRows || []).map(
                       (row: any, index: number) => (
@@ -12934,7 +13009,7 @@ export default function Home() {
                     ? "Searching…"
                     : selectedLibrarySourceId
                       ? `${libraryPagination.totalProducts} unique product identities from this source`
-                      : `${libraryPagination.totalProducts} canonical server record${libraryPagination.totalProducts === 1 ? "" : "s"}`}
+                      : `${libraryPagination.totalProducts} product record${libraryPagination.totalProducts === 1 ? "" : "s"}`}
                 </strong>
               </div>
               <span>
@@ -12965,12 +13040,12 @@ export default function Home() {
                     <b
                       className="review-pending"
                     >
-                      {product.reviewStatus || product.review_status || "Needs Review"}
+                      Review: {product.reviewStatus || product.review_status || "Needs Review"}
                     </b>
                     <small>
                       {product.approvedForDiscovery
-                        ? "Approved for discovery"
-                        : "Not approved for discovery"}
+                        ? "Permitted use: Product discovery"
+                        : "Permitted use: Not approved for discovery"}
                     </small>
                     {product.lifecycleEvidenceSupported &&
                       product.lifecycle_status === "Active" && (
@@ -12979,7 +13054,7 @@ export default function Home() {
                     {product.resolvesToCanonical && (
                       <small>Resolves to {product.canonicalPartNumber}</small>
                     )}
-                    <small>No commercial approval implied</small>
+                    <small>Blocker: No commercial approval</small>
                   </span>
                 </button>
               ))}
@@ -13025,7 +13100,7 @@ export default function Home() {
               <div className="empty-state">
                 <strong>Select a product</strong>
                 <p>
-                  Canonical resolution, source provenance, prices and missing
+                  Product identity, source evidence, prices and missing
                   evidence will appear here.
                 </p>
               </div>
@@ -13034,12 +13109,12 @@ export default function Home() {
               <>
                 <header>
                   <div>
-                    <small>CANONICAL PRODUCT</small>
+                    <small>PRODUCT RECORD</small>
                     <h2>{selectedLibraryProduct.product.part_number}</h2>
                     <p>{selectedLibraryProduct.product.description}</p>
                   </div>
-                  <span className="review-ready">
-                    {selectedLibraryProduct.product.identity_status}
+                  <span className="review-pending">
+                    Product identity: {selectedLibraryProduct.product.identity_status}
                   </span>
                 </header>
                 <div className="canonical-chain">
@@ -13093,7 +13168,7 @@ export default function Home() {
                   </span>
                 </div>
                 <section className="library-detail-section">
-                  <strong>Original codes and provenance</strong>
+                  <strong>Original codes and source evidence</strong>
                   {selectedLibraryProduct.orderCodeObservations.length ? (
                     selectedLibraryProduct.orderCodeObservations.map(
                       (record, index) => (
@@ -14260,7 +14335,22 @@ export default function Home() {
         </details>
       </section>
     ) : activeModule === "Supplier RFQs" ? (
-      <RfqAuthorityWorkspace />
+      <section className="module-page">
+        <div className="module-heading">
+          <div>
+            <small>SUPPLIER PRICE EVIDENCE</small>
+            <h1>Supplier RFQs</h1>
+            <p>Supplier RFQ workspace is not available in this version.</p>
+          </div>
+        </div>
+        <div className="empty-state">
+          <strong>Unavailable in this version</strong>
+          <p>
+            Use persisted supplier quotations and approved supplier price
+            evidence where available. No RFQ action has been completed.
+          </p>
+        </div>
+      </section>
     ) : activeModule === "Quotation" ? (
       <QuotationWorkspace
         projectId={projectId}
@@ -15299,12 +15389,18 @@ export default function Home() {
               }
               onClick={() => {
                 if (destination === "Overview" || destination === "Projects") {
-                  setTopLevelArea(
-                    destination === "Overview" ? "Dashboard" : "Projects",
-                  );
+                  const workspace =
+                    destination === "Overview" ? "Dashboard" : "Projects";
+                  setTopLevelArea(workspace);
+                  setActiveModule("Overview");
                   setShowAllProjects(true);
                   setProjectOpen(false);
                   setSidebarOpen(false);
+                  window.history.pushState(
+                    null,
+                    "",
+                    buildProjectLocation("", workspace),
+                  );
                   return;
                 }
                 if (destination === "Settings") {
@@ -15323,11 +15419,11 @@ export default function Home() {
             </button>
           ))}
         </nav>
-        {!showAllProjects && !isOrganizationLibrary && (
+        {!showAllProjects && !isGlobalWorkspace && (
           <div className="project-nav-context">
-            <small>ACTIVE PROJECT</small>
+            <small>CURRENT PROJECT</small>
             <strong>{projectName}</strong>
-            <span>{preSalesWorkflow ? `${preSalesWorkflow.lifecycleState} · ${preSalesWorkflow.workflowStage}` : "Loading workflow…"}</span>
+            <span>{preSalesWorkflow ? `Project status: ${preSalesWorkflow.lifecycleState} · Workflow: ${preSalesWorkflow.workflowStage}` : "Loading workflow…"}</span>
           </div>
         )}
 
@@ -15364,7 +15460,7 @@ export default function Home() {
 
       <main className="main-content">
         <header
-          className={`topbar ${showAllProjects || isOrganizationLibrary ? "home-topbar" : "project-topbar"}`}
+          className={`topbar ${showAllProjects || isGlobalWorkspace ? "home-topbar" : "project-topbar"}`}
         >
           <button
             className="mobile-menu"
@@ -15373,11 +15469,15 @@ export default function Home() {
           >
             ☰
           </button>
-          {showAllProjects || isOrganizationLibrary ? (
+          {showAllProjects || isGlobalWorkspace ? (
             <div className="home-title">
               <span aria-hidden="true">
                 {isOrganizationLibrary
                   ? "▤"
+                  : activeModule === "Product Library"
+                    ? "⌕"
+                    : activeModule === "Reports"
+                      ? "▥"
                   : topLevelArea === "Projects"
                     ? "▦"
                     : "⌂"}
@@ -15386,12 +15486,16 @@ export default function Home() {
                 <small>
                   {isOrganizationLibrary
                     ? "ORGANIZATION KNOWLEDGE"
+                    : activeModule === "Product Library"
+                      ? "PRODUCT KNOWLEDGE"
+                      : activeModule === "Reports"
+                        ? "ORGANIZATION REPORTING"
                     : topLevelArea === "Projects"
                     ? "PROJECT REGISTER"
                     : "ORGANIZATION OVERVIEW"}
                 </small>
                 <strong>
-                  {isOrganizationLibrary ? "Knowledge Library" : topLevelArea}
+                  {isGlobalWorkspace ? activeModule : topLevelArea}
                 </strong>
               </div>
             </div>
@@ -15414,12 +15518,12 @@ export default function Home() {
               <b>⌄</b>
             </button>
           )}
-          {!showAllProjects && !isOrganizationLibrary && projectOpen && (
+          {!showAllProjects && !isGlobalWorkspace && projectOpen && (
             <div className="project-menu">
-              <small>ACTIVE PROJECT</small>
+              <small>CURRENT PROJECT</small>
               <strong>{projectName}</strong>
               <span>
-                {clientName} · {projectCode} · {preSalesWorkflow?.lifecycleState || "Loading"}
+                {clientName} · {userFacingProjectReference(projectCode)} · Project status: {preSalesWorkflow?.lifecycleState || "Loading"}
               </span>
               <label className="project-menu-search">
                 <span>⌕</span>
@@ -15442,12 +15546,12 @@ export default function Home() {
                     <span>
                       <strong>{project.name}</strong>
                       <small>
-                        {project.client} · {project.code}
+                        {project.client} · {userFacingProjectReference(project.code)}
                       </small>
                     </span>
                     <b>
                       {project.id === projectId
-                        ? "Active"
+                        ? "Current"
                         : `${project.items.length} BOQ`}
                     </b>
                   </button>
@@ -15474,7 +15578,7 @@ export default function Home() {
               </button>
             </div>
           )}
-          {!showAllProjects && !isOrganizationLibrary && (
+          {!showAllProjects && !isGlobalWorkspace && (
             <div className="top-actions">
               <button
                 className="review-link"
@@ -15505,7 +15609,7 @@ export default function Home() {
         </header>
 
         <div className="workspace">
-          {!showAllProjects && !isOrganizationLibrary && (
+          {!showAllProjects && !isGlobalWorkspace && (
             <ProjectShell
               dashboard={serverProjectDashboard}
               workflow={preSalesWorkflow}
@@ -15680,7 +15784,9 @@ export default function Home() {
                             <strong>{entry.project.name}</strong>
                             <small>
                               {entry.project.client || "Client not recorded"} ·{" "}
-                              {entry.project.tenderNumber || entry.project.id}
+                              {userFacingProjectReference(
+                                entry.project.tenderNumber,
+                              )}
                             </small>
                           </button>
                           <span
@@ -18733,6 +18839,14 @@ export default function Home() {
                       </small>
                     </summary>
                     <div className="tender-context-body">
+                      <div className="intake-only-note">
+                        <strong>Browser-only intake notes</strong>
+                        <p>
+                          The optional fields below are not persisted to the
+                          server in this version. They remain an unsaved browser
+                          draft until a server-backed workflow is available.
+                        </p>
+                      </div>
                       <div className="field-row">
                         <label>
                           Country
@@ -19224,7 +19338,7 @@ export default function Home() {
               </select>
             </label>
             <div className="settings-note">
-              <strong>Local project control</strong>
+              <strong>Browser-only project draft</strong>
               <p>
                 Changes are stored only in this browser. Duplicate and archive
                 actions are available from the project menu.
@@ -19245,7 +19359,7 @@ export default function Home() {
                 }
                 onClick={saveProjectDetails}
               >
-                Save project details
+                Update browser-only draft
               </button>
             </div>
           </aside>

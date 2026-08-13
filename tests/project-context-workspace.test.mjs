@@ -14,11 +14,27 @@ const page = await readFile(
   "utf8",
 );
 
-test("Documents workspace exposes separate Project Context review", () => {
+test("Documents renders only a compact Project Context summary", () => {
   assert.match(
     page,
-    /<ProjectContextWorkspace projectId=\{projectId\} \/>/,
+    /<ProjectContextWorkspace\s+projectId=\{projectId\}\s+compact/,
   );
+  assert.match(page, /onReview=\{\(\) => navigate\("Project Context"\)\}/);
+  assert.match(workspace, /if \(compact\)/);
+  assert.match(workspace, /Review project context/);
+  assert.match(workspace, /Extracted facts/);
+  assert.match(workspace, /Needs Review/);
+  assert.match(workspace, /Reviewed/);
+  assert.match(workspace, /Interpretation review/);
+  assert.match(workspace, /Missing context/);
+  assert.match(workspace, /extraction\.original_filename/);
+  assert.match(workspace, /extraction\.version_number/);
+});
+
+test("dedicated Project Context workspace contains the complete review experience", () => {
+  assert.match(page, /activeModule === "Project Context"/);
+  assert.match(page, /<ProjectContextWorkspace projectId=\{projectId\} \/>/);
+  assert.match(workspace, /reviewSections\.map/);
   assert.match(
     workspace,
     /These facts are separate from BOQ items/,
@@ -37,11 +53,16 @@ test("Project Context view retains review status and provenance", () => {
   assert.match(workspace, /fact\.confidence/);
 });
 
-test("AI interpretation remains visibly review-only", () => {
+test("ambiguous extraction remains visibly review-only without claiming AI ran", () => {
   assert.match(
     workspace,
-    /Requires AI interpretation and human confirmation/,
+    /The extracted value is ambiguous and needs human review/,
   );
+  assert.match(workspace, /Extraction confidence measures how reliably the source was read/);
+  assert.equal((workspace.match(/Extraction confidence measures how reliably the source was read/g) || []).length, 1);
+  assert.match(workspace, /not factual, technical, or commercial approval/);
+  assert.doesNotMatch(workspace, />AI interpretation</);
+  assert.doesNotMatch(workspace, /Requires AI interpretation and human confirmation/);
   assert.match(workspace, /Mandatory review reason/);
   assert.match(workspace, /x-idempotency-key/);
   assert.match(
@@ -49,6 +70,15 @@ test("AI interpretation remains visibly review-only", () => {
     /does not alter the original extraction, BOQ rows or project/,
   );
   assert.doesNotMatch(workspace, /Apply to project/);
+});
+
+test("review states are separated before facts are rendered", () => {
+  assert.match(workspace, /const needsReviewFacts/);
+  assert.match(workspace, /const reviewedFacts/);
+  assert.match(workspace, /const rejectedFacts/);
+  assert.match(workspace, /name: "Needs Review"/);
+  assert.match(workspace, /name: "Reviewed"/);
+  assert.match(workspace, /name: "Rejected"/);
 });
 
 test("fact review exposes governed approve edit and reject actions", () => {

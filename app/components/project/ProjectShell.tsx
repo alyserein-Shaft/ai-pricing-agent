@@ -1,5 +1,5 @@
 import type { PreSalesWorkflow, ServerProjectDashboard } from "./types";
-import { canonicalStepperItems } from "../../lib/project-navigation.mjs";
+import { canonicalStepperItems, userFacingProjectReference, userFacingWorkspaceName } from "../../lib/project-navigation.mjs";
 
 export function ProjectShell(props: {
   dashboard: ServerProjectDashboard | null;
@@ -12,6 +12,13 @@ export function ProjectShell(props: {
   onOpenRoute: (route: string) => void;
 }) {
   const { dashboard, workflow } = props;
+  const projectStatus = dashboard?.project.status || "Loading status…";
+  const projectStatusClass = /completed|approved/i.test(projectStatus)
+    ? "status-complete"
+    : /failed|blocked|overdue/i.test(projectStatus)
+      ? "status-blocked"
+      : "status-neutral";
+  const projectReference = userFacingProjectReference(props.projectCode);
   return <>
     <nav className="project-workflow-tabs" aria-label="Project estimation workflow">
       {canonicalStepperItems(workflow).map((item, index) => {
@@ -25,12 +32,12 @@ export function ProjectShell(props: {
         </button>;
       })}
     </nav>
-    <div className="workspace-context-seal" aria-label={`Active project ${props.projectCode}`}>
-      <span>PROJECT WORKSPACE</span><strong>{props.projectCode}</strong>
-      <small>{props.activeWorkspace} · {dashboard?.facts.boqItems || 0} BOQ item{dashboard?.facts.boqItems === 1 ? "" : "s"}</small>
+    <div className="workspace-context-seal" aria-label={`Current project ${projectReference}`}>
+      <span>PROJECT WORKSPACE</span><strong>{projectReference}</strong>
+      <small>{userFacingWorkspaceName(props.activeWorkspace)} · {dashboard?.facts.boqItems || 0} BOQ item{dashboard?.facts.boqItems === 1 ? "" : "s"}</small>
     </div>
     <section className="project-strip" aria-label="Project status">
-      <div><span className="status-dot"/><strong>{dashboard?.project.status || "Loading status…"}</strong>
+      <div><span className={`status-dot ${projectStatusClass}`}/><strong>Project status: {projectStatus}</strong>
         <small>{workflow ? `${workflow.progress}% workflow progress · ${workflow.blockers.length} blocker(s)` : "Reading verified project records"}</small></div>
       <div className="strip-progress"><span style={{ width: `${workflow?.progress || 0}%` }}/></div>
       <button disabled={!workflow?.nextAction} onClick={() => workflow?.nextAction && props.onOpenRoute(workflow.nextAction.route)}>

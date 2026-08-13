@@ -1,6 +1,9 @@
 export const PROJECT_MODULES = Object.freeze({
+  Dashboard: "Dashboard",
+  Projects: "Projects",
   Overview: "Overview",
   Documents: "Documents",
+  "Project Context": "Project Context",
   BOQ: "BOQ",
   Requirements: "Technical Matching",
   Matching: "Technical Matching",
@@ -20,6 +23,27 @@ export const PROJECT_MODULES = Object.freeze({
   Reports: "Reports",
   Activity: "Activity",
 });
+
+export const GLOBAL_WORKSPACES = Object.freeze([
+  "Dashboard",
+  "Projects",
+  "Knowledge Library",
+  "Product Library",
+  "Reports",
+]);
+
+export function globalWorkspacePresentation(workspace) {
+  if (workspace === "Dashboard" || workspace === "Overview") {
+    return { topLevelArea: "Dashboard", activeModule: "Overview", showAllProjects: true };
+  }
+  if (workspace === "Projects") {
+    return { topLevelArea: "Projects", activeModule: "Overview", showAllProjects: true };
+  }
+  if (["Knowledge Library", "Product Library", "Reports"].includes(workspace)) {
+    return { topLevelArea: "Dashboard", activeModule: workspace, showAllProjects: false };
+  }
+  return null;
+}
 
 export function parseProjectLocation(search) {
   const query = new URLSearchParams(search);
@@ -41,9 +65,27 @@ export function buildProjectLocation(projectId, workspace, selectedItemId = "") 
   return `?${query.toString()}`;
 }
 
+export function userFacingProjectReference(value) {
+  const text = String(value || "").trim();
+  return /^project_[0-9a-f-]{20,}$/i.test(text)
+    ? "Project reference not assigned"
+    : text || "Project reference not assigned";
+}
+
+export function userFacingWorkspaceName(workspace) {
+  return ({
+    "Technical Matching": "Product Selection",
+    Costing: "Costing & Pricing",
+    "Price Sources": "Supplier Price Evidence",
+    "Supplier RFQs": "Supplier Price Evidence",
+    Quotation: "Prepare Quotation",
+  })[workspace] || workspace;
+}
+
 const WORKSPACE_STAGE_IDS = Object.freeze({
   Overview: [],
   Documents: ["intake", "document-intake"],
+  "Project Context": ["intake", "document-intake"],
   BOQ: ["extraction", "boq-extraction", "extraction-review"],
   "Technical Review": ["scope", "technical", "technical-review"],
   "Technical Matching": ["requirements", "selection", "requirement-analysis", "product-matching"],
@@ -60,9 +102,18 @@ export function workspaceForRoute(route = "Overview") {
 
 export function canonicalStepperItems(workflow) {
   const stages = Array.isArray(workflow?.stages) ? workflow.stages : [];
+  const userFacingStageNames = {
+    requirements: "Requirements",
+    selection: "Product Selection",
+    "product-matching": "Product Selection",
+    supplier: "Supplier Price Evidence",
+    pricing: "Costing & Pricing",
+    costing: "Costing & Pricing",
+    quotation: "Prepare Quotation",
+  };
   return [
     { id: "overview", name: "Overview", route: "Overview", workspace: "Overview", status: workflow?.status || "Waiting", progress: workflow?.progress || 0 },
-    ...stages.map((stage) => ({ ...stage, workspace: workspaceForRoute(stage.route) })),
+    ...stages.map((stage) => ({ ...stage, name: userFacingStageNames[stage.id] || stage.name, workspace: workspaceForRoute(stage.route) })),
   ];
 }
 
@@ -89,8 +140,8 @@ export function aiQuotationAvailability(workflow) {
   const boqItems = Number(workflow?.facts?.boqItems || 0);
   const pricedItems = Number(workflow?.facts?.pricedItems || 0);
   if (!boqItems) return { available: false, reason: "A reviewed BOQ is required before an advisory can be generated.", route: "BOQ" };
-  if (!pricedItems) return { available: false, reason: "Governed pricing evidence is required before an advisory can be generated.", route: "Costing" };
-  return { available: true, reason: "Governed quotation evidence is available.", route: "Quotation" };
+  if (!pricedItems) return { available: false, reason: "Approved pricing evidence is required before an advisory can be generated.", route: "Costing" };
+  return { available: true, reason: "Reviewed quotation evidence is available.", route: "Quotation" };
 }
 
 export function isGoldenProject(project) {
