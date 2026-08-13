@@ -5,7 +5,7 @@ const json = (body, status = 200) => new Response(JSON.stringify(body), { status
 const id = (prefix) => `${prefix}_${crypto.randomUUID()}`; const now = () => new Date().toISOString();
 const parse = (value, fallback = null) => { try { return JSON.parse(value || ""); } catch { return fallback; } };
 const fingerprint = async (value) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(value))))].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-const ownedItem = (db, itemId, userId) => db.prepare("SELECT b.* FROM boq_items b JOIN projects p ON p.id=b.project_id WHERE b.id=? AND p.owner_user_id=? AND b.row_type='BOQ Item'").bind(itemId, userId).first();
+const ownedItem = (db, itemId, userId) => db.prepare(`SELECT b.* FROM ${currentBoqEvidenceFrom("b")} JOIN projects p ON p.id=b.project_id WHERE b.id=? AND p.owner_user_id=? AND ${currentBoqItemPredicate("b")}`).bind(itemId, userId).first();
 const currentProfile = (db, itemId) => db.prepare("SELECT * FROM requirement_profile_versions WHERE boq_item_id=? AND superseded_at IS NULL ORDER BY version_number DESC LIMIT 1").bind(itemId).first();
 const currentClassification = (db, itemId) => db.prepare("SELECT * FROM engineering_classification_versions WHERE boq_item_id=? AND superseded_at IS NULL ORDER BY version_number DESC LIMIT 1").bind(itemId).first();
 const fact = (row) => ({ id: row.id, requirementId: row.requirement_id, factType: row.fact_type, value: parse(row.current_value, row.current_value), confidence: row.confidence, reviewStatus: row.review_status, sourcePage: row.source_page, sourceClause: row.source_clause, sourceSection: row.source_section, evidenceSnippet: row.evidence_snippet });
@@ -52,3 +52,4 @@ export const handleEngineeringClassificationApi = async (request, env) => {
   }
   return json({ error: { code: "ENGINEERING_CLASSIFICATION_API_NOT_FOUND", message: "Engineering classification operation not found." } }, 404);
 };
+import { currentBoqEvidenceFrom, currentBoqItemPredicate } from "./current-evidence-scope.mjs";

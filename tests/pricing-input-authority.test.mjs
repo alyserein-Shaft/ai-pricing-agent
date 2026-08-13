@@ -11,7 +11,9 @@ const fixture = () => {
   raw.exec(`
     CREATE TABLE projects (
       id TEXT PRIMARY KEY,
-      owner_user_id TEXT NOT NULL
+      owner_user_id TEXT NOT NULL,
+      organization_id TEXT,
+      archived_at TEXT
     );
 
     CREATE TABLE project_members (
@@ -35,13 +37,24 @@ const fixture = () => {
 
     CREATE TABLE boq_extraction_versions (
       id TEXT PRIMARY KEY,
+      document_id TEXT,
+      document_version_id TEXT,
+      version_number INTEGER,
+      status TEXT,
       superseded_at TEXT
     );
+
+    CREATE TABLE documents (id TEXT PRIMARY KEY,project_id TEXT,current_version_id TEXT,deleted_at TEXT,archived_at TEXT);
+    CREATE TABLE document_versions (id TEXT PRIMARY KEY,document_id TEXT);
 
     CREATE TABLE boq_items (
       id TEXT PRIMARY KEY,
       extraction_version_id TEXT NOT NULL,
       project_id TEXT NOT NULL,
+      source_document_id TEXT,
+      row_type TEXT,
+      review_status TEXT,
+      approved_for_downstream INTEGER,
       numeric_quantity REAL,
       normalized_unit TEXT,
       updated_at TEXT
@@ -147,8 +160,11 @@ const fixture = () => {
       approval_ready INTEGER
     );
 
-    INSERT INTO projects (id, owner_user_id)
-    VALUES ('${PROJECT_ID}', 'local-development-user');
+    INSERT INTO projects (id, owner_user_id, organization_id, archived_at)
+    VALUES ('${PROJECT_ID}', 'local-development-user', 'org', NULL);
+
+    INSERT INTO documents VALUES ('doc-current','${PROJECT_ID}','doc-version-current',NULL,NULL),('doc-old','${PROJECT_ID}','doc-version-old','2026-08-10T12:00:00Z',NULL);
+    INSERT INTO document_versions VALUES ('doc-version-current','doc-current'),('doc-version-old','doc-old');
 
     INSERT INTO pricing_scenarios (
       id, project_id, version_number, project_currency, settings, deleted_at, superseded_at
@@ -156,15 +172,15 @@ const fixture = () => {
       ('scenario-current', '${PROJECT_ID}', 2, 'SAR', '{}', NULL, NULL),
       ('scenario-old', '${PROJECT_ID}', 1, 'SAR', '{}', NULL, '2026-08-10T12:00:00Z');
 
-    INSERT INTO boq_extraction_versions (id, superseded_at) VALUES
-      ('boq-version-current', NULL),
-      ('boq-version-old', '2026-08-10T12:00:00Z');
+    INSERT INTO boq_extraction_versions (id,document_id,document_version_id,version_number,status,superseded_at) VALUES
+      ('boq-version-current','doc-current','doc-version-current',1,'Completed',NULL),
+      ('boq-version-old','doc-old','doc-version-old',1,'Completed','2026-08-10T12:00:00Z');
 
     INSERT INTO boq_items (
-      id, extraction_version_id, project_id, numeric_quantity, normalized_unit, updated_at
+      id, extraction_version_id, project_id, source_document_id, row_type, review_status, approved_for_downstream, numeric_quantity, normalized_unit, updated_at
     ) VALUES
-      ('boq-current', 'boq-version-current', '${PROJECT_ID}', 1, 'EA', '2026-08-10T12:00:00Z'),
-      ('boq-old', 'boq-version-old', '${PROJECT_ID}', 1, 'EA', '2026-08-10T12:00:00Z');
+      ('boq-current', 'boq-version-current', '${PROJECT_ID}', 'doc-current', 'BOQ Item', 'Approved', 1, 1, 'EA', '2026-08-10T12:00:00Z'),
+      ('boq-old', 'boq-version-old', '${PROJECT_ID}', 'doc-old', 'BOQ Item', 'Approved', 1, 1, 'EA', '2026-08-10T12:00:00Z');
 
     INSERT INTO product_manufacturers (id, name)
     VALUES ('manufacturer-1', 'Honeywell');

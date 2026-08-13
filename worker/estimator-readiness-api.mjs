@@ -1,5 +1,6 @@
 import { deriveEstimatorReadiness } from "../app/domain/estimator-row-readiness.mjs";
 import { resolveApplicationContext } from "./application-context.mjs";
+import { currentBoqEvidenceFrom } from "./current-evidence-scope.mjs";
 
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const projectAccess = (db, projectId, context) => db.prepare(`SELECT p.id FROM projects p LEFT JOIN project_members m ON m.project_id=p.id AND m.user_id=? AND m.status='Active' AND m.revoked_at IS NULL WHERE p.id=? AND p.organization_id=? AND (p.owner_user_id=? OR m.id IS NOT NULL)`).bind(context.userId, projectId, context.organizationId, context.userId).first();
@@ -20,8 +21,7 @@ const readinessRows = async (db, projectId) => {
     CASE WHEN CAST(pl.quantity AS REAL)>0 THEN CAST(pl.net_selling_minor AS REAL)/CAST(pl.quantity AS REAL) END sellingUnitMinor,
     pl.net_selling_minor sellingTotalMinor, pl.project_currency currency,
     pr.approval_status priceApprovalStatus, pr.downstream_use priceDownstreamUse, pr.valid_until priceValidUntil, pr.source_location priceSource
-  FROM boq_items b
-  JOIN boq_extraction_versions ev ON ev.id=b.extraction_version_id AND ev.superseded_at IS NULL
+  FROM ${currentBoqEvidenceFrom("b")}
   LEFT JOIN estimator_item_interpretations ui ON ui.boq_item_id=b.id AND ui.version_number=(SELECT MAX(ui2.version_number) FROM estimator_item_interpretations ui2 WHERE ui2.boq_item_id=b.id)
   LEFT JOIN product_match_runs mr ON mr.boq_item_id=b.id AND mr.superseded_at IS NULL AND mr.version_number=(SELECT MAX(mr2.version_number) FROM product_match_runs mr2 WHERE mr2.boq_item_id=b.id AND mr2.superseded_at IS NULL)
   LEFT JOIN product_match_candidates c ON c.match_run_id=mr.id AND c.rank=1 AND c.review_status<>'Rejected'

@@ -7,6 +7,7 @@ import {
 } from "../app/domain/pricing-engine.mjs";
 import { commercialLineTotals } from "../app/domain/commercial-summary.mjs";
 import { resolveApplicationContext } from "./application-context.mjs";
+import { currentBoqEvidenceFrom, currentBoqItemPredicate } from "./current-evidence-scope.mjs";
 
 const json = (value, status = 200) =>
   new Response(JSON.stringify(value), {
@@ -82,7 +83,7 @@ export const loadPricingInput = async (
   { projectId, boqItemId, candidateId, scenario, body },
 ) => {
   const item = await db
-    .prepare("SELECT b.* FROM boq_items b JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL WHERE b.id=? AND b.project_id=?")
+    .prepare(`SELECT b.* FROM ${currentBoqEvidenceFrom("b")} WHERE b.id=? AND b.project_id=? AND ${currentBoqItemPredicate("b")}`)
     .bind(boqItemId, projectId)
     .first();
   if (!item)
@@ -631,13 +632,10 @@ CASE WHEN (
 )='Approved' THEN 1 ELSE 0 END commercially_approved
 FROM pricing_lines l
 JOIN pricing_runs r ON r.id=l.pricing_run_id
-JOIN boq_items b ON b.id=l.boq_item_id
-JOIN boq_extraction_versions e
-  ON e.id=b.extraction_version_id
- AND e.superseded_at IS NULL
+JOIN ${currentBoqEvidenceFrom("b")} ON b.id=l.boq_item_id
 WHERE r.project_id=?
   AND r.scenario_id=?
-  AND b.row_type IN ('Item','BOQ Item')
+  AND ${currentBoqItemPredicate("b")}
   AND r.superseded_at IS NULL
   AND r.version_number=(
     SELECT MAX(r2.version_number)
@@ -836,7 +834,7 @@ WHERE r.project_id=?
           422,
         );
       const rows = await env.DB.prepare(
-          "SELECT l.* FROM pricing_lines l JOIN pricing_runs r ON r.id=l.pricing_run_id JOIN boq_items b ON b.id=l.boq_item_id AND b.project_id=l.project_id JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL WHERE r.project_id=? AND r.scenario_id=? AND b.row_type IN ('Item','BOQ Item') AND r.superseded_at IS NULL AND r.version_number=(SELECT MAX(r2.version_number) FROM pricing_runs r2 JOIN pricing_lines l2 ON l2.pricing_run_id=r2.id WHERE r2.scenario_id=r.scenario_id AND r2.superseded_at IS NULL AND l2.boq_item_id=l.boq_item_id)",
+          `SELECT l.* FROM pricing_lines l JOIN pricing_runs r ON r.id=l.pricing_run_id JOIN ${currentBoqEvidenceFrom("b")} ON b.id=l.boq_item_id AND b.project_id=l.project_id WHERE r.project_id=? AND r.scenario_id=? AND ${currentBoqItemPredicate("b")} AND r.superseded_at IS NULL AND r.version_number=(SELECT MAX(r2.version_number) FROM pricing_runs r2 JOIN pricing_lines l2 ON l2.pricing_run_id=r2.id WHERE r2.scenario_id=r.scenario_id AND r2.superseded_at IS NULL AND l2.boq_item_id=l.boq_item_id)`,
         )
           .bind(projectId, scenarioId)
           .all(),
@@ -971,7 +969,7 @@ WHERE r.project_id=?
       const comparison = [];
       for (const scenario of scenarios.results || []) {
         const rows = await env.DB.prepare(
-          "SELECT l.* FROM pricing_lines l JOIN pricing_runs r ON r.id=l.pricing_run_id JOIN boq_items b ON b.id=l.boq_item_id JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL WHERE r.project_id=? AND r.scenario_id=? AND r.superseded_at IS NULL AND b.row_type IN ('Item','BOQ Item') AND r.version_number=(SELECT MAX(r2.version_number) FROM pricing_runs r2 JOIN pricing_lines l2 ON l2.pricing_run_id=r2.id WHERE r2.scenario_id=r.scenario_id AND r2.superseded_at IS NULL AND l2.boq_item_id=l.boq_item_id)",
+          `SELECT l.* FROM pricing_lines l JOIN pricing_runs r ON r.id=l.pricing_run_id JOIN ${currentBoqEvidenceFrom("b")} ON b.id=l.boq_item_id WHERE r.project_id=? AND r.scenario_id=? AND r.superseded_at IS NULL AND ${currentBoqItemPredicate("b")} AND r.version_number=(SELECT MAX(r2.version_number) FROM pricing_runs r2 JOIN pricing_lines l2 ON l2.pricing_run_id=r2.id WHERE r2.scenario_id=r.scenario_id AND r2.superseded_at IS NULL AND l2.boq_item_id=l.boq_item_id)`,
         )
           .bind(projectId, scenario.id)
           .all();
@@ -1002,7 +1000,7 @@ WHERE r.project_id=?
   if (itemRoute) {
     const boqItemId = decodeURIComponent(itemRoute[1]),
       item = await env.DB.prepare(
-        "SELECT b.* FROM boq_items b JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL WHERE b.id=?"
+        `SELECT b.* FROM ${currentBoqEvidenceFrom("b")} WHERE b.id=? AND ${currentBoqItemPredicate("b")}`
       )
         .bind(boqItemId)
         .first();

@@ -18,7 +18,8 @@ export function OverviewWorkspace({ dashboard, workflow, estimatorReadiness, onO
       <span className={projectStatusClass}>Project status: {dashboard.project.status}</span></div>
     <div className="summary-grid">
       <article><span>Documents</span><strong>{dashboard.facts.documents || 0}</strong><small>{dashboard.facts.processing || 0} processing · {dashboard.facts.failedJobs || 0} failed</small></article>
-      <article><span>BOQ items</span><strong>{dashboard.facts.boqItems || 0}</strong><small>{dashboard.facts.matchedItems || 0} matched · {dashboard.facts.technicalApproved || 0} technically approved</small></article>
+      <article><span>Current BOQ items</span><strong>{dashboard.facts.boqItems || 0}</strong><small>{dashboard.facts.currentExtractedRows || 0} extracted rows · {dashboard.facts.structuralRows || 0} structural/header</small></article>
+      <article><span>Extraction review</span><strong>{dashboard.facts.extractionConfirmed || 0} confirmed</strong><small>{dashboard.facts.extractionReview || 0} need review · {dashboard.facts.aiUnderstood || 0} AI understood</small></article>
       <article><span>Workflow progress</span><strong>{workflow.progress}%</strong><small>Across the current project journey</small></article>
       <article><span>{dashboard.commercialRestricted ? "Commercial data" : "Quoted value"}</span><strong>{dashboard.commercialRestricted ? "Restricted" : `${dashboard.totals?.currency || "SAR"} ${money(dashboard.totals?.quotedValue || 0)}`}</strong><small>{dashboard.commercialRestricted ? "Requires commercial permission" : `${(dashboard.totals?.averageMargin || 0).toFixed(1)}% average margin`}</small></article>
     </div>

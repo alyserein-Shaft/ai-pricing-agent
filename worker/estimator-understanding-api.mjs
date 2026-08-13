@@ -8,6 +8,7 @@ import {
 } from "../app/domain/boq-understanding-engine.mjs";
 import { resolveApplicationContext } from "./application-context.mjs";
 import { createConfiguredBoqUnderstandingProvider } from "./boq-understanding-provider.mjs";
+import { currentBoqEvidenceFrom, currentBoqItemPredicate } from "./current-evidence-scope.mjs";
 
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const id = (prefix) => `${prefix}_${crypto.randomUUID()}`;
@@ -47,8 +48,8 @@ export async function runUnderstandingBatch(rows, { provider, existing = async (
 
 const activeRows = async (db, projectId, itemId = null) => {
   const result = await db.prepare(`SELECT b.id boqItemId,b.description,b.numeric_quantity numericQuantity,b.original_quantity originalQuantity,b.normalized_unit normalizedUnit,b.original_unit originalUnit,b.system_value system,b.category,b.subcategory,b.manufacturer,b.model,b.part_number partNumber,b.current_values currentValues,b.source_location sourceLocation
-    FROM boq_items b JOIN boq_extraction_versions ev ON ev.id=b.extraction_version_id AND ev.superseded_at IS NULL
-    WHERE b.project_id=? AND b.row_type IN ('Item','BOQ Item') ${itemId ? "AND b.id=?" : ""} ORDER BY b.sequence,b.id`).bind(...(itemId ? [projectId, itemId] : [projectId])).all();
+    FROM ${currentBoqEvidenceFrom("b")}
+    WHERE b.project_id=? AND ${currentBoqItemPredicate("b")} ${itemId ? "AND b.id=?" : ""} ORDER BY b.sequence,b.id`).bind(...(itemId ? [projectId, itemId] : [projectId])).all();
   return (result.results || []).map((row) => ({ ...row, currentValues: parse(row.currentValues, {}), sourceLocation: parse(row.sourceLocation, null) }));
 };
 
@@ -105,8 +106,7 @@ export const handleEstimatorUnderstandingApi = async (request, env) => {
   }
   if (request.method !== "POST") return json({ error: { code: "METHOD_NOT_ALLOWED", message: "Use POST to retry an item." } }, 405);
   const itemId = decodeURIComponent(retryMatch[1]);
-  const item = await env.DB.prepare(`SELECT project_id projectId FROM boq_items WHERE id=?`).bind(itemId).first();
+  const item = await env.DB.prepare(`SELECT b.project_id projectId FROM ${currentBoqEvidenceFrom("b")} WHERE b.id=? AND ${currentBoqItemPredicate("b")}`).bind(itemId).first();
   if (!item || !(await projectAccess(env.DB, item.projectId, resolved.context))) return json({ error: { code: "BOQ_ITEM_NOT_FOUND", message: "BOQ item not found." } }, 404);
   return json(await executeRun(env, resolved.context, item.projectId, await activeRows(env.DB, item.projectId, itemId)));
 };
-

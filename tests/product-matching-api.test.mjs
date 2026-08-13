@@ -48,7 +48,7 @@ test("matching status reports queued processing before the first match run is pe
         bind(...params) {
           return {
             async first() {
-              if (sql.includes("FROM boq_items i JOIN projects")) {
+              if (sql.includes("SELECT i.*,i.evidence_document_version_id")) {
                 return {
                   id: "item-1",
                   project_id: "project-1",

@@ -16,6 +16,8 @@ const fixture = () => {
       archived_at TEXT
     );
 
+    CREATE TABLE projects (id TEXT PRIMARY KEY, organization_id TEXT, archived_at TEXT);
+
     CREATE TABLE document_versions (
       id TEXT PRIMARY KEY,
       document_id TEXT
@@ -31,6 +33,10 @@ const fixture = () => {
 
     CREATE TABLE boq_extraction_versions (
       id TEXT PRIMARY KEY,
+      document_id TEXT,
+      document_version_id TEXT,
+      version_number INTEGER,
+      status TEXT,
       superseded_at TEXT
     );
 
@@ -38,6 +44,7 @@ const fixture = () => {
       id TEXT PRIMARY KEY,
       extraction_version_id TEXT,
       project_id TEXT,
+      source_document_id TEXT,
       row_type TEXT,
       review_status TEXT,
       approved_for_downstream INTEGER
@@ -146,16 +153,20 @@ const fixture = () => {
       cancelled_at TEXT
     );
 
-    INSERT INTO boq_extraction_versions (id, superseded_at)
-    VALUES ('boq-current-version', NULL);
+    INSERT INTO projects VALUES ('${PROJECT_ID}','org',NULL);
+    INSERT INTO documents (id,project_id,current_version_id,archived_at) VALUES ('doc-1','${PROJECT_ID}','doc-version-1',NULL);
+    INSERT INTO document_versions VALUES ('doc-version-1','doc-1');
+    INSERT INTO boq_extraction_versions (id,document_id,document_version_id,version_number,status,superseded_at)
+    VALUES ('boq-current-version','doc-1','doc-version-1',1,'Completed',NULL);
 
     INSERT INTO boq_items (
-      id, extraction_version_id, project_id, row_type,
+      id, extraction_version_id, project_id, source_document_id, row_type,
       review_status, approved_for_downstream
     ) VALUES (
       'boq-1',
       'boq-current-version',
       '${PROJECT_ID}',
+      'doc-1',
       'BOQ Item',
       'Approved',
       1

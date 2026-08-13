@@ -1,6 +1,7 @@
 import { requireMigratedTables } from "./schema-requirements.mjs";
 import { DASHBOARD_MODEL_VERSION, METRIC_REGISTRY, deriveProjectDashboard } from "../app/domain/dashboard-workflow-engine.mjs";
 import { authenticateLibraryActor } from "./library-auth.mjs";
+import { currentBoqEvidenceCounts, currentBoqEvidenceFrom, currentBoqItemPredicate } from "./current-evidence-scope.mjs";
 
 const json = (body, status = 200, headers = {}) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "private, no-store", "x-dashboard-model-version": DASHBOARD_MODEL_VERSION, ...headers } });
 const id = (prefix) => `${prefix}_${crypto.randomUUID()}`;
@@ -57,49 +58,40 @@ export const collectProjectFacts = async (db, projectId) => {
     .bind(projectId)
     .first();
   const selectedPricingScenarioId = pricingAuthority?.selected_pricing_scenario_id || null;
+  const evidenceCounts = await currentBoqEvidenceCounts(db, { projectId });
+  const currentBoq = currentBoqEvidenceFrom("b");
 
   const [documents, classified, processing, failedJobs, boqItems, extractionReview, specificationExtractions, requirementProfiles, requirementReview, matchedItems, technicalPending, technicalApproved, pricedItems, commercialPending, commercialApproved, finalReviewApproved, openClarifications, blockingClarifications, openSafetyBlocks, exportsCompleted, exportFailures] = await Promise.all([
     one(db, "SELECT COUNT(*) count FROM documents WHERE project_id=? AND archived_at IS NULL AND deleted_at IS NULL", projectId),
     one(db, "SELECT COUNT(DISTINCT d.id) count FROM documents d JOIN document_classifications c ON c.document_id=d.id AND c.superseded_at IS NULL WHERE d.project_id=? AND d.archived_at IS NULL AND d.deleted_at IS NULL AND c.status IN ('Classified','Confirmed','Manually Confirmed')", projectId),
     one(db, "SELECT COUNT(*) count FROM document_processing_runs r JOIN document_versions v ON v.id=r.document_version_id JOIN documents d ON d.id=v.document_id WHERE d.project_id=? AND d.current_version_id=v.id AND r.stage IN ('Intake','Classification') AND r.status IN ('Queued','Processing','Retrying','In Progress') AND NOT EXISTS (SELECT 1 FROM document_processing_runs newer WHERE newer.document_version_id=r.document_version_id AND newer.stage=r.stage AND (newer.created_at>r.created_at OR (newer.created_at=r.created_at AND newer.id>r.id)))", projectId),
     one(db, "SELECT COUNT(*) count FROM document_processing_runs r JOIN document_versions v ON v.id=r.document_version_id JOIN documents d ON d.id=v.document_id WHERE d.project_id=? AND d.current_version_id=v.id AND r.stage IN ('Intake','Classification') AND r.status='Failed' AND NOT EXISTS (SELECT 1 FROM document_processing_runs newer WHERE newer.document_version_id=r.document_version_id AND newer.stage=r.stage AND (newer.created_at>r.created_at OR (newer.created_at=r.created_at AND newer.id>r.id)))", projectId),
-    one(db, "SELECT COUNT(*) count FROM boq_items b JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL WHERE b.project_id=? AND b.row_type IN ('Item','BOQ Item')", projectId),
-    one(db, "SELECT COUNT(*) count FROM boq_items b JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL WHERE b.project_id=? AND b.row_type IN ('Item','BOQ Item') AND (b.review_status NOT IN ('Approved','Accepted') OR b.approved_for_downstream=0)", projectId),
+    Promise.resolve(evidenceCounts.currentBoqItems),
+    Promise.resolve(evidenceCounts.extractionNeedsReview),
     one(db, "SELECT COUNT(*) count FROM specification_extraction_versions s JOIN documents d ON d.id=s.document_id WHERE d.project_id=? AND s.superseded_at IS NULL AND s.status IN ('Completed','Needs Review')", projectId),
-    one(db, "SELECT COUNT(DISTINCT p.boq_item_id) count FROM requirement_profile_versions p JOIN boq_items b ON b.id=p.boq_item_id JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL WHERE p.project_id=? AND p.superseded_at IS NULL AND b.row_type IN ('Item','BOQ Item')", projectId),
-    one(db, "SELECT COUNT(*) count FROM requirement_profile_versions p JOIN boq_items b ON b.id=p.boq_item_id JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL WHERE p.project_id=? AND p.superseded_at IS NULL AND b.row_type IN ('Item','BOQ Item') AND (p.readiness_status NOT IN ('Ready for Matching','Ready with Warnings','Approved') OR p.approved_for_matching=0)", projectId),
-    one(db, "SELECT COUNT(DISTINCT r.boq_item_id) count FROM product_match_runs r JOIN boq_items b ON b.id=r.boq_item_id JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL WHERE r.project_id=? AND r.superseded_at IS NULL AND b.row_type IN ('Item','BOQ Item') AND r.candidate_count>0", projectId),
+    one(db, `SELECT COUNT(DISTINCT p.boq_item_id) count FROM requirement_profile_versions p JOIN ${currentBoq} ON b.id=p.boq_item_id WHERE p.project_id=? AND p.superseded_at IS NULL AND ${currentBoqItemPredicate("b")}`, projectId),
+    one(db, `SELECT COUNT(*) count FROM requirement_profile_versions p JOIN ${currentBoq} ON b.id=p.boq_item_id WHERE p.project_id=? AND p.superseded_at IS NULL AND ${currentBoqItemPredicate("b")} AND (p.readiness_status NOT IN ('Ready for Matching','Ready with Warnings','Approved') OR p.approved_for_matching=0)`, projectId),
+    one(db, `SELECT COUNT(DISTINCT r.boq_item_id) count FROM product_match_runs r JOIN ${currentBoq} ON b.id=r.boq_item_id WHERE r.project_id=? AND r.superseded_at IS NULL AND ${currentBoqItemPredicate("b")} AND r.candidate_count>0`, projectId),
     one(db, `SELECT COUNT(*) count
-FROM boq_items b
-JOIN boq_extraction_versions e
-  ON e.id=b.extraction_version_id
- AND e.superseded_at IS NULL
+FROM safety_decisions decision
+JOIN ${currentBoq} ON b.id=decision.boq_item_id
 WHERE b.project_id=?
-  AND b.row_type IN ('Item','BOQ Item')
-  AND NOT EXISTS (
-    SELECT 1
-    FROM safety_decisions d
-    WHERE d.boq_item_id=b.id
-      AND d.superseded_at IS NULL
-      AND (
+  AND ${currentBoqItemPredicate("b")}
+  AND decision.superseded_at IS NULL
+  AND COALESCE((
         SELECT a.status
         FROM safety_approval_requests a
-        WHERE a.safety_decision_id=d.id
+        WHERE a.safety_decision_id=decision.id
           AND a.approval_type='Technical'
         ORDER BY a.decided_at DESC, a.id DESC
         LIMIT 1
-      )='Approved'
-  )`, projectId),
+      ),'')<>'Approved'`, projectId),
     one(db, `SELECT COUNT(DISTINCT d.boq_item_id) count
 FROM safety_decisions d
-JOIN boq_items b
-  ON b.id=d.boq_item_id
- AND b.row_type IN ('Item','BOQ Item')
-JOIN boq_extraction_versions e
-  ON e.id=b.extraction_version_id
- AND e.superseded_at IS NULL
+JOIN ${currentBoq} ON b.id=d.boq_item_id
 WHERE d.project_id=?
   AND d.superseded_at IS NULL
+  AND ${currentBoqItemPredicate("b")}
   AND (
     SELECT a.status
     FROM safety_approval_requests a
@@ -108,17 +100,15 @@ WHERE d.project_id=?
     ORDER BY a.decided_at DESC, a.id DESC
     LIMIT 1
   )='Approved'`, projectId),
-    selectedPricingScenarioId ? one(db, "SELECT COUNT(DISTINCT l.boq_item_id) count FROM pricing_lines l JOIN pricing_runs r ON r.id=l.pricing_run_id JOIN boq_items b ON b.id=l.boq_item_id JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL WHERE l.project_id=? AND r.scenario_id=? AND r.superseded_at IS NULL AND b.row_type IN ('Item','BOQ Item') AND l.approval_ready=1 AND l.status NOT IN ('Invalid','Expired','Rejected') AND r.version_number=(SELECT MAX(r2.version_number) FROM pricing_runs r2 JOIN pricing_lines l2 ON l2.pricing_run_id=r2.id WHERE r2.scenario_id=r.scenario_id AND r2.superseded_at IS NULL AND l2.boq_item_id=l.boq_item_id)", projectId, selectedPricingScenarioId) : 0,
+    selectedPricingScenarioId ? one(db, `SELECT COUNT(DISTINCT l.boq_item_id) count FROM pricing_lines l JOIN pricing_runs r ON r.id=l.pricing_run_id JOIN ${currentBoq} ON b.id=l.boq_item_id WHERE l.project_id=? AND r.scenario_id=? AND r.superseded_at IS NULL AND ${currentBoqItemPredicate("b")} AND l.approval_ready=1 AND l.status NOT IN ('Invalid','Expired','Rejected') AND r.version_number=(SELECT MAX(r2.version_number) FROM pricing_runs r2 JOIN pricing_lines l2 ON l2.pricing_run_id=r2.id WHERE r2.scenario_id=r.scenario_id AND r2.superseded_at IS NULL AND l2.boq_item_id=l.boq_item_id)`, projectId, selectedPricingScenarioId) : 0,
     selectedPricingScenarioId ? one(db, `SELECT COUNT(DISTINCT l.boq_item_id) count
 FROM pricing_lines l
 JOIN pricing_runs r ON r.id=l.pricing_run_id
-JOIN boq_items b ON b.id=l.boq_item_id AND b.row_type IN ('Item','BOQ Item')
-JOIN boq_extraction_versions e
-  ON e.id=b.extraction_version_id
- AND e.superseded_at IS NULL
+JOIN ${currentBoq} ON b.id=l.boq_item_id
 WHERE l.project_id=?
   AND r.scenario_id=?
   AND r.superseded_at IS NULL
+  AND ${currentBoqItemPredicate("b")}
   AND l.approval_ready=1
   AND r.version_number=(
     SELECT MAX(r2.version_number)
@@ -142,13 +132,11 @@ WHERE l.project_id=?
     selectedPricingScenarioId ? one(db, `SELECT COUNT(DISTINCT l.boq_item_id) count
 FROM pricing_lines l
 JOIN pricing_runs r ON r.id=l.pricing_run_id
-JOIN boq_items b ON b.id=l.boq_item_id AND b.row_type IN ('Item','BOQ Item')
-JOIN boq_extraction_versions e
-  ON e.id=b.extraction_version_id
- AND e.superseded_at IS NULL
+JOIN ${currentBoq} ON b.id=l.boq_item_id
 WHERE l.project_id=?
   AND r.scenario_id=?
   AND r.superseded_at IS NULL
+  AND ${currentBoqItemPredicate("b")}
   AND l.approval_ready=1
   AND r.version_number=(
     SELECT MAX(r2.version_number)
@@ -169,14 +157,15 @@ WHERE l.project_id=?
     LIMIT 1
   )='Approved'`, projectId, selectedPricingScenarioId) : 0,
 
-    one(db, "SELECT COUNT(DISTINCT b.id) count FROM boq_items b JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL JOIN review_queue_items q ON q.boq_item_id=b.id AND q.project_id=b.project_id AND q.review_type='Final Estimation Review' AND q.deleted_at IS NULL AND q.status IN ('Approved','Approved with Conditions') WHERE b.project_id=? AND b.row_type IN ('Item','BOQ Item')", projectId),
-    one(db, "SELECT COUNT(*) count FROM review_clarifications c JOIN review_queue_items q ON q.id=c.review_item_id LEFT JOIN boq_items b ON b.id=q.boq_item_id LEFT JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL WHERE c.project_id=? AND c.status NOT IN ('Resolved','Cancelled') AND q.deleted_at IS NULL AND (q.boq_item_id IS NULL OR (b.row_type IN ('Item','BOQ Item') AND e.id IS NOT NULL))", projectId),
-    one(db, "SELECT COUNT(*) count FROM review_clarifications c JOIN review_queue_items q ON q.id=c.review_item_id LEFT JOIN boq_items b ON b.id=q.boq_item_id LEFT JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL WHERE c.project_id=? AND c.status NOT IN ('Resolved','Cancelled') AND q.deleted_at IS NULL AND q.blocking=1 AND (q.boq_item_id IS NULL OR (b.row_type IN ('Item','BOQ Item') AND e.id IS NOT NULL))", projectId),
-    one(db, "SELECT COUNT(*) count FROM safety_blocks sb JOIN safety_decisions s ON s.id=sb.safety_decision_id JOIN boq_items b ON b.id=s.boq_item_id JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL WHERE s.project_id=? AND s.superseded_at IS NULL AND b.row_type IN ('Item','BOQ Item') AND sb.status='Open'", projectId),
+    one(db, `SELECT COUNT(DISTINCT b.id) count FROM ${currentBoq} JOIN review_queue_items q ON q.boq_item_id=b.id AND q.project_id=b.project_id AND q.review_type='Final Estimation Review' AND q.deleted_at IS NULL AND q.status IN ('Approved','Approved with Conditions') WHERE b.project_id=? AND ${currentBoqItemPredicate("b")}`, projectId),
+    one(db, `SELECT COUNT(*) count FROM review_clarifications c JOIN review_queue_items q ON q.id=c.review_item_id LEFT JOIN ${currentBoq} ON b.id=q.boq_item_id WHERE c.project_id=? AND c.status NOT IN ('Resolved','Cancelled') AND q.deleted_at IS NULL AND (q.boq_item_id IS NULL OR ${currentBoqItemPredicate("b")})`, projectId),
+    one(db, `SELECT COUNT(*) count FROM review_clarifications c JOIN review_queue_items q ON q.id=c.review_item_id LEFT JOIN ${currentBoq} ON b.id=q.boq_item_id WHERE c.project_id=? AND c.status NOT IN ('Resolved','Cancelled') AND q.deleted_at IS NULL AND q.blocking=1 AND (q.boq_item_id IS NULL OR ${currentBoqItemPredicate("b")})`, projectId),
+    one(db, `SELECT COUNT(*) count FROM safety_blocks sb JOIN safety_decisions s ON s.id=sb.safety_decision_id JOIN ${currentBoq} ON b.id=s.boq_item_id WHERE s.project_id=? AND s.superseded_at IS NULL AND ${currentBoqItemPredicate("b")} AND sb.status='Open'`, projectId),
     one(db, "SELECT COUNT(*) count FROM excel_export_jobs WHERE project_id=? AND status IN ('Completed','Completed with Warnings') AND cancelled_at IS NULL", projectId),
     one(db, "SELECT COUNT(*) count FROM excel_export_jobs WHERE project_id=? AND status='Failed'", projectId),
   ]);
-  return { documents, classified, processing, failedJobs, boqItems, extractionReview, specificationExtractions, requirementProfiles, requirementReview, matchedItems, technicalPending, technicalApproved, pricedItems, missingPrices: Math.max(0, boqItems - pricedItems), commercialPending, commercialApproved, finalReviewApproved, finalReviewPending: Math.max(0, boqItems - finalReviewApproved), openClarifications, blockingClarifications, openSafetyBlocks, exportsCompleted, exportFailures };
+  const aiUnderstood = await one(db, `SELECT COUNT(*) count FROM ${currentBoq} JOIN estimator_item_interpretations i ON i.boq_item_id=b.id AND i.version_number=(SELECT MAX(i2.version_number) FROM estimator_item_interpretations i2 WHERE i2.boq_item_id=b.id) WHERE b.project_id=? AND ${currentBoqItemPredicate("b")} AND i.status IN ('COMPLETED','NEEDS_REVIEW')`, projectId);
+  return { documents, classified, processing, failedJobs, currentExtractedRows: evidenceCounts.currentExtractedRows, structuralRows: evidenceCounts.structuralRows, boqItems, extractionConfirmed: evidenceCounts.extractionConfirmed, extractionReview, aiUnderstood, specificationExtractions, requirementProfiles, requirementReview, matchedItems, technicalPending, technicalApproved, pricedItems, missingPrices: Math.max(0, boqItems - pricedItems), commercialPending, commercialApproved, finalReviewApproved, finalReviewPending: Math.max(0, boqItems - finalReviewApproved), openClarifications, blockingClarifications, openSafetyBlocks, exportsCompleted, exportFailures };
 };
 
 const pricingTotals = async (db, projectId) => {
@@ -196,7 +185,7 @@ const pricingTotals = async (db, projectId) => {
       };
 
     const row = await db
-      .prepare("SELECT COALESCE(SUM(l.total_cost_minor),0) total_cost, COALESCE(SUM(l.net_selling_minor),0) quoted_value, COALESCE(AVG(l.margin_basis_points),0) margin FROM pricing_lines l JOIN pricing_runs r ON r.id=l.pricing_run_id JOIN boq_items b ON b.id=l.boq_item_id JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL WHERE l.project_id=? AND r.scenario_id=? AND r.superseded_at IS NULL AND b.row_type IN ('Item','BOQ Item') AND l.approval_ready=1 AND l.status NOT IN ('Invalid','Expired','Rejected') AND r.version_number=(SELECT MAX(r2.version_number) FROM pricing_runs r2 JOIN pricing_lines l2 ON l2.pricing_run_id=r2.id WHERE r2.scenario_id=r.scenario_id AND r2.superseded_at IS NULL AND l2.boq_item_id=l.boq_item_id)")
+      .prepare(`SELECT COALESCE(SUM(l.total_cost_minor),0) total_cost, COALESCE(SUM(l.net_selling_minor),0) quoted_value, COALESCE(AVG(l.margin_basis_points),0) margin FROM pricing_lines l JOIN pricing_runs r ON r.id=l.pricing_run_id JOIN ${currentBoqEvidenceFrom("b")} ON b.id=l.boq_item_id WHERE l.project_id=? AND r.scenario_id=? AND r.superseded_at IS NULL AND ${currentBoqItemPredicate("b")} AND l.approval_ready=1 AND l.status NOT IN ('Invalid','Expired','Rejected') AND r.version_number=(SELECT MAX(r2.version_number) FROM pricing_runs r2 JOIN pricing_lines l2 ON l2.pricing_run_id=r2.id WHERE r2.scenario_id=r.scenario_id AND r2.superseded_at IS NULL AND l2.boq_item_id=l.boq_item_id)`)
       .bind(projectId, scenarioId)
       .first();
 

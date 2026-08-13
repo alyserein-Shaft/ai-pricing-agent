@@ -16,8 +16,16 @@ const fixture = () => {
   const raw = new DatabaseSync(":memory:");
 
   raw.exec(`
+    CREATE TABLE projects(id TEXT PRIMARY KEY,organization_id TEXT,archived_at TEXT);
+    CREATE TABLE documents(id TEXT PRIMARY KEY,project_id TEXT,current_version_id TEXT,deleted_at TEXT,archived_at TEXT);
+    CREATE TABLE document_versions(id TEXT PRIMARY KEY,document_id TEXT);
+
     CREATE TABLE boq_extraction_versions (
       id TEXT PRIMARY KEY,
+      document_id TEXT,
+      document_version_id TEXT,
+      version_number INTEGER,
+      status TEXT,
       superseded_at TEXT
     );
 
@@ -25,6 +33,7 @@ const fixture = () => {
       id TEXT PRIMARY KEY,
       extraction_version_id TEXT NOT NULL,
       project_id TEXT NOT NULL,
+      source_document_id TEXT NOT NULL,
       row_type TEXT NOT NULL
     );
 
@@ -72,13 +81,16 @@ const fixture = () => {
       discount_type TEXT NOT NULL
     );
 
-    INSERT INTO boq_extraction_versions (id, superseded_at) VALUES
-      ('boq-current-version', NULL),
-      ('boq-old-version', '2026-08-10T12:00:00Z');
+    INSERT INTO projects VALUES ('${PROJECT_ID}','org',NULL);
+    INSERT INTO documents VALUES ('doc-current','${PROJECT_ID}','version-current',NULL,NULL),('doc-old','${PROJECT_ID}','version-old','2026-08-10T12:00:00Z',NULL);
+    INSERT INTO document_versions VALUES ('version-current','doc-current'),('version-old','doc-old');
+    INSERT INTO boq_extraction_versions (id,document_id,document_version_id,version_number,status,superseded_at) VALUES
+      ('boq-current-version','doc-current','version-current',1,'Completed',NULL),
+      ('boq-old-version','doc-old','version-old',1,'Completed','2026-08-10T12:00:00Z');
 
-    INSERT INTO boq_items (id, extraction_version_id, project_id, row_type) VALUES
-      ('boq-current', 'boq-current-version', '${PROJECT_ID}', 'BOQ Item'),
-      ('boq-old', 'boq-old-version', '${PROJECT_ID}', 'BOQ Item');
+    INSERT INTO boq_items (id, extraction_version_id, project_id, source_document_id, row_type) VALUES
+      ('boq-current', 'boq-current-version', '${PROJECT_ID}', 'doc-current', 'BOQ Item'),
+      ('boq-old', 'boq-old-version', '${PROJECT_ID}', 'doc-old', 'BOQ Item');
 
     INSERT INTO product_match_runs (
       id, project_id, boq_item_id, version_number, superseded_at

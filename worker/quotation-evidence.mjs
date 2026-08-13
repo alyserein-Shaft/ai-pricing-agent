@@ -1,5 +1,6 @@
 import { QUOTATION_AUTHORITY_VERSION, quotationEvidenceFingerprint } from "../app/domain/quotation-authority.mjs";
 import { loadCanonicalPricingLine } from "./pricing-authority.mjs";
+import { currentBoqEvidenceFrom, currentBoqItemPredicate } from "./current-evidence-scope.mjs";
 
 const rows = async (db, sql, ...values) => (await db.prepare(sql).bind(...values).all()).results || [];
 
@@ -8,9 +9,9 @@ export async function buildQuotationEvidenceManifest(db, projectId) {
   if (!project) throw Object.assign(new Error("Project not found."), { code: "PROJECT_NOT_FOUND" });
   const profile = await db.prepare("SELECT selected_pricing_scenario_id,currency FROM project_dashboard_profiles WHERE project_id=? AND deleted_at IS NULL").bind(projectId).first();
   const scenario = profile?.selected_pricing_scenario_id ? await db.prepare("SELECT id,version_number,project_currency,status FROM pricing_scenarios WHERE id=? AND project_id=? AND superseded_at IS NULL AND deleted_at IS NULL").bind(profile.selected_pricing_scenario_id, projectId).first() : null;
-  const boq = await rows(db, `SELECT b.id itemId,b.extraction_version_id extractionVersionId,e.version_number extractionVersion,b.updated_at itemUpdatedAt
-    FROM boq_items b JOIN boq_extraction_versions e ON e.id=b.extraction_version_id AND e.superseded_at IS NULL
-    WHERE b.project_id=? AND b.row_type IN ('Item','BOQ Item') ORDER BY b.id`, projectId);
+  const boq = await rows(db, `SELECT b.id itemId,b.extraction_version_id extractionVersionId,b.evidence_extraction_version extractionVersion,b.updated_at itemUpdatedAt
+    FROM ${currentBoqEvidenceFrom("b")}
+    WHERE b.project_id=? AND ${currentBoqItemPredicate("b")} ORDER BY b.id`, projectId);
   const items = [];
   for (const item of boq) {
     const requirement = await db.prepare("SELECT id,version_number,input_fingerprint FROM requirement_profile_versions WHERE boq_item_id=? AND superseded_at IS NULL ORDER BY version_number DESC LIMIT 1").bind(item.itemId).first();

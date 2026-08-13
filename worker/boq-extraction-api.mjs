@@ -2,6 +2,7 @@ import { requireMigratedTables } from "./schema-requirements.mjs";
 import { BOQ_OCR_VERSION, BOQ_PARSER_VERSION, BOQ_ROW_TYPES, BOQ_RULESET_VERSION, compareBoqRevisions, extractBoqBytes } from "../app/domain/boq-extractor.mjs";
 import { QUALIFIED_BOQ_ROW_TYPES } from "../app/domain/boq-row-qualification.mjs";
 import { applicationActor, resolveApplicationContext } from "./application-context.mjs";
+import { currentBoqEvidenceFrom } from "./current-evidence-scope.mjs";
 
 const json = (body, status = 200, headers = {}) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...headers } });
 const id = (prefix) => `${prefix}_${crypto.randomUUID()}`;
@@ -14,7 +15,7 @@ let initialized = false;
 export const ensureBoqExtractionSchema = async (db) => { if (!initialized) { await requireMigratedTables(db, BOQ_SCHEMA_TABLES); initialized = true; } };
 
 const ownedDocument = (db, documentId, userId) => db.prepare(`SELECT d.id, d.project_id, d.document_type, d.classification_source, d.current_version_id AS version_id, p.name AS project_name, v.original_filename, v.extension, v.object_key, v.revision, c.id AS classification_id, c.primary_type, c.status AS classification_status, c.manual_review_required FROM documents d JOIN projects p ON p.id=d.project_id AND p.owner_user_id=? JOIN document_versions v ON v.id=d.current_version_id LEFT JOIN document_classifications c ON c.id=(SELECT id FROM document_classifications WHERE document_id=d.id AND superseded_at IS NULL ORDER BY classified_at DESC LIMIT 1) WHERE d.id=? AND d.deleted_at IS NULL`).bind(userId, documentId).first();
-const currentExtraction = (db, documentId) => db.prepare("SELECT * FROM boq_extraction_versions WHERE document_id=? AND superseded_at IS NULL ORDER BY version_number DESC LIMIT 1").bind(documentId).first();
+const currentExtraction = (db, documentId) => db.prepare(`SELECT e.* FROM boq_extraction_versions e JOIN documents d ON d.id=e.document_id AND d.current_version_id=e.document_version_id AND d.deleted_at IS NULL AND d.archived_at IS NULL JOIN document_versions v ON v.id=e.document_version_id AND v.document_id=d.id WHERE e.document_id=? AND e.superseded_at IS NULL AND e.status IN ('Completed','Needs Review') ORDER BY e.version_number DESC,e.id DESC LIMIT 1`).bind(documentId).first();
 const extractionEligibility = (document) => document && document.primary_type === "BOQ" && (!document.manual_review_required || document.classification_status === "Manually Confirmed");
 
 const updateJob = async (db, runId, fromStatus, status, progress, error = null) => {
@@ -68,7 +69,7 @@ export const scheduleAutomaticBoqExtraction = (env, ctx, { documentId, userId, r
 
 const extractionPayload = async (db, documentId) => { const extraction = await currentExtraction(db, documentId); if (!extraction) return null; return { ...extraction, summary: parseJson(extraction.summary, {}) }; };
 const itemPayload = (row) => ({ ...row, section_path: parseJson(row.section_path, []), source_location: parseJson(row.source_location, {}), original_raw_values: parseJson(row.original_raw_values, []), current_values: parseJson(row.current_values, {}) });
-const getItem = (db, itemId, userId) => db.prepare("SELECT i.* FROM boq_items i JOIN boq_extraction_versions e ON e.id=i.extraction_version_id JOIN documents d ON d.id=e.document_id JOIN projects p ON p.id=d.project_id WHERE i.id=? AND p.owner_user_id=?").bind(itemId, userId).first();
+const getItem = (db, itemId, userId) => db.prepare(`SELECT i.* FROM ${currentBoqEvidenceFrom("i")} JOIN projects p ON p.id=i.project_id WHERE i.id=? AND p.owner_user_id=?`).bind(itemId, userId).first();
 const auditDecision = async (db, item, user, action, previous, next, reason) => db.batch([
   db.prepare("INSERT INTO boq_review_decisions (id, extraction_version_id, item_id, action, previous_value, new_value, reason, decided_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(id("boqdecision"), item.extraction_version_id, item.id, action, JSON.stringify(previous), JSON.stringify(next), reason, user.id),
   db.prepare("INSERT INTO document_audit_events (id, project_id, document_id, version_id, actor_user_id, action, old_value, new_value, reason, request_id) SELECT ?, i.project_id, i.source_document_id, e.document_version_id, ?, ?, ?, ?, ?, ? FROM boq_items i JOIN boq_extraction_versions e ON e.id=i.extraction_version_id WHERE i.id=?").bind(id("audit"), user.id, `BOQ ${action}`, JSON.stringify(previous), JSON.stringify(next), reason, id("request"), item.id),
