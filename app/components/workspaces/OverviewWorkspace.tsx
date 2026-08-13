@@ -1,5 +1,4 @@
 import type { EstimatorReadiness, PreSalesWorkflow, ServerProjectDashboard } from "../project/types";
-import { EmptyState } from "../shared/WorkspaceStates";
 import { userFacingProjectReference } from "../../lib/project-navigation.mjs";
 
 export function OverviewWorkspace({ dashboard, workflow, estimatorReadiness, onOpenRoute, money }: {
@@ -33,7 +32,7 @@ export function OverviewWorkspace({ dashboard, workflow, estimatorReadiness, onO
       </div>
       <div className="estimation-coverage"><span>AI Coverage <strong>{estimatorReadiness.summary.aiCoverage}%</strong></span><span>Quotation Coverage <strong>{estimatorReadiness.summary.quotationCoverage}%</strong></span></div>
     </section>}
-    {workflow.nextAction ? <button className="next-recommended-action" onClick={() => onOpenRoute(workflow.nextAction!.route)}><span><small>NEXT WORKFLOW ACTION · {workflow.nextAction.owner}</small><strong>{workflow.nextAction.title}</strong><p>{workflow.blockers.find(b => b.stageId === workflow.currentStageId)?.message || "Continue the governed pre-sales workflow."}</p></span><b>Open work →</b></button> : <EmptyState title="No action currently requires attention" detail="The current quotation has completed the governed workflow."/>}
+    {workflow.nextAction && <section className="overview-workflow-context" aria-label="Current workflow context"><small>CURRENT WORKFLOW CONTEXT</small><strong>{workflow.blockers.find(b => b.stageId === workflow.currentStageId)?.message || workflow.nextAction.title}</strong><p>The project action bar above provides the primary next action.</p></section>}
     <div className="action-health-grid"><section className="action-queue"><div className="section-title"><div><small>OTHER ACTIONS</small><strong>Additional work requiring attention</strong></div><span>{dashboard.actions.filter(action => action.route !== workflow.nextAction?.route).length} open</span></div>{dashboard.actions.filter(action => action.route !== workflow.nextAction?.route).map(action => <button key={action.id} className="action-row" onClick={() => onOpenRoute(action.route)}><span className={`action-priority ${action.severity === "Critical" ? "p0" : "p1"}`}>{action.severity}</span><span><strong>{action.title}</strong><small>{action.description} · Owner: {action.owner}</small></span><b>Resolve →</b></button>)}</section>
       <aside className="project-risk-panel"><small>EXPLAINED RISKS</small><h2>{dashboard.risks.length ? `${dashboard.risks.length} active` : "No active risk"}</h2>{dashboard.risks.map(risk => <button key={risk.id} onClick={() => onOpenRoute(risk.recommendedAction)}><span className={`risk-level risk-${risk.severity.toLowerCase()}`}>{risk.severity}</span><strong>{risk.type}</strong><p>{risk.trigger}</p><small>{risk.impact}</small></button>)}</aside></div>
   </section>;

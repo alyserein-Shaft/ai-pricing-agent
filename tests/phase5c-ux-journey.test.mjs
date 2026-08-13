@@ -55,12 +55,12 @@ test("AI advisory is available at deterministic minimum evidence", () => {
 });
 
 test("Golden projects are excluded from normal lists", () => {
-  const projects = [{ id: "real", organizationId: "org" }, { id: "golden", organizationId: "golden-e2e-organization" }];
+  const projects = [{ id: "real", organizationId: "org", operationalClassification: "Operational" }, { id: "golden", organizationId: "org", operationalClassification: "Internal Validation", isTestFixture: true }];
   assert.deepEqual(visibleProductProjects(projects).map((entry) => entry.id), ["real"]);
 });
 
 test("Golden projects remain available in explicit Golden mode", () => {
-  const projects = [{ id: "golden", organizationId: "golden-e2e-organization" }];
+  const projects = [{ id: "golden", organizationId: "org", operationalClassification: "Internal Validation", isTestFixture: true }];
   assert.equal(visibleProductProjects(projects, { goldenMode: true }).length, 1);
 });
 
@@ -89,7 +89,7 @@ test("attention KPIs include units and specific actions", async () => {
 test("project workspace context prevents false Dashboard active state", async () => {
   const page = await source("app/page.tsx");
   const shell = await source("app/components/project/ProjectShell.tsx");
-  assert.match(page, /destination === "Overview" &&[\s\S]*showAllProjects/);
+  assert.match(page, /projectWorkspace=\{!showAllProjects && !isGlobalWorkspace \? activeModule : undefined\}/);
   assert.match(shell, /PROJECT WORKSPACE/);
 });
 

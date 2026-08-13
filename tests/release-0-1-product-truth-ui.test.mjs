@@ -65,10 +65,10 @@ test("global navigation keeps URL, active navigation and rendered workspace on o
   assert.match(navigation, /Dashboard: "Dashboard"/);
   assert.match(navigation, /Projects: "Projects"/);
   assert.match(navigation, /globalWorkspacePresentation/);
-  assert.match(page, /const presentation = globalWorkspacePresentation\(location\.workspace\)/);
-  assert.match(page, /buildProjectLocation\("", workspace\)/);
-  assert.match(page, /\["Knowledge Library", "Product Library", "Reports"\]\.includes\(module\)/);
-  assert.match(page, /isGlobalWorkspace \? activeModule : topLevelArea/);
+  assert.match(page, /const presentation = globalWorkspacePresentation\(resolvedWorkspace\)/);
+  assert.match(page, /buildGlobalLocation\(destination\.canonicalWorkspace \|\| workspace, destination\.section\)/);
+  assert.match(page, /"Knowledge Library", "Product Library", "Case Studies", "Reports", "Administration"/);
+  assert.match(page, /globalWorkspace=\{showAllProjects \?/);
 });
 
 test("standard project summaries never fall back to an internal project UUID", () => {

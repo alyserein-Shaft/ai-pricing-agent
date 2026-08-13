@@ -1,5 +1,6 @@
 import type { PreSalesWorkflow, ServerProjectDashboard } from "./types";
-import { canonicalStepperItems, userFacingProjectReference, userFacingWorkspaceName } from "../../lib/project-navigation.mjs";
+import { userFacingProjectReference, userFacingWorkspaceName } from "../../lib/project-navigation.mjs";
+import { currentVisiblePhase, visibleProjectPhases } from "../../lib/project-phase-presentation.mjs";
 
 export function ProjectShell(props: {
   dashboard: ServerProjectDashboard | null;
@@ -19,16 +20,25 @@ export function ProjectShell(props: {
       ? "status-blocked"
       : "status-neutral";
   const projectReference = userFacingProjectReference(props.projectCode);
+  const phases = visibleProjectPhases(workflow);
+  const currentPhase = currentVisiblePhase(workflow);
   return <>
     <nav className="project-workflow-tabs" aria-label="Project estimation workflow">
-      {canonicalStepperItems(workflow).map((item, index) => {
-        const label = item.name;
+      <label className="compact-phase-control">
+        <span>Current phase</span>
+        <select aria-label="Current project phase" value={currentPhase?.id || "set-up"}
+          onChange={(event) => props.onNavigate(phases.find((phase) => phase.id === event.target.value)?.workspace || "Overview")}>
+          {phases.map((phase, index) => <option key={phase.id} value={phase.id}>{index + 1}. {phase.label} — {phase.state}</option>)}
+        </select>
+      </label>
+      {phases.map((item, index) => {
+        const label = item.label;
         const workspace = item.workspace;
         const locked = !props.canViewCommercial && ["Costing", "Quotation"].includes(workspace);
         return <button key={item.id} disabled={locked} title={locked ? "Commercial permission required" : undefined}
-          className={props.activeWorkspace === workspace ? "active" : ""}
-          onClick={() => item.route ? props.onOpenRoute(item.route) : props.onNavigate(workspace)}>
-          <span>{index + 1}</span><strong>{label}</strong><small>{locked ? "Locked" : item.status}</small>
+          className={`${item.current ? "active" : ""} phase-${item.state.toLowerCase().replaceAll(" ", "-")}`}
+          onClick={() => props.onNavigate(workspace)}>
+          <span>{index + 1}</span><strong>{label}</strong><small>{locked ? "Locked" : item.state}</small>
         </button>;
       })}
     </nav>
@@ -38,8 +48,7 @@ export function ProjectShell(props: {
     </div>
     <section className="project-strip" aria-label="Project status">
       <div><span className={`status-dot ${projectStatusClass}`}/><strong>Project status: {projectStatus}</strong>
-        <small>{workflow ? `${workflow.progress}% workflow progress · ${workflow.blockers.length} blocker(s)` : "Reading verified project records"}</small></div>
-      <div className="strip-progress"><span style={{ width: `${workflow?.progress || 0}%` }}/></div>
+        <small>{workflow ? `${workflow.blockers.length} blocker(s) · ${workflow.warnings.length} warning(s)` : "Reading verified project records"}</small></div>
       <button disabled={!workflow?.nextAction} onClick={() => workflow?.nextAction && props.onOpenRoute(workflow.nextAction.route)}>
         {workflow?.nextAction?.title || "No action required"} →
       </button>

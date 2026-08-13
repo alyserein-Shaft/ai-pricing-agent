@@ -11,9 +11,9 @@ const fixture = () => {
   raw.exec(`
     CREATE TABLE organizations (id TEXT PRIMARY KEY,name TEXT NOT NULL,status TEXT NOT NULL DEFAULT 'Active',created_at TEXT DEFAULT CURRENT_TIMESTAMP);
     CREATE TABLE organization_memberships (id TEXT PRIMARY KEY,organization_id TEXT,user_id TEXT,status TEXT DEFAULT 'Active',granted_by TEXT,granted_at TEXT DEFAULT CURRENT_TIMESTAMP,revoked_at TEXT,UNIQUE(organization_id,user_id));
-    CREATE TABLE projects (id TEXT PRIMARY KEY,name TEXT NOT NULL,owner_user_id TEXT NOT NULL,organization_id TEXT,system_domain TEXT NOT NULL DEFAULT 'Unspecified',initial_status TEXT NOT NULL DEFAULT 'Draft',archived_at TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP,updated_at TEXT DEFAULT CURRENT_TIMESTAMP);
-    CREATE TABLE project_members (id TEXT PRIMARY KEY,project_id TEXT,user_id TEXT,role TEXT,status TEXT DEFAULT 'Active',granted_by TEXT,granted_at TEXT DEFAULT CURRENT_TIMESTAMP,revoked_at TEXT,UNIQUE(project_id,user_id));
-    CREATE TABLE project_dashboard_profiles (project_id TEXT PRIMARY KEY,client TEXT,consultant TEXT,contractor TEXT,location TEXT,tender_number TEXT,package_name TEXT,due_date TEXT,currency TEXT DEFAULT 'SAR',manual_status TEXT,status_reason TEXT,status_version INTEGER DEFAULT 1,updated_by TEXT,updated_at TEXT DEFAULT CURRENT_TIMESTAMP,deleted_at TEXT);
+    CREATE TABLE projects (id TEXT PRIMARY KEY,name TEXT NOT NULL,owner_user_id TEXT NOT NULL,organization_id TEXT,system_domain TEXT NOT NULL DEFAULT 'Unspecified',initial_status TEXT NOT NULL DEFAULT 'Draft',operational_classification TEXT NOT NULL DEFAULT 'Operational',archived_at TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP,updated_at TEXT DEFAULT CURRENT_TIMESTAMP);
+    CREATE TABLE project_members (id TEXT PRIMARY KEY,project_id TEXT,user_id TEXT,role TEXT,status TEXT DEFAULT 'Active',granted_by TEXT,granted_at TEXT DEFAULT CURRENT_TIMESTAMP,revoked_at TEXT);
+    CREATE TABLE project_dashboard_profiles (project_id TEXT PRIMARY KEY,client TEXT,consultant TEXT,contractor TEXT,location TEXT,tender_number TEXT,package_name TEXT,due_date TEXT,currency TEXT DEFAULT 'SAR',manual_status TEXT,status_reason TEXT,status_version INTEGER DEFAULT 1,selected_pricing_scenario_id TEXT,selected_pricing_scenario_at TEXT,selected_pricing_scenario_by TEXT,selected_pricing_scenario_reason TEXT,updated_by TEXT,updated_at TEXT DEFAULT CURRENT_TIMESTAMP,deleted_at TEXT);
     CREATE TABLE workflow_stage_states (id TEXT PRIMARY KEY,project_id TEXT,stage_id TEXT,model_version TEXT,status TEXT,progress INTEGER,blocking_issue_count INTEGER DEFAULT 0,warning_count INTEGER DEFAULT 0,owner_role TEXT,next_action TEXT,drill_down_route TEXT,source_version TEXT,calculated_at TEXT,started_at TEXT,completed_at TEXT,UNIQUE(project_id,stage_id,source_version));
     CREATE TABLE project_progress_snapshots (id TEXT PRIMARY KEY,project_id TEXT,model_version TEXT,progress INTEGER,derived_status TEXT,ready_for_quotation INTEGER,facts TEXT,source_version TEXT,calculated_at TEXT,UNIQUE(project_id,source_version));
     CREATE TABLE dashboard_metric_definitions (id TEXT,version TEXT,name TEXT,description TEXT,scope TEXT,data_source TEXT,formula TEXT,filters TEXT,exclusions TEXT,refresh_strategy TEXT,permission TEXT,drill_down_route TEXT,owner TEXT,test_cases TEXT,created_at TEXT DEFAULT CURRENT_TIMESTAMP,UNIQUE(id,version));
@@ -33,26 +33,28 @@ const fixture = () => {
     INSERT INTO organization_membership_roles (id,membership_id,role,status,granted_by) VALUES ('role-a-owner','membership-a','Organization Owner','Active','fixture'),('role-a-admin','membership-a','Organization Administrator','Active','fixture'),('role-b-owner','membership-b','Organization Owner','Active','fixture'),('role-c-member','membership-c','Organization Member','Active','fixture');
     INSERT INTO library_security_principals (user_id,email,account_status,session_status) VALUES ('user-a','a@example.test','Active','Active'),('user-b','b@example.test','Active','Active'),('user-c','c@example.test','Active','Active');
     INSERT INTO library_permission_grants (id,user_id,permission,status,granted_by) VALUES ('grant-a','user-a','Library Manager','Active','fixture'),('grant-b','user-b','Library Manager','Active','fixture'),('grant-c','user-c','Library Manager','Active','fixture');
-    INSERT INTO projects (id,name,owner_user_id,organization_id) VALUES ('project-a','Alpha Fire Upgrade','user-a','org-a'),('project-b','Beta Secure Site','user-b','org-b'),('legacy-unassigned','Technical Intake Test','user-a',NULL);
-    INSERT INTO project_dashboard_profiles (project_id,client,tender_number,currency,updated_by) VALUES ('project-a','Acme Client','TND-42','SAR','fixture'),('project-b','Other Client','B-200','SAR','fixture'),('legacy-unassigned','Legacy Client','LEG-1','SAR','fixture');
-    INSERT INTO project_members (id,project_id,user_id,role,status,granted_by) VALUES ('cross-membership','project-b','user-a','Estimator','Active','fixture'),('estimator-membership','project-a','user-c','Estimator','Active','fixture');
+    INSERT INTO projects (id,name,owner_user_id,organization_id,operational_classification) VALUES ('project-a','Alpha Fire Upgrade','user-a','org-a','Operational'),('project-similar','Golden Customer Retrofit','user-a','org-a','Operational'),('project-fixture','Internal QA Project','user-a','org-a','Internal Validation'),('project-b','Beta Secure Site','user-b','org-b','Operational'),('legacy-unassigned','Technical Intake Test','user-a',NULL,'Operational');
+    INSERT INTO project_dashboard_profiles (project_id,client,tender_number,currency,updated_by) VALUES ('project-a','Acme Client','TND-42','SAR','fixture'),('project-similar','Golden Trading Co.','OPS-100','SAR','fixture'),('project-fixture','Internal Validation','QA-1','SAR','fixture'),('project-b','Other Client','B-200','SAR','fixture'),('legacy-unassigned','Legacy Client','LEG-1','SAR','fixture');
+    INSERT INTO project_members (id,project_id,user_id,role,status,granted_by) VALUES ('cross-membership','project-b','user-a','Estimator','Active','fixture'),('estimator-membership','project-a','user-c','Estimator','Active','fixture'),('duplicate-a-1','project-a','user-a','Estimator','Active','fixture'),('duplicate-a-2','project-a','user-a','Project Manager','Active','fixture');
     INSERT INTO product_match_candidates VALUES ('sentinel','unchanged'); INSERT INTO safety_decisions VALUES ('sentinel','unchanged'); INSERT INTO pricing_approvals VALUES ('sentinel','unchanged'); INSERT INTO review_decisions VALUES ('sentinel','unchanged'); INSERT INTO identity_resolution_proposals VALUES ('sentinel','unchanged'); INSERT INTO export_templates VALUES ('sentinel','unchanged');
   `);
   const operation = (sql, args = []) => ({ first: async () => raw.prepare(sql).get(...args), all: async () => ({ results: raw.prepare(sql).all(...args) }), run: async () => raw.prepare(sql).run(...args) });
   const DB = { prepare(sql) { return { ...operation(sql), bind: (...args) => operation(sql, args) }; }, async batch(statements) { raw.exec("BEGIN"); try { const results=[]; for (const statement of statements) results.push(await statement.run()); raw.exec("COMMIT"); return results; } catch(error) { raw.exec("ROLLBACK"); throw error; } } };
-  return { raw, env: { DB, IDENTITY_AUTH_MODE: "sites" } };
+  return { raw, env: { DB, APP_ACCESS_MODE: "single-user", APP_USER_ID: "user-a", APP_ORGANIZATION_ID: "org-a" } };
 };
 const request = (path, user="user-a", method="GET", body) => new Request(`https://app.example${path}`, { method, headers: { "oai-authenticated-user-id":user, "oai-authenticated-user-email":`${user}@example.test`, ...(body ? { "content-type":"application/json" } : {}) }, body: body ? JSON.stringify(body) : undefined });
-const getJson = async (env, path, user="user-a") => { const response=await handleDashboardApi(request(path,user),env); return { response, body:await response.json() }; };
+const getJson = async (env, path, user="user-a") => { const response=await handleDashboardApi(request(path,user),{...env,APP_USER_ID:user,APP_ORGANIZATION_ID:user==="user-b"?"org-b":"org-a"}); return { response, body:await response.json() }; };
 
 test("dashboard, metrics and actions are strictly scoped to the active organization", async () => {
   const { raw, env } = fixture();
   const { response, body } = await getJson(env,"/api/dashboard/organization");
-  assert.equal(response.status,200); assert.equal(body.organization.id,"org-a"); assert.deepEqual(body.projects.map((entry)=>entry.project.id),["project-a"]);
-  assert.equal(body.metrics.activeProjects,1); assert.ok(body.actionQueue.every((action)=>action.projectId==="project-a")); assert.equal(body.unassignedLegacyProjects.count,1); assert.equal(body.unassignedLegacyProjects.includedInMetrics,false);
+  assert.equal(response.status,200,JSON.stringify(body)); assert.equal(body.organization.id,"org-a"); assert.deepEqual(new Set(body.projects.map((entry)=>entry.project.id)),new Set(["project-a","project-similar"]));
+  assert.equal(body.projects.length,2); assert.equal(body.metrics.activeProjects,2); assert.ok(body.actionQueue.every((action)=>["project-a","project-similar"].includes(action.projectId))); assert.equal(body.unassignedLegacyProjects.count,1); assert.equal(body.unassignedLegacyProjects.includedInMetrics,false);
+  assert.equal(body.projects.some((entry)=>entry.project.id==="project-fixture"),false); assert.equal(body.actionQueue.some((action)=>action.projectId==="project-fixture"),false);
+  assert.equal(new Set(body.actionQueue.map((action)=>`${action.projectId}:${action.id}`)).size,body.actionQueue.length);
   assert.equal(body.projects.some((entry)=>entry.project.id==="project-b"),false); assert.equal(body.projects.some((entry)=>entry.project.id==="legacy-unassigned"),false);
   assert.equal(body.projects[0].commercialRestricted,false);
-  const estimator=await getJson(env,"/api/dashboard/organization","user-c"); assert.equal(estimator.body.projects[0].commercialRestricted,true); assert.equal(estimator.body.projects[0].totals,undefined);
+  const estimator=await getJson(env,"/api/dashboard/organization","user-c"); assert.equal(estimator.body.projects.length,1); assert.equal(estimator.body.projects[0].commercialRestricted,true); assert.equal(estimator.body.projects[0].totals,undefined);
   for (const table of ["product_match_candidates","safety_decisions","pricing_approvals","review_decisions","identity_resolution_proposals","export_templates"]) assert.equal(raw.prepare(`SELECT payload FROM ${table} WHERE id='sentinel'`).get().payload,"unchanged");
   raw.close();
 });
@@ -61,8 +63,19 @@ test("organization project search is server-side for name, client and reference 
   const { raw, env } = fixture();
   await handleDashboardApi(request("/api/dashboard/organization"),env);
   for (const query of ["Alpha","Acme","TND-42"]) { const { body }=await getJson(env,`/api/dashboard/organization?q=${encodeURIComponent(query)}`); assert.deepEqual(body.projects.map((entry)=>entry.project.id),["project-a"],query); }
-  const { body }=await getJson(env,"/api/dashboard/organization?q=unknown-value"); assert.equal(body.state,"No Search Results"); assert.equal(body.projects.length,0); assert.equal(body.metrics.activeProjects,1);
+  const { body }=await getJson(env,"/api/dashboard/organization?q=unknown-value"); assert.equal(body.state,"No Search Results"); assert.equal(body.projects.length,0); assert.equal(body.metrics.activeProjects,2);
   const list=await getJson(env,"/api/projects?q=Acme"); assert.deepEqual(list.body.projects.map((entry)=>entry.project.id),["project-a"]);
+  raw.close();
+});
+
+test("only the explicit server classification controls operational visibility", async () => {
+  const { raw, env } = fixture();
+  const normal=await getJson(env,"/api/dashboard/organization");
+  assert.equal(normal.body.projects.some((entry)=>entry.project.name==="Golden Customer Retrofit"),true);
+  assert.equal(normal.body.projects.some((entry)=>entry.project.id==="project-fixture"),false);
+  const golden=await getJson({...env,GOLDEN_E2E:"1"},"/api/dashboard/organization");
+  assert.equal(golden.body.projects.some((entry)=>entry.project.id==="project-fixture"),true);
+  assert.equal(golden.body.projects.find((entry)=>entry.project.id==="project-fixture").project.isTestFixture,true);
   raw.close();
 });
 

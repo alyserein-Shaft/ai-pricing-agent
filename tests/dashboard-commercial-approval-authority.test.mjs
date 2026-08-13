@@ -108,7 +108,8 @@ const fixture = () => {
       id TEXT PRIMARY KEY,
       safety_decision_id TEXT,
       approval_type TEXT,
-      status TEXT
+      status TEXT,
+      decided_at TEXT
     );
 
     CREATE TABLE pricing_runs (

@@ -19,6 +19,10 @@ export const PROJECT_MODULES = Object.freeze({
   "Knowledge Library": "Knowledge Library",
   "Pricing Memory": "Pricing Memory",
   "Case Studies": "Case Studies",
+  Home: "Home",
+  Knowledge: "Knowledge Library",
+  Administration: "Administration",
+  Settings: "Administration",
   "Price Sources": "Price Sources",
   Reports: "Reports",
   Activity: "Activity",
@@ -30,17 +34,22 @@ export const GLOBAL_WORKSPACES = Object.freeze([
   "Knowledge Library",
   "Product Library",
   "Reports",
+  "Case Studies",
+  "Administration",
 ]);
 
 export function globalWorkspacePresentation(workspace) {
-  if (workspace === "Dashboard" || workspace === "Overview") {
+  if (workspace === "Dashboard" || workspace === "Home" || workspace === "Overview") {
     return { topLevelArea: "Dashboard", activeModule: "Overview", showAllProjects: true };
   }
   if (workspace === "Projects") {
     return { topLevelArea: "Projects", activeModule: "Overview", showAllProjects: true };
   }
-  if (["Knowledge Library", "Product Library", "Reports"].includes(workspace)) {
+  if (["Knowledge Library", "Product Library", "Case Studies", "Reports", "Administration"].includes(workspace)) {
     return { topLevelArea: "Dashboard", activeModule: workspace, showAllProjects: false };
+  }
+  if (workspace === "Pricing Memory") {
+    return { topLevelArea: "Dashboard", activeModule: "Knowledge Library", showAllProjects: false };
   }
   return null;
 }
@@ -145,9 +154,9 @@ export function aiQuotationAvailability(workflow) {
 }
 
 export function isGoldenProject(project) {
-  const explicit = project?.testMode === true || project?.isTestFixture === true || project?.metadata?.testMode === "golden";
+  const explicit = project?.testMode === true || project?.isTestFixture === true || project?.operationalClassification === "Internal Validation" || project?.operationalClassification === "Fixture" || project?.metadata?.testMode === "golden";
   const goldenEnvironment = typeof process !== "undefined" && process.env?.GOLDEN_E2E === "1";
-  return !goldenEnvironment && (explicit || project?.organizationId === "golden-e2e-organization");
+  return !goldenEnvironment && explicit;
 }
 
 export function visibleProductProjects(projects, options = {}) {

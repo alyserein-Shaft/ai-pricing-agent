@@ -27,7 +27,6 @@ import {
   parseProjectLocation,
   reconcileFailedDocumentFilter,
   userFacingProjectReference,
-  visibleProductProjects,
 } from "./lib/project-navigation.mjs";
 import {
   documentClassificationPresentation,
@@ -35,6 +34,9 @@ import {
   extractedContentReviewPresentation,
 } from "./lib/document-status-presentation.mjs";
 import { ProjectShell } from "./components/project/ProjectShell";
+import { AppShell } from "./components/layout/AppShell";
+import { buildGlobalLocation, canonicalizeGlobalSearch, resolveGlobalDestination } from "./lib/application-navigation.mjs";
+import { homeActionQueuePresentation, projectProgressTone } from "./lib/home-presentation.mjs";
 import type {
   DashboardAction,
   EstimatorReadiness,
@@ -202,6 +204,7 @@ type ModuleName =
   | "Quotation"
   | "Price Sources"
   | "Reports"
+  | "Administration"
   | "Activity";
 type CaseStudySummary = {
   id: string;
@@ -1759,17 +1762,6 @@ const honeywellLifecycleMappings: ProductLifecycleMapping[] = [
   },
 ];
 
-const globalNavItems: Array<
-  [string, string, ModuleName | "Projects" | "Settings"]
-> = [
-  ["⌂", "Dashboard", "Overview"],
-  ["▦", "Projects", "Projects"],
-  ["▤", "Knowledge Library", "Knowledge Library"],
-  ["⌕", "Product Library", "Product Library"],
-  ["▥", "Reports", "Reports"],
-  ["⚙", "Settings", "Settings"],
-];
-
 const tenderDocuments = [
   "BOQ.xlsx",
   "28 46 00 - Fire Detection and Alarm System - Rev 1.pdf",
@@ -2163,7 +2155,9 @@ export default function Home() {
   const isGlobalWorkspace = [
     "Knowledge Library",
     "Product Library",
+    "Case Studies",
     "Reports",
+    "Administration",
   ].includes(activeModule);
   const [showNewProject, setShowNewProject] = useState(false);
   const [draftProjectName, setDraftProjectName] = useState("");
@@ -2730,6 +2724,7 @@ export default function Home() {
   const [excelExportError, setExcelExportError] = useState("");
   const [organizationDashboard, setOrganizationDashboard] =
     useState<OrganizationDashboard | null>(null);
+  const [showAllHomeActions, setShowAllHomeActions] = useState(false);
   const [serverProjectDashboard, setServerProjectDashboard] =
     useState<ServerProjectDashboard | null>(null);
   const [preSalesWorkflow, setPreSalesWorkflow] =
@@ -2848,15 +2843,29 @@ export default function Home() {
     const restoreLocation = () => {
       const location = parseProjectLocation(window.location.search);
       if (!location.projectId) {
-        const presentation = globalWorkspacePresentation(location.workspace);
+        const query = new URLSearchParams(window.location.search);
+        const selectedSection = query.get("section") || "";
+        const requestedWorkspace = query.get("workspace") || query.get("module") || location.workspace;
+        const resolvedDestination = resolveGlobalDestination(requestedWorkspace, selectedSection);
+        const resolvedWorkspace = resolvedDestination?.workspace === "Knowledge"
+          ? "Knowledge Library"
+          : resolvedDestination?.workspace || location.workspace;
+        const presentation = globalWorkspacePresentation(resolvedWorkspace);
         if (!presentation) {
           setTopLevelArea("Dashboard");
           setActiveModule("Overview");
           setShowAllProjects(true);
           return;
         }
+        const canonicalSearch = canonicalizeGlobalSearch(window.location.search);
+        if (canonicalSearch && canonicalSearch !== window.location.search) {
+          window.history.replaceState(null, "", canonicalSearch);
+        }
         setTopLevelArea(presentation.topLevelArea);
         setActiveModule(presentation.activeModule as ModuleName);
+        if (presentation.activeModule === "Knowledge Library") {
+          setKnowledgeSection(resolvedDestination?.section || "Files");
+        }
         setShowAllProjects(presentation.showAllProjects);
         setSelectedMatchingItemId(null);
         setPricingScenarioId("");
@@ -7408,6 +7417,7 @@ export default function Home() {
           Standards: "Standard",
         };
         const fileTypeMap: Record<string, string> = {
+          Prices: "Price List",
           "Price Lists": "Price List",
           Datasheets: "Product Datasheet",
           "Case Studies": "Previous Project Reference",
@@ -10384,7 +10394,7 @@ export default function Home() {
         .toLowerCase()
         .includes(projectSearch.trim().toLowerCase()),
   );
-  const projectSwitcherProjects = visibleProductProjects(projectPortfolio).filter((project) =>
+  const projectSwitcherProjects = projectPortfolio.filter((project) =>
     `${project.name} ${project.client} ${project.code}`
       .toLowerCase()
       .includes(projectMenuSearch.trim().toLowerCase()),
@@ -10524,11 +10534,38 @@ export default function Home() {
     setActiveModule(module);
     if (module !== "Technical Matching") setSelectedMatchingItemId(null);
     setSidebarOpen(false);
-    if (["Knowledge Library", "Product Library", "Reports"].includes(module)) {
-      window.history.pushState(null, "", buildProjectLocation("", module));
+    if (["Knowledge Library", "Product Library", "Case Studies", "Reports", "Administration"].includes(module)) {
+      const globalLocation = module === "Knowledge Library"
+        ? buildGlobalLocation("Knowledge", "Files")
+        : module === "Product Library"
+          ? buildGlobalLocation("Knowledge", "Products")
+          : module === "Case Studies"
+            ? buildGlobalLocation("Knowledge", "Case Studies")
+            : buildGlobalLocation(module);
+      window.history.pushState(null, "", globalLocation);
       return;
     }
     window.history.pushState(null, "", buildProjectLocation(projectId, module));
+  };
+  const navigateGlobal = (workspace: string, section = "") => {
+    const destination = resolveGlobalDestination(workspace, section);
+    if (!destination) return;
+    if (destination.workspace === "Reports" && !canViewCommercial) {
+      showToast("This screen requires a server-assigned commercial permission");
+      return;
+    }
+    const module = destination.workspace === "Home" || destination.workspace === "Projects"
+      ? "Overview"
+      : destination.workspace === "Knowledge"
+        ? "Knowledge Library"
+        : destination.workspace;
+    setTopLevelArea(destination.workspace === "Projects" ? "Projects" : "Dashboard");
+    setActiveModule(module as ModuleName);
+    setShowAllProjects(["Home", "Projects"].includes(destination.workspace));
+    if (destination.section) setKnowledgeSection(destination.section);
+    setProjectOpen(false);
+    setSidebarOpen(false);
+    window.history.pushState(null, "", buildGlobalLocation(destination.canonicalWorkspace || workspace, destination.section));
   };
   const selectedLibrarySource = durableLibrarySources.find(
     (source) => source.id === selectedLibrarySourceId,
@@ -11174,33 +11211,6 @@ export default function Home() {
             </small>
           </article>
         </div>
-        {preSalesWorkflow?.nextAction ? (
-          <button
-            className="next-recommended-action"
-            onClick={() =>
-              openDashboardRoute(projectId, preSalesWorkflow.nextAction.route)
-            }
-          >
-            <span>
-              <small>
-                NEXT WORKFLOW ACTION · {preSalesWorkflow.nextAction.owner}
-              </small>
-              <strong>{preSalesWorkflow.nextAction.title}</strong>
-              <p>
-                {preSalesWorkflow.blockers.find(
-                  (blocker) =>
-                    blocker.stageId === preSalesWorkflow.currentStageId,
-                )?.message || "Continue the governed pre-sales workflow."}
-              </p>
-            </span>
-            <b>Open work →</b>
-          </button>
-        ) : (
-          <div className="empty-state">
-            <strong>No action currently requires attention</strong>
-            <p>The current quotation has completed the governed workflow.</p>
-          </div>
-        )}
         <section
           className="workflow-stage-board"
           aria-label="Complete AI pre-sales estimation workflow"
@@ -11217,7 +11227,7 @@ export default function Home() {
                 <strong>{stage.name}</strong>
                 <span>{stage.status}</span>
               </header>
-              <div>
+              <div className={`workflow-stage-progress progress-${projectProgressTone({ progress: stage.progress, status: stage.status })}`}>
                 <i style={{ width: `${stage.progress}%` }} />
               </div>
               <p>
@@ -12933,7 +12943,7 @@ export default function Home() {
         <div className="module-heading">
           <div>
             <small>PRODUCT RECORDS & SOURCE EVIDENCE</small>
-            <h1>Product Library</h1>
+            <h1>Products</h1>
             <p>
               Search active products, superseded order codes and reviewed source
               observations. Library evidence never approves a price by itself.
@@ -14505,6 +14515,7 @@ export default function Home() {
       </>
     ) : activeModule === "Knowledge Library" ? (
       <KnowledgeLibraryWorkspace
+        section={knowledgeSection}
         files={knowledgeFiles as unknown as Record<string, unknown>[]}
         results={knowledgeResults as unknown as Record<string, unknown>[]}
         summary={knowledgeSummary as unknown as Record<string, unknown>}
@@ -14533,6 +14544,15 @@ export default function Home() {
         search={caseStudySearch}
         onSearch={setCaseStudySearch}
       />
+    ) : activeModule === "Administration" ? (
+      <section className="module-page administration-page">
+        <div className="module-heading"><div><small>ORGANIZATION CONTROL</small><h1>Administration</h1><p>Server-derived organization, access, and library permissions.</p></div></div>
+        <div className="administration-summary">
+          <article><small>ORGANIZATION</small><strong>{authSession.organizations[0]?.name || "No organization assigned"}</strong><span>{authSession.organizations[0]?.roles.join(" / ") || "No organization role"}</span></article>
+          <article><small>LIBRARY PERMISSION</small><strong>{authSession.effectiveLibraryPermission}</strong><span>Managed separately from project roles</span></article>
+          <article><small>ACCOUNT</small><strong>{authSession.user.displayName}</strong><span>{authSession.user.email}</span></article>
+        </div>
+      </section>
     ) : activeModule === "Reports" ? (
       <section className="module-page reports-page">
         <div className="module-heading">
@@ -15344,119 +15364,26 @@ export default function Home() {
 
   return (
     <div className="app-shell">
-      <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : ""}`}>
-        <button
-          className="sidebar-close"
-          onClick={() => setSidebarOpen(false)}
-          aria-label="Close navigation"
-        >
-          ×
-        </button>
-        <div className="brand">
-          <div className="brand-mark" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-          <div>
-            <strong>AI Pricing Agent</strong>
-            <small>وكيل التسعير الذكي</small>
-          </div>
-        </div>
-
-        <nav aria-label="Application navigation" className="global-navigation">
-          {globalNavItems.map(([icon, label, destination]) => (
-            <button
-              key={label}
-              disabled={destination === "Reports" && !canViewCommercial}
-              title={
-                destination === "Reports" && !canViewCommercial
-                  ? "Commercial permission required"
-                  : undefined
-              }
-              className={
-                destination === "Overview" &&
-                showAllProjects &&
-                topLevelArea === "Dashboard"
-                  ? "nav-active"
-                  : destination === "Projects" &&
-                      showAllProjects &&
-                      topLevelArea === "Projects"
-                    ? "nav-active"
-                    : destination === activeModule && !showAllProjects
-                      ? "nav-active"
-                      : ""
-              }
-              onClick={() => {
-                if (destination === "Overview" || destination === "Projects") {
-                  const workspace =
-                    destination === "Overview" ? "Dashboard" : "Projects";
-                  setTopLevelArea(workspace);
-                  setActiveModule("Overview");
-                  setShowAllProjects(true);
-                  setProjectOpen(false);
-                  setSidebarOpen(false);
-                  window.history.pushState(
-                    null,
-                    "",
-                    buildProjectLocation("", workspace),
-                  );
-                  return;
-                }
-                if (destination === "Settings") {
-                  openPricingSettings();
-                  setSidebarOpen(false);
-                  return;
-                }
-                navigate(destination);
-              }}
-            >
-              <span aria-hidden="true">{icon}</span>
-              {label}
-              {destination === "Reports" && !canViewCommercial && (
-                <small>Locked</small>
-              )}
-            </button>
-          ))}
-        </nav>
-        {!showAllProjects && !isGlobalWorkspace && (
-          <div className="project-nav-context">
-            <small>CURRENT PROJECT</small>
-            <strong>{projectName}</strong>
-            <span>{preSalesWorkflow ? `Project status: ${preSalesWorkflow.lifecycleState} · Workflow: ${preSalesWorkflow.workflowStage}` : "Loading workflow…"}</span>
-          </div>
-        )}
-
-        <section
-          className="authenticated-profile"
-          aria-label="Authenticated account"
-        >
-          <span className="avatar">{authSession.user.initials}</span>
-          <div>
-            <strong>{authSession.user.displayName}</strong>
-            <small>{authSession.user.email}</small>
-            <small>
-              {isOrganizationLibrary
-                ? authSession.effectiveLibraryPermission
-                : `${authSession.effectiveLibraryPermission} · Project: ${workingRole}`}
-            </small>
-            <small>
-              {authSession.organizations[0]
-                ? `${authSession.organizations[0].name} · ${authSession.organizations[0].roles.join(" / ")}`
-                : "No organization assigned"}
-            </small>
-          </div>
-          <a href={authSession.signOutUrl}>Sign out</a>
-        </section>
-      </aside>
-
-      {sidebarOpen && (
-        <button
-          className="scrim"
-          onClick={() => setSidebarOpen(false)}
-          aria-label="Close navigation overlay"
-        />
-      )}
+      <AppShell
+        open={sidebarOpen}
+        onOpenChange={setSidebarOpen}
+        globalWorkspace={showAllProjects ? (topLevelArea === "Projects" ? "Projects" : "Home") : activeModule === "Knowledge Library" ? "Knowledge" : activeModule}
+        globalSection={knowledgeSection}
+        projectWorkspace={!showAllProjects && !isGlobalWorkspace ? activeModule : undefined}
+        projectName={projectName}
+        projectStatus={preSalesWorkflow ? `${preSalesWorkflow.lifecycleState} · ${preSalesWorkflow.workflowStage}` : undefined}
+        canViewCommercial={canViewCommercial}
+        account={{
+          initials: authSession.user.initials,
+          displayName: authSession.user.displayName,
+          email: authSession.user.email,
+          permission: isOrganizationLibrary ? authSession.effectiveLibraryPermission : `${authSession.effectiveLibraryPermission}${!showAllProjects && !isGlobalWorkspace ? ` · Project: ${workingRole}` : ""}`,
+          organization: authSession.organizations[0] ? `${authSession.organizations[0].name} · ${authSession.organizations[0].roles.join(" / ")}` : "No organization assigned",
+          signOutUrl: authSession.signOutUrl,
+        }}
+        onGlobalNavigate={navigateGlobal}
+        onProjectNavigate={(workspace) => navigate(workspace as ModuleName)}
+      />
 
       <main className="main-content">
         <header
@@ -15495,7 +15422,13 @@ export default function Home() {
                     : "ORGANIZATION OVERVIEW"}
                 </small>
                 <strong>
-                  {isGlobalWorkspace ? activeModule : topLevelArea}
+                  {isGlobalWorkspace
+                    ? activeModule === "Knowledge Library" || activeModule === "Product Library" || activeModule === "Case Studies"
+                      ? "Knowledge"
+                      : activeModule
+                    : topLevelArea === "Dashboard"
+                      ? "Home"
+                      : topLevelArea}
                 </strong>
               </div>
             </div>
@@ -15601,7 +15534,7 @@ export default function Home() {
                   className="settings-button"
                   onClick={openPricingSettings}
                 >
-                  ⚙ <span>Settings</span>
+                  ⚙ <span>Pricing controls</span>
                 </button>
               )}
             </div>
@@ -15773,7 +15706,7 @@ export default function Home() {
                   </label>}
                   <div className="section-title"><div><small>{topLevelArea === "Dashboard" ? "PRIORITY PROJECTS" : "PROJECT REGISTER"}</small><strong>{topLevelArea === "Dashboard" ? "Projects needing attention" : "All accessible organization projects"}</strong></div></div>
                   <div className="server-project-list">
-                    {visibleProductProjects(organizationDashboard.projects).slice(0, topLevelArea === "Dashboard" ? 3 : 100).map((entry) => (
+                    {organizationDashboard.projects.slice(0, topLevelArea === "Dashboard" ? 3 : 100).map((entry) => (
                       <article key={entry.project.id}>
                         <header>
                           <button
@@ -15836,7 +15769,7 @@ export default function Home() {
                             </strong>
                           </span>
                         </div>
-                        <div className="server-project-progress">
+                        <div className={`server-project-progress progress-${projectProgressTone({ progress: entry.workflow.progress, status: entry.project.status })}`}>
                           <i style={{ width: `${entry.workflow.progress}%` }} />
                         </div>
                         {entry.nextAction ? (
@@ -15909,8 +15842,7 @@ export default function Home() {
                         {organizationDashboard.actionQueue.length} actions
                       </span>
                     </div>
-                    {organizationDashboard.actionQueue
-                      .slice(0, 10)
+                    {homeActionQueuePresentation(organizationDashboard.actionQueue, showAllHomeActions).visible
                       .map((action) => (
                         <button
                           key={action.id}
@@ -15932,6 +15864,19 @@ export default function Home() {
                           <b>Open filtered work →</b>
                         </button>
                       ))}
+                    {homeActionQueuePresentation(organizationDashboard.actionQueue, showAllHomeActions).hasMore && (
+                      <button
+                        className="organization-action-queue-more"
+                        aria-expanded={showAllHomeActions}
+                        onClick={() => setShowAllHomeActions((visible) => !visible)}
+                      >
+                        <span>
+                          <strong>{showAllHomeActions ? "Show priority summary" : `View all ${organizationDashboard.actionQueue.length} actions`}</strong>
+                          <small>{showAllHomeActions ? "Return to the six highest-priority actions" : "Open the complete operational action queue"}</small>
+                        </span>
+                        <b>{showAllHomeActions ? "Collapse ↑" : "View all →"}</b>
+                      </button>
+                    )}
                     {!organizationDashboard.actionQueue.length && (
                       <div className="empty-state">
                         <strong>
