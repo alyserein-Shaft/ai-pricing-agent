@@ -76,13 +76,25 @@ const fixture = () => {
 
     CREATE TABLE boq_extraction_versions (
       id TEXT PRIMARY KEY,
+      document_id TEXT,
+      document_version_id TEXT,
+      version_number INTEGER,
+      status TEXT,
       superseded_at TEXT
     );
+
+    CREATE TABLE documents (
+      id TEXT PRIMARY KEY, project_id TEXT NOT NULL, current_version_id TEXT,
+      deleted_at TEXT, archived_at TEXT
+    );
+
+    CREATE TABLE document_versions (id TEXT PRIMARY KEY, document_id TEXT NOT NULL);
 
     CREATE TABLE boq_items (
       id TEXT PRIMARY KEY,
       extraction_version_id TEXT NOT NULL,
       project_id TEXT NOT NULL,
+      source_document_id TEXT NOT NULL,
       row_type TEXT NOT NULL
     );
 
@@ -205,16 +217,23 @@ const fixture = () => {
     SET superseded_at='2026-08-10T12:00:00Z'
     WHERE id='scenario-old';
 
-    INSERT INTO boq_extraction_versions (id, superseded_at)
-    VALUES
-      ('boq-version-current', NULL),
-      ('boq-version-old', '2026-08-10T12:00:00Z');
+    INSERT INTO documents VALUES
+      ('doc-current', '${PROJECT_ID}', 'doc-version-current', NULL, NULL),
+      ('doc-old', '${PROJECT_ID}', 'doc-version-old', NULL, NULL);
+    INSERT INTO document_versions VALUES
+      ('doc-version-current', 'doc-current'),
+      ('doc-version-old', 'doc-old');
 
-    INSERT INTO boq_items (id, extraction_version_id, project_id, row_type)
+    INSERT INTO boq_extraction_versions (id, document_id, document_version_id, version_number, status, superseded_at)
     VALUES
-      ('boq-1', 'boq-version-current', '${PROJECT_ID}', 'BOQ Item'),
-      ('boq-2', 'boq-version-current', '${PROJECT_ID}', 'BOQ Item'),
-      ('boq-old', 'boq-version-old', '${PROJECT_ID}', 'BOQ Item');
+      ('boq-version-current', 'doc-current', 'doc-version-current', 1, 'Completed', NULL),
+      ('boq-version-old', 'doc-old', 'doc-version-old', 1, 'Completed', '2026-08-10T12:00:00Z');
+
+    INSERT INTO boq_items (id, extraction_version_id, project_id, source_document_id, row_type)
+    VALUES
+      ('boq-1', 'boq-version-current', '${PROJECT_ID}', 'doc-current', 'BOQ Item'),
+      ('boq-2', 'boq-version-current', '${PROJECT_ID}', 'doc-current', 'BOQ Item'),
+      ('boq-old', 'boq-version-old', '${PROJECT_ID}', 'doc-old', 'BOQ Item');
 
     INSERT INTO pricing_runs (
       id, project_id, scenario_id, version_number, status,

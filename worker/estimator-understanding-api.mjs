@@ -45,7 +45,7 @@ const stableReason = (value) => {
   if (reason === "RESERVED_SOURCE_ATTRIBUTE_REMOVED") return "RESERVED_ATTRIBUTE_REMOVED";
   return QUALITY_REASONS.has(reason) ? reason : null;
 };
-const qualityItem = (row) => {
+export const qualityItem = (row) => {
   const interpretation = parse(row.interpretation, null);
   const blockingMissingFields = [];
   const informationalMissingFields = [];

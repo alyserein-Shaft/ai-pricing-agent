@@ -48,6 +48,7 @@ import { DocumentsWorkspace } from "./components/workspaces/DocumentsWorkspace";
 import { ProjectContextWorkspace } from "./components/workspaces/ProjectContextWorkspace";
 import { BoqReviewWorkspace } from "./components/workspaces/BoqReviewWorkspace";
 import { TechnicalRequirementsWorkspace } from "./components/workspaces/TechnicalRequirementsWorkspace";
+import { AiUnderstandingReviewWorkspace } from "./components/workspaces/AiUnderstandingReviewWorkspace";
 import { MatchingCandidateReview, MatchingWorkspace } from "./components/workspaces/MatchingWorkspace";
 import { PricingWorkspace } from "./components/workspaces/PricingWorkspace";
 import { SupplierPriceIntakeWorkspace } from "./components/workspaces/SupplierPriceIntakeWorkspace";
@@ -192,6 +193,7 @@ type ModuleName =
   | "Documents"
   | "Project Context"
   | "BOQ"
+  | "AI Understanding Review"
   | "Technical Matching"
   | "Product Library"
   | "Knowledge Library"
@@ -2938,6 +2940,7 @@ export default function Home() {
       Documents: "Documents",
       "Project Context": "Project Context",
       BOQ: "BOQ",
+      "AI Understanding Review": "AI Understanding Review",
       Requirements: "Technical Matching",
       Matching: "Technical Matching",
       "Technical Review": "Technical Review",
@@ -13134,6 +13137,8 @@ export default function Home() {
           )}
         </section>
       </BoqReviewWorkspace>
+    ) : activeModule === "AI Understanding Review" ? (
+      <AiUnderstandingReviewWorkspace projectId={projectId} />
     ) : activeModule === "Product Library" ? (
       <section className="module-page product-library-page">
         <div className="module-heading">
@@ -13487,6 +13492,7 @@ export default function Home() {
       </section>
     ) : activeModule === "Technical Matching" ? (
       <MatchingWorkspace
+        projectId={projectId}
         items={extractedBoqItems.filter((item) => item.row_type === "BOQ Item")}
         requirementCount={persistedRequirementCount}
         pendingRequirementCount={persistedRequirementNeedsReview}
@@ -13498,6 +13504,7 @@ export default function Home() {
         }}
         onOpenLibrary={() => navigate("Product Library")}
         onOpenPrerequisite={() => openDashboardRoute(projectId, preSalesWorkflow?.nextAction?.route || "BOQ")}
+        onOpenUnderstanding={() => navigate("AI Understanding Review")}
       />
     ) : activeModule === "Technical Matching" && Boolean(0) ? (
       <section className="module-page construction-workspace">

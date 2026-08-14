@@ -26,6 +26,7 @@ export const PROJECT_NAVIGATION = Object.freeze([
     children: [
       { id: "Documents", label: "Documents", workspace: "Documents" },
       { id: "BOQ", label: "BOQ", workspace: "BOQ" },
+      { id: "AI Understanding Review", label: "AI Understanding Review", workspace: "AI Understanding Review" },
       { id: "Requirements", label: "Requirements", workspace: "Technical Review" },
     ],
   },

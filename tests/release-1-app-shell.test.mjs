@@ -110,7 +110,7 @@ test("AppShell keeps complete navigation reachable within constrained viewport h
   const css = await source("app/globals.css");
   const projectDestinations = PROJECT_NAVIGATION.flatMap((item) => [item.label, ...(item.children || []).map((child) => child.label)]);
 
-  assert.deepEqual(projectDestinations, ["Overview", "Tender", "Documents", "BOQ", "Requirements", "Product Selection", "Pricing", "Supplier Price Evidence", "Costing & Pricing", "Quotation", "Activity"]);
+  assert.deepEqual(projectDestinations, ["Overview", "Tender", "Documents", "BOQ", "AI Understanding Review", "Requirements", "Product Selection", "Pricing", "Supplier Price Evidence", "Costing & Pricing", "Quotation", "Activity"]);
   assert.match(shell, /className="app-navigation-scroll"[^>]*data-shell-region="navigation"/);
   assert.match(css, /height: 100dvh/);
   assert.match(css, /grid-template-rows: auto minmax\(0, 1fr\) auto/);

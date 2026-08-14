@@ -1,11 +1,22 @@
+"use client";
+import { useEffect, useState } from "react";
 import type { MatchingBoqItemView, MatchCandidateView, SafetyDecisionView } from "./technical-matching-types";
 import { EmptyState, ErrorState, LoadingState, PrerequisiteState } from "../shared/WorkspaceStates";
 import { matchingCandidateModel } from "./technical-matching-models.mjs";
 
-export function MatchingWorkspace(props: { items: MatchingBoqItemView[]; requirementCount: number; pendingRequirementCount: number; stageStatus: string; blockers: string[]; onSelect: (id: string) => void; onOpenLibrary: () => void; onOpenPrerequisite: () => void }) {
+export function MatchingWorkspace(props: { projectId: string; items: MatchingBoqItemView[]; requirementCount: number; pendingRequirementCount: number; stageStatus: string; blockers: string[]; onSelect: (id: string) => void; onOpenLibrary: () => void; onOpenPrerequisite: () => void; onOpenUnderstanding: () => void }) {
+  const [understanding, setUnderstanding] = useState<{ approved: number; awaiting: number } | null>(null);
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/projects/${encodeURIComponent(props.projectId)}/estimator-understanding-review`, { cache: "no-store" })
+      .then((response) => response.ok ? response.json() : null)
+      .then((value) => { if (active && value?.summary) setUnderstanding({ approved: Number(value.summary.approved || 0), awaiting: Number(value.summary.awaitingReview || 0) }); })
+      .catch(() => undefined);
+    return () => { active = false; };
+  }, [props.projectId]);
   const unavailable = !props.items.length || ["Not Started", "Waiting", "Blocked"].includes(props.stageStatus);
   return <section className="module-page construction-workspace"><div className="module-heading"><div><small>STEP 05 · PRODUCT SELECTION</small><h1>Review product suggestions</h1><p>{props.items.length} persisted BOQ items · {props.requirementCount} extracted requirements · {props.pendingRequirementCount} awaiting review.</p></div><div className="heading-actions"><button className="secondary-action" onClick={props.onOpenLibrary}>Search Product Library</button></div></div>
-    <div className="active-source-banner" role="status"><div><small>PRODUCT SELECTION STATUS</small><strong>{props.stageStatus}</strong><p>Suggestions, confidence, permitted use and safety decisions are read from persisted product records. Historical Discovery Only evidence cannot approve a product.</p></div></div>
+    <div className="active-source-banner" role="status"><div><small>PRODUCT SELECTION STATUS</small><strong>{understanding?.approved ? `${understanding.approved} understanding approved — ready for product discovery` : props.stageStatus}</strong><p>{understanding?.awaiting ? `${understanding.awaiting} AI interpretations still require engineer review. ` : ""}Suggestions, confidence, permitted use and safety decisions are read from persisted product records. Historical Discovery Only evidence cannot approve a product.</p></div><button onClick={props.onOpenUnderstanding}>Review AI understanding</button></div>
     {props.blockers.length > 0 && <div className="approval-blocked" role="alert"><strong>Matching remains blocked</strong><ul>{props.blockers.map((blocker, index) => <li key={index}>{blocker}</li>)}</ul></div>}
     {unavailable ? <PrerequisiteState state={props.items.length ? "WAITING" : "EMPTY"} title="Product matching is not available yet" detail={props.blockers[0] || "Product matching starts after BOQ understanding and requirements are available."} action="Review prerequisites" onAction={props.onOpenPrerequisite}/> : <div className="compliance-table"><table><thead><tr><th>BOQ item</th><th>Description</th><th>Quantity</th><th>Extraction review</th><th></th></tr></thead><tbody>{props.items.map(item => <tr key={item.id}><td>{item.item_number || item.sequence}</td><td><strong>{item.description || "Description missing"}</strong><small>{item.section || "Section not recorded"}</small></td><td>{item.original_quantity || "Missing"} {item.original_unit || ""}</td><td><span className={item.review_status === "Approved" ? "review-ready" : "review-pending"}>{item.review_status}</span></td><td><button onClick={() => props.onSelect(item.id)}>Open candidates</button></td></tr>)}</tbody></table></div>}
   </section>;

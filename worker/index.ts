@@ -39,6 +39,7 @@ import { handleProjectContextApi } from "./project-context-api.mjs";
 import { handleProjectPricingLearningApi } from "./project-pricing-learning-api.mjs";
 import { handleEstimatorReadinessApi } from "./estimator-readiness-api.mjs";
 import { handleEstimatorUnderstandingApi } from "./estimator-understanding-api.mjs";
+import { handleEstimatorUnderstandingReviewApi } from "./estimator-understanding-review-api.mjs";
 import { handleBoqAiDiagnosticApi } from "./boq-ai-diagnostic-api.mjs";
 import { securityHeaders } from "../app/domain/production-readiness.mjs";
 
@@ -127,6 +128,9 @@ const worker = {
 
     const estimatorUnderstandingResponse = await handleEstimatorUnderstandingApi(request, env);
     if (estimatorUnderstandingResponse) return secured(estimatorUnderstandingResponse);
+
+    const estimatorUnderstandingReviewResponse = await handleEstimatorUnderstandingReviewApi(request, env);
+    if (estimatorUnderstandingReviewResponse) return secured(estimatorUnderstandingReviewResponse);
 
     const dashboardApiResponse = await handleDashboardApi(request, env);
     if (dashboardApiResponse) return secured(dashboardApiResponse);
