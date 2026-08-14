@@ -35,11 +35,35 @@ test("candidate taxonomy context is bounded and excludes irrelevant families", (
   assert.ok(JSON.stringify(context).length < 1600);
 });
 
+test("real sounder-flasher descriptions prefer the governed composite notification family", () => {
+  for (const description of ["Addressable Sounder With Flasher", "Weatherproof Addressable Sounder With Flasher"]) {
+    const context = buildFireAlarmTaxonomyContext({ description, system: "Fire Alarm" });
+    assert.equal(context.families.length, 1);
+    assert.equal(context.families[0].category, "Notification Devices");
+    assert.equal(context.families[0].family, "Sounder/Strobe");
+  }
+});
+
+test("generic Fire Alarm and panel tokens cannot misclassify firefighter telephone equipment", () => {
+  const telephone = buildFireAlarmTaxonomyContext({ description: "Fire Man Telephone Panel", system: "Fire Alarm" });
+  assert.deepEqual(telephone.families, []);
+  for (const description of ["Fire panel device", "Addressable fire alarm system panel", "Fire suppression panel"]) {
+    const context = buildFireAlarmTaxonomyContext({ description });
+    assert.equal(context.families.some(({ family }) => family === "Fire Alarm Control Panel"), false);
+  }
+  assert.equal(buildFireAlarmTaxonomyContext({ description: "Fire Alarm Control Panel" }).families[0]?.family, "Fire Alarm Control Panel");
+});
+
+test("ambiguous BOQ family evidence yields no governed candidate", () => {
+  const context = buildFireAlarmTaxonomyContext({ description: "Monitor Module and Control Module" });
+  assert.deepEqual(context.families, []);
+});
+
 test("valid candidate key maps server-side to canonical inferred system, category and family", () => {
   const result = understanding.validateAndMergeBoqInterpretation(row("Addressable optical smoke detector with built-in isolator"), validOutput({
     taxonomyCandidateKey: fact("FA-1", "EXTRACTED", 100), system: fact(null, "MISSING", 0), category: fact("Detector Things"), productFamily: fact("Paraphrased Optical Sensor"),
   }));
-  assert.equal(result.status, "COMPLETED");
+  assert.equal(result.status, "NEEDS_REVIEW");
   assert.deepEqual(result.interpretation.system, { value: "Fire Alarm", origin: "INFERRED", confidence: 70 });
   assert.deepEqual(result.interpretation.category, { value: "Detection Devices", origin: "INFERRED", confidence: 70 });
   assert.deepEqual(result.interpretation.productFamily, { value: "Addressable Smoke Detector", origin: "INFERRED", confidence: 70 });
@@ -71,9 +95,10 @@ test("missing candidate key never auto-selects the sole candidate", () => {
 
 test("existing exact category and family output remains backward compatible", () => {
   const result = understanding.validateAndMergeBoqInterpretation(row("Addressable optical smoke detector"), validOutput());
-  assert.equal(result.status, "COMPLETED");
+  assert.equal(result.status, "NEEDS_REVIEW");
   assert.equal(result.interpretation.category.value, "Detection Devices");
   assert.equal(result.interpretation.productFamily.value, "Addressable Smoke Detector");
+  assert.ok(result.interpretation.reviewReasons.includes("GOVERNED_CANDIDATE_KEY_MISSING"));
 });
 
 test("a supplied key cannot select outside the bounded request context", () => {
@@ -108,7 +133,7 @@ test("out-of-taxonomy values cannot pass as completed", () => {
 
 test("valid mocked response expands to canonical classification without creating downstream authority", () => {
   const result = understanding.validateAndMergeBoqInterpretation(row("Addressable optical smoke detector with built-in isolator"), validOutput());
-  assert.equal(result.status, "COMPLETED");
+  assert.equal(result.status, "NEEDS_REVIEW");
   assert.equal(result.interpretation.category.value, "Detection Devices");
   assert.equal(result.interpretation.productFamily.value, "Addressable Smoke Detector");
   assert.equal(result.interpretation.productFamily.origin, "INFERRED");

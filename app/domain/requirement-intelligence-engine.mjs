@@ -9,7 +9,7 @@ const unique = (values) => [...new Set(values.filter(Boolean))];
 const modality = (requirement) => requirement.requirementType === "Optional" || /\b(?:may|optional)\b/i.test(requirement.originalText || "") ? "Optional" : requirement.requirementType === "Preferred" || /\bpreferred\b/i.test(requirement.originalText || "") ? "Preferred" : "Mandatory";
 
 const equipment = (value) => {
-  const family = buildFireAlarmTaxonomyContext({ description: value }).families[0]?.family || null;
+  const family = buildFireAlarmTaxonomyContext({ description: value }, { allowMultipleExplicitEntities: true }).families[0]?.family || null;
   return family === "Fire Alarm Control Panel" ? "Fire Alarm Panel" : family;
 };
 

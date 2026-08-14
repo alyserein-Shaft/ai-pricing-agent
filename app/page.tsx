@@ -2733,6 +2733,45 @@ export default function Home() {
     useState<EstimatorReadiness | null>(null);
   const [understandingRunning, setUnderstandingRunning] = useState(false);
   const [understandingMessage, setUnderstandingMessage] = useState("");
+  type UnderstandingRunSummary = {
+    processed: number;
+    completed: number;
+    needsReview: number;
+    failed: number;
+    unavailable: number;
+  };
+  const [understandingQualitySummary, setUnderstandingQualitySummary] = useState<{
+    persistedSummary: UnderstandingRunSummary;
+    effectiveQualitySummary: UnderstandingRunSummary;
+  } | null>(null);
+  const [understandingQualityRunId, setUnderstandingQualityRunId] = useState<string | null>(null);
+  const [understandingRetryManifest, setUnderstandingRetryManifest] = useState<{
+    mode: "CONTROLLED_RETRY";
+    historicalRunId: string;
+    retryFingerprint: string;
+    itemIds: string[];
+    itemCount: number;
+    items: Array<{ itemReference: string; description: string }>;
+  } | null>(null);
+  const [understandingRetryState, setUnderstandingRetryState] = useState<"idle" | "preparing" | "ready" | "running" | "completed" | "partial" | "restored" | "failed">("idle");
+  const [understandingRetryMessage, setUnderstandingRetryMessage] = useState("");
+  const [understandingPilotManifest, setUnderstandingPilotManifest] = useState<{
+    authoritativeCurrentItemCount: number;
+    eligiblePrimaryCount: number;
+    eligibleExploratoryCount: number;
+    excludedDataQualityCount: number;
+    probableCrossDocumentDuplicateCount: number;
+    selectedPrimaryCount: number;
+    selectedExploratoryCount: number;
+    selectedItemCount: number;
+    itemIds: string[];
+    manifestFingerprint: string;
+    selectionVersion: string;
+    generatedAt: string;
+    primaryItems: Array<{ boqItemId: string; itemReference: string | number | null; description: string; unit: string | null; quantity: string | number | null; selectionReasons: string[] }>;
+    exploratoryItems: Array<{ boqItemId: string; itemReference: string | number | null; description: string; unit: string | null; quantity: string | number | null; selectionReasons: string[] }>;
+    excludedExamples: Array<{ boqItemId: string; itemReference: string | number | null; description: string; unit: string | null; quantity: string | number | null; exclusionReasons: string[] }>;
+  } | null>(null);
   const [dashboardLoading, setDashboardLoading] = useState(true);
   const [dashboardError, setDashboardError] = useState("");
   const [dashboardErrorCode, setDashboardErrorCode] = useState("");
@@ -2978,6 +3017,25 @@ export default function Home() {
     setDurableLibrarySources(payload.sources || []);
     return payload.sources || [];
   }, [projectId]);
+
+  useEffect(() => {
+    setUnderstandingPilotManifest(null);
+    setUnderstandingMessage("");
+    setUnderstandingQualitySummary(null);
+    setUnderstandingQualityRunId(null);
+    setUnderstandingRetryManifest(null);
+    setUnderstandingRetryState("idle");
+    setUnderstandingRetryMessage("");
+  }, [projectId]);
+
+  useEffect(() => {
+    if (activeModule !== "BOQ" || !projectId) return;
+    let active = true;
+    requestJson<{ latestQualityRunId?: string | null; latestQualityReport?: NonNullable<typeof understandingQualitySummary> | null }>(`/api/projects/${encodeURIComponent(projectId)}/estimator-understanding`, { cache: "no-store" })
+      .then((payload) => { if (active) { setUnderstandingQualityRunId(payload.latestQualityRunId || null); setUnderstandingQualitySummary(payload.latestQualityReport || null); } })
+      .catch(() => { if (active) setUnderstandingQualitySummary(null); });
+    return () => { active = false; };
+  }, [activeModule, projectId]);
 
   useEffect(() => {
     if (activeModule === "Knowledge Library") return;
@@ -12617,22 +12675,160 @@ export default function Home() {
             disabled={understandingRunning || !extractedBoqItems.some((item) => item.row_type === "BOQ Item")}
             onClick={async () => {
               setUnderstandingRunning(true);
-              setUnderstandingMessage(`AI is analyzing ${extractedBoqItems.filter((item) => item.row_type === "BOQ Item").length} items`);
+              setUnderstandingMessage("Preparing a read-only representative pilot. AI has not run yet.");
               try {
-                const result = await requestJson<{ status: string; summary: { processed: number; successful: number; review: number; failed: number; unavailable: number } }>(`/api/projects/${encodeURIComponent(projectId)}/estimator-understanding/run`, { method: "POST" });
-                const readiness = await requestJson<EstimatorReadiness>(`/api/projects/${encodeURIComponent(projectId)}/estimator-readiness`, { cache: "no-store" });
-                setEstimatorReadiness(readiness);
-                setUnderstandingMessage(result.status === "AI_UNAVAILABLE" ? "AI understanding is not configured; manual BOQ review remains available." : `${result.summary.processed} items analyzed · ${result.summary.review} need interpretation review · ${result.summary.failed} failed`);
+                const manifest = await requestJson<NonNullable<typeof understandingPilotManifest>>(`/api/projects/${encodeURIComponent(projectId)}/estimator-understanding/pilot-manifest`, { cache: "no-store" });
+                setUnderstandingPilotManifest(manifest);
+                setUnderstandingMessage(`Selected ${manifest.selectedItemCount} of ${manifest.authoritativeCurrentItemCount} current BOQ items. AI has not run yet.`);
               } catch (error) {
-                setUnderstandingMessage(error instanceof Error ? error.message : "AI understanding could not run.");
+                setUnderstandingPilotManifest(null);
+                setUnderstandingMessage(error instanceof Error ? error.message : "The AI pilot manifest could not be prepared.");
               } finally {
                 setUnderstandingRunning(false);
               }
             }}
           >
-            {understandingRunning ? "Analyzing BOQ items…" : "Analyze BOQ items"}
+            {understandingRunning ? "Preparing AI pilot…" : "Prepare AI pilot"}
           </button>
           {understandingMessage && <small>{understandingMessage}</small>}
+          {understandingQualitySummary && (
+            <div>
+              <small>Persisted run outcome</small>
+              <div className="extraction-proof" aria-label="Persisted BOQ understanding run summary">
+                <span><small>COMPLETED</small><strong>{understandingQualitySummary.persistedSummary.completed}</strong></span>
+                <span><small>NEEDS REVIEW</small><strong>{understandingQualitySummary.persistedSummary.needsReview}</strong></span>
+                <span><small>FAILED</small><strong>{understandingQualitySummary.persistedSummary.failed}</strong></span>
+                <span><small>UNAVAILABLE</small><strong>{understandingQualitySummary.persistedSummary.unavailable}</strong></span>
+              </div>
+              <small>Effective quality under current rules</small>
+              <div className="extraction-proof" aria-label="Effective BOQ understanding quality summary">
+                <span><small>COMPLETED</small><strong>{understandingQualitySummary.effectiveQualitySummary.completed}</strong></span>
+                <span><small>NEEDS REVIEW</small><strong>{understandingQualitySummary.effectiveQualitySummary.needsReview}</strong></span>
+                <span><small>FAILED</small><strong>{understandingQualitySummary.effectiveQualitySummary.failed}</strong></span>
+                <span><small>UNAVAILABLE</small><strong>{understandingQualitySummary.effectiveQualitySummary.unavailable}</strong></span>
+              </div>
+            </div>
+          )}
+          {understandingQualityRunId && !understandingRetryManifest && understandingRetryState !== "completed" && understandingRetryState !== "restored" && (
+            <button
+              disabled={understandingRetryState === "preparing" || understandingRetryState === "running"}
+              onClick={async () => {
+                setUnderstandingRetryState("preparing");
+                setUnderstandingRetryMessage("Preparing the server-authorized retry…");
+                try {
+                  const manifest = await requestJson<NonNullable<typeof understandingRetryManifest>>(`/api/projects/${encodeURIComponent(projectId)}/estimator-understanding/runs/${encodeURIComponent(understandingQualityRunId)}/retry-manifest`, { cache: "no-store" });
+                  setUnderstandingRetryManifest(manifest);
+                  setUnderstandingRetryState("ready");
+                  setUnderstandingRetryMessage("");
+                } catch (error) {
+                  setUnderstandingRetryState("failed");
+                  setUnderstandingRetryMessage(error instanceof Error ? error.message : "The approved retry could not be prepared.");
+                }
+              }}
+            >
+              {understandingRetryState === "preparing" ? "Preparing retry…" : "Prepare approved understanding retry"}
+            </button>
+          )}
+          {understandingRetryManifest && (
+            <div className="intake-guardrail" aria-label="Controlled BOQ understanding retry confirmation">
+              <strong>{understandingRetryManifest.itemCount} approved retry items</strong>
+              <p>The historical run remains preserved. AI may only improve understanding; Product Matching and Pricing will not start.</p>
+              <ul>
+                {understandingRetryManifest.items.map((item) => <li key={item.itemReference}><strong>{item.itemReference}</strong> · {item.description}</li>)}
+              </ul>
+              <button
+                disabled={understandingRetryState === "running"}
+                onClick={async () => {
+                  if (!window.confirm("Run the controlled AI understanding retry for exactly these 6 items? The historical run will remain unchanged, and matching and pricing will not start.")) return;
+                  setUnderstandingRetryState("running");
+                  setUnderstandingRetryMessage("Running the controlled retry…");
+                  try {
+                    const result = await requestJson<{ status: string; idempotent: boolean; summary?: { processed: number; successful: number; review: number; failed: number; unavailable: number } }>(`/api/projects/${encodeURIComponent(projectId)}/estimator-understanding/runs/${encodeURIComponent(understandingRetryManifest.historicalRunId)}/retry`, {
+                      method: "POST",
+                      headers: { "content-type": "application/json" },
+                      body: JSON.stringify({ mode: understandingRetryManifest.mode, historicalRunId: understandingRetryManifest.historicalRunId, retryFingerprint: understandingRetryManifest.retryFingerprint, itemIds: understandingRetryManifest.itemIds }),
+                    });
+                    const partial = Number(result.summary?.failed || 0) + Number(result.summary?.unavailable || 0) > 0;
+                    setUnderstandingRetryState(result.idempotent ? "restored" : partial ? "partial" : "completed");
+                    setUnderstandingRetryMessage(result.idempotent ? "The existing controlled retry was restored; no duplicate run was created." : partial ? "The controlled retry completed with isolated item failures. Review the comparison report." : "The controlled retry completed. Review every result before downstream use.");
+                  } catch (error) {
+                    setUnderstandingRetryState("failed");
+                    setUnderstandingRetryMessage(error instanceof Error ? error.message : "The controlled retry failed safely.");
+                  }
+                }}
+              >
+                {understandingRetryState === "running" ? "Retry running…" : "Confirm and run 6-item retry"}
+              </button>
+            </div>
+          )}
+          {understandingRetryMessage && <small role="status">{understandingRetryMessage}</small>}
+          {understandingPilotManifest && (
+            <div className="intake-guardrail">
+              <strong>Controlled AI understanding pilot</strong>
+              <p>
+                {understandingPilotManifest.selectedItemCount} of {understandingPilotManifest.authoritativeCurrentItemCount} current BOQ items are selected. AI has not run yet. Matching and pricing will not start, and every result requires engineer review.
+              </p>
+              {understandingPilotManifest.probableCrossDocumentDuplicateCount > 0 && (
+                <p>{understandingPilotManifest.probableCrossDocumentDuplicateCount} probable cross-document duplicate groups were retained diagnostically; no duplicate group can contribute more than one executable pilot row.</p>
+              )}
+              <strong>Governed Fire Alarm primary items ({understandingPilotManifest.selectedPrimaryCount})</strong>
+              <p>Valid product rows with a bounded governed Fire Alarm taxonomy candidate.</p>
+              <ul>
+                {understandingPilotManifest.primaryItems.map((item) => (
+                  <li key={item.boqItemId}>
+                    <strong>{item.itemReference || "BOQ item"}</strong> · {item.description} — {item.selectionReasons.join(" · ")}
+                  </li>
+                ))}
+              </ul>
+              <strong>Cross-system exploratory items ({understandingPilotManifest.selectedExploratoryCount})</strong>
+              <p>Valid product or equipment rows included for controlled exploratory understanding only.</p>
+              <ul>
+                {understandingPilotManifest.exploratoryItems.map((item) => (
+                  <li key={item.boqItemId}>
+                    <strong>{item.itemReference || "BOQ item"}</strong> · {item.description} — {item.selectionReasons.join(" · ")}
+                  </li>
+                ))}
+              </ul>
+              {understandingPilotManifest.excludedExamples.length > 0 && (
+                <>
+                  <strong>Data-quality exclusions ({understandingPilotManifest.excludedDataQualityCount})</strong>
+                  <p>These examples are diagnostic only. They are not executable or authorized for the pilot.</p>
+                  <ul>
+                    {understandingPilotManifest.excludedExamples.map((item) => (
+                      <li key={item.boqItemId}>
+                        <strong>{item.itemReference || "BOQ item"}</strong> · {item.description || "No description"} — {item.exclusionReasons.join(" · ")}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              <button
+                disabled={understandingRunning || understandingPilotManifest.selectedItemCount < 1}
+                onClick={async () => {
+                  if (!window.confirm(`Run AI understanding on ${understandingPilotManifest.selectedItemCount} selected BOQ items? Results will require engineer review and will not start matching or pricing.`)) return;
+                  setUnderstandingRunning(true);
+                  setUnderstandingMessage(`Running the controlled AI pilot on ${understandingPilotManifest.selectedItemCount} items…`);
+                  try {
+                    const result = await requestJson<{ status: string; summary: { processed: number; successful: number; review: number; failed: number; unavailable: number }; qualityReport?: NonNullable<typeof understandingQualitySummary> }>(`/api/projects/${encodeURIComponent(projectId)}/estimator-understanding/run`, {
+                      method: "POST",
+                      headers: { "content-type": "application/json" },
+                      body: JSON.stringify({ mode: "CONTROLLED_PILOT", itemIds: understandingPilotManifest.itemIds, manifestFingerprint: understandingPilotManifest.manifestFingerprint }),
+                    });
+                    const readiness = await requestJson<EstimatorReadiness>(`/api/projects/${encodeURIComponent(projectId)}/estimator-readiness`, { cache: "no-store" });
+                    setEstimatorReadiness(readiness);
+                    if (result.qualityReport) setUnderstandingQualitySummary(result.qualityReport);
+                    setUnderstandingMessage(result.status === "AI_UNAVAILABLE" ? "AI understanding is unavailable; no downstream authority changed." : `${result.summary.processed} pilot items processed · Completed: ${result.summary.successful} · Needs review: ${result.summary.review} · Failed: ${result.summary.failed} · Unavailable: ${result.summary.unavailable}`);
+                  } catch (error) {
+                    setUnderstandingMessage(error instanceof Error ? error.message : "The controlled AI pilot could not run.");
+                  } finally {
+                    setUnderstandingRunning(false);
+                  }
+                }}
+              >
+                {understandingRunning ? "Running AI pilot…" : `Run AI pilot on ${understandingPilotManifest.selectedItemCount} items`}
+              </button>
+            </div>
+          )}
         </div>
         <div className="compact-table boq-extraction-review-table">
           <table>

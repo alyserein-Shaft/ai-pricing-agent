@@ -197,10 +197,16 @@ test("@golden @golden-full completes the governed upload-to-issued-export journe
   const incompleteReadiness = await request.post(`/api/boq-items/${incomplete.id}/requirement-profile/approve-readiness`, { data: { reason: "Attempt must remain blocked because mandatory identity is missing" } });
   expect(incompleteReadiness.status()).toBe(409);
 
+  const understandingManifest = await api(
+    request,
+    "get",
+    `/api/projects/${projectId}/estimator-understanding/pilot-manifest`,
+  );
   const understandingRun = await api(
     request,
     "post",
     `/api/projects/${projectId}/estimator-understanding/run`,
+    { data: { mode: "CONTROLLED_PILOT", itemIds: understandingManifest.itemIds, manifestFingerprint: understandingManifest.manifestFingerprint } },
   );
   expect(understandingRun.status).toBe("COMPLETED");
 

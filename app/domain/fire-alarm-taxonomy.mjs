@@ -40,7 +40,7 @@ const familyPhrases = Object.freeze({
   "Beam Detector": ["beam detector"], "Duct Detector": ["duct detector", "duct smoke detector"], "Flame Detector": ["flame detector"],
   "Conventional Detector": ["conventional detector", "conventional smoke detector", "conventional heat detector"],
   "Detector Base": ["detector base"], "Sounder Base": ["sounder base"], "Isolator Base": ["isolator base"],
-  "Sounder/Strobe": ["sounder strobe", "sounder with strobe"], "Sounder": ["sounder"], "Strobe": ["strobe"],
+  "Sounder/Strobe": ["sounder strobe", "sounder with strobe", "sounder flasher", "sounder with flasher", "sounder beacon", "sounder with beacon"], "Sounder": ["sounder"], "Strobe": ["strobe", "flasher", "beacon"],
   "Monitor Module": ["monitor module", "monitoring module"], "Control Module": ["control module"], "Input Module": ["input module"],
   "Output Module": ["output module"], "Relay Module": ["relay module"], "Isolator Module": ["isolator module"], "Zone Module": ["zone module"], "Interface Module": ["interface module"],
   "Manual Call Point": ["manual call point"], "Pull Station": ["pull station"], "Break Glass Unit": ["break glass unit"],
@@ -66,27 +66,43 @@ export const normalizeFireAlarmAttributeName = (value, family) => {
   return profile.attributes.includes(canonical) ? canonical : null;
 };
 
-export function buildFireAlarmTaxonomyContext(evidence = {}, { maxFamilies = 6, maxAttributes = 10 } = {}) {
+export function buildFireAlarmTaxonomyContext(evidence = {}, { maxFamilies = 6, maxAttributes = 10, allowMultipleExplicitEntities = false } = {}) {
   const sourceText = [evidence.description, evidence.system, evidence.category, evidence.subcategory, evidence.manufacturerText, evidence.modelText, ...(evidence.confirmedSpecification || []).map((entry) => typeof entry === "string" ? entry : entry?.normalizedRequirement || entry?.originalText)].filter(Boolean).join(" ");
   const source = normalized(sourceText);
   const sourceTokens = tokens(source);
   const scored = [];
   for (const [family, phrases] of Object.entries(familyPhrases)) {
-    let score = 0;
-    const basis = [];
+    let best = null;
     for (const phrase of phrases) {
       const normalizedPhrase = normalized(phrase);
-      if (source.includes(normalizedPhrase)) { score += 100 + normalizedPhrase.length; basis.push(phrase); }
-      else {
-        const phraseTokens = tokens(phrase);
+      const phraseTokens = tokens(phrase);
+      if (source.includes(normalizedPhrase)) {
+        const match = { score: 1000 + phraseTokens.size * 100 + normalizedPhrase.length, matchKind: "EXACT_PHRASE", matchedPhrase: normalizedPhrase, basis: phrase };
+        if (!best || match.score > best.score) best = match;
+      } else {
         const overlap = [...phraseTokens].filter((token) => sourceTokens.has(token)).length;
-        if (overlap >= 2 && overlap === phraseTokens.size) { score += overlap * 10; basis.push(phrase); }
+        const genericTokens = new Set(["fire", "alarm", "panel", "addressable", "system", "device"]);
+        const distinguishing = [...phraseTokens].filter((token) => !genericTokens.has(token));
+        if (overlap === phraseTokens.size && distinguishing.length > 0 && distinguishing.some((token) => sourceTokens.has(token))) {
+          const match = { score: 100 + distinguishing.length * 20 + phraseTokens.size, matchKind: "TOKEN_MATCH", matchedPhrase: normalizedPhrase, basis: phrase };
+          if (!best || match.score > best.score) best = match;
+        }
       }
     }
-    if (score) scored.push({ category: fireAlarmCategoryForFamily(family), family, score, basis: freezeList(basis) });
+    if (best) scored.push({ category: fireAlarmCategoryForFamily(family), family, ...best, basis: freezeList([best.basis]) });
   }
   scored.sort((left, right) => right.score - left.score || left.family.localeCompare(right.family));
-  const families = scored.slice(0, Math.max(1, Math.min(8, maxFamilies))).map(({ category, family, basis }, index) => Object.freeze({ selectionKey: `FA-${index + 1}`, category, family, basis }));
+  const [strongest, next] = scored;
+  const exactSpecificity = strongest && next && strongest.matchKind === "EXACT_PHRASE" && next.matchKind === "EXACT_PHRASE" && strongest.matchedPhrase.includes(next.matchedPhrase) && strongest.matchedPhrase !== next.matchedPhrase;
+  const ambiguous = Boolean(strongest && next && (
+    strongest.score === next.score
+    || (strongest.matchKind === "TOKEN_MATCH")
+    || (strongest.matchKind === "EXACT_PHRASE" && next.matchKind === "EXACT_PHRASE" && !exactSpecificity)
+  ));
+  // BOQ selection fails closed on ambiguity. Requirement intelligence may opt
+  // into multiple explicit entities because a clause can govern several items.
+  const accepted = strongest && (!ambiguous || allowMultipleExplicitEntities) ? (allowMultipleExplicitEntities ? scored : [strongest]) : [];
+  const families = accepted.slice(0, Math.max(1, Math.min(8, maxFamilies))).map(({ category, family, basis }, index) => Object.freeze({ selectionKey: `FA-${index + 1}`, category, family, basis }));
   const likelyFireAlarm = /\bfire alarm\b/.test(source) || families.length > 0;
   const selectedAttributes = [];
   const addAttribute = (name) => { if (!selectedAttributes.includes(name)) selectedAttributes.push(name); };
