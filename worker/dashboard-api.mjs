@@ -2,6 +2,11 @@ import { requireMigratedTables } from "./schema-requirements.mjs";
 import { DASHBOARD_MODEL_VERSION, METRIC_REGISTRY, deriveProjectDashboard } from "../app/domain/dashboard-workflow-engine.mjs";
 import { authenticateLibraryActor } from "./library-auth.mjs";
 import { currentBoqEvidenceCounts, currentBoqEvidenceFrom, currentBoqItemPredicate } from "./current-evidence-scope.mjs";
+import {
+  normalizeNpQProfile,
+  npqFingerprint,
+  validateNpQProfile,
+} from "../app/domain/project-npq-engine.mjs";
 
 const json = (body, status = 200, headers = {}) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "private, no-store", "x-dashboard-model-version": DASHBOARD_MODEL_VERSION, ...headers } });
 const id = (prefix) => `${prefix}_${crypto.randomUUID()}`;
@@ -228,6 +233,318 @@ export const handleDashboardApi = async (request, env) => {
     const projects = await hydrateProjects(env.DB, uniqueProjects(rows.results || []), user.id), legacyCount = await unassignedLegacyCount(env.DB, user.id);
     return json({ organization: active.organization, projects, state: projects.length ? "Projects Available" : q ? "No Search Results" : "No Organization Projects", query: q, unassignedLegacyProjects: { count: legacyCount, includedInMetrics: false }, pagination: { limit: 100, offset: 0, returned: projects.length }, updatedAt: now() });
   }
+  if (url.pathname === "/api/projects/onboard" && request.method === "POST") {
+    const active = await resolveActiveOrganization(env.DB, user.id, "");
+    if (active.error) return json({ error: active.error }, active.error.status);
+
+    if (
+      !active.organization.roles.some((role) =>
+        ["Organization Owner", "Organization Administrator"].includes(role)
+      )
+    ) {
+      return json(
+        {
+          error: {
+            status: 403,
+            code: "ORGANIZATION_PROJECT_CREATE_DENIED",
+            message:
+              "Organization Owner or Administrator permission is required.",
+          },
+        },
+        403,
+      );
+    }
+
+    const body = await bodyOf(request);
+    const name = String(body.name || "").trim();
+    const client = String(body.client || "").trim();
+    const reference = String(body.reference || "").trim();
+    const dueDate = String(body.dueDate || "").trim();
+    const requestedSystem = String(body.system || "").trim();
+    const systemDomain =
+      requestedSystem === "Fire Detection & Alarm"
+        ? "Fire Alarm"
+        : requestedSystem;
+    const initialStatus = String(body.status || "Draft").trim();
+
+    if (name.length < 2) {
+      return json(
+        {
+          error: {
+            status: 422,
+            code: "PROJECT_NAME_REQUIRED",
+            message: "A project name is required.",
+          },
+        },
+        422,
+      );
+    }
+
+    if (!systemDomain) {
+      return json(
+        {
+          error: {
+            status: 422,
+            code: "PROJECT_SYSTEM_REQUIRED",
+            message: "A project system/domain is required.",
+          },
+        },
+        422,
+      );
+    }
+
+    if (initialStatus !== "Draft") {
+      return json(
+        {
+          error: {
+            status: 422,
+            code: "PROJECT_INITIAL_STATUS_INVALID",
+            message: "New projects must begin in Draft status.",
+          },
+        },
+        422,
+      );
+    }
+
+    const npqValidation = validateNpQProfile(
+      {
+        ...(body.npq || {}),
+        primarySystem:
+          String(body.npq?.primarySystem || "").trim() || requestedSystem,
+      },
+      { forConfirmation: true },
+    );
+
+    if (!npqValidation.ok) {
+      return json(
+        {
+          error: {
+            status: 422,
+            code: npqValidation.code,
+            message: `NPQ onboarding is incomplete: ${npqValidation.missing.join(", ")}.`,
+            missing: npqValidation.missing,
+          },
+        },
+        422,
+      );
+    }
+
+    const npq = normalizeNpQProfile(npqValidation.profile);
+    const npqFingerprintValue = await npqFingerprint(npq);
+
+    const projectId = id("project");
+    const npqProfileId = id("npqProfile");
+    const npqEventId = id("npqEvent");
+    const requestId =
+      request.headers.get("x-request-id") || id("request");
+    const stamp = now();
+
+    const operationalClassification =
+      String(env.GOLDEN_E2E || "") === "1"
+        ? "Internal Validation"
+        : "Operational";
+
+    const confirmationReason =
+      String(body.npqConfirmationReason || "").trim() ||
+      "Initial NPQ estimation strategy confirmed during project creation";
+
+    const npqColumns = [
+      "id",
+      "project_id",
+      "version_number",
+      "country",
+      "city",
+      "location",
+      "inquiry_subject",
+      "inquiry_received",
+      "contact_name",
+      "contact_email",
+      "contact_phone",
+      "primary_system",
+      "additional_systems_json",
+      "delivery_scope",
+      "scope_notes",
+      "manufacturer_strategy",
+      "preferred_manufacturer",
+      "approved_manufacturers_json",
+      "manufacturer_notes",
+      "pricing_strategy",
+      "primary_pricing_source_type",
+      "primary_pricing_source_id",
+      "fallback_pricing_sources_json",
+      "project_currency",
+      "pricing_notes",
+      "expected_evidence_json",
+      "boq_availability",
+      "drawing_availability",
+      "status",
+      "input_fingerprint",
+      "confirmation_reason",
+      "confirmed_by",
+      "confirmed_at",
+      "created_by",
+      "created_at",
+    ];
+
+    const npqValues = [
+      npqProfileId,
+      projectId,
+      1,
+      npq.country || null,
+      npq.city || null,
+      npq.location || null,
+      npq.inquirySubject || null,
+      npq.inquiryReceived || null,
+      npq.contactName || null,
+      npq.contactEmail || null,
+      npq.contactPhone || null,
+      npq.primarySystem,
+      JSON.stringify(npq.additionalSystems),
+      npq.deliveryScope,
+      npq.scopeNotes || null,
+      npq.manufacturerStrategy,
+      npq.preferredManufacturer || null,
+      JSON.stringify(npq.approvedManufacturers),
+      npq.manufacturerNotes || null,
+      npq.pricingStrategy,
+      npq.primaryPricingSourceType || null,
+      npq.primaryPricingSourceId || null,
+      JSON.stringify(npq.fallbackPricingSources),
+      npq.projectCurrency,
+      npq.pricingNotes || null,
+      JSON.stringify(npq.expectedEvidence),
+      npq.boqAvailability,
+      npq.drawingAvailability,
+      "Confirmed",
+      npqFingerprintValue,
+      confirmationReason,
+      user.id,
+      stamp,
+      user.id,
+      stamp,
+    ];
+
+    await env.DB.batch([
+      env.DB
+        .prepare(
+          "INSERT INTO projects (id,name,owner_user_id,organization_id,system_domain,initial_status,operational_classification,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?)",
+        )
+        .bind(
+          projectId,
+          name,
+          user.id,
+          active.organization.id,
+          systemDomain,
+          initialStatus,
+          operationalClassification,
+          stamp,
+          stamp,
+        ),
+
+      env.DB
+        .prepare(
+          "INSERT INTO project_dashboard_profiles (project_id,client,tender_number,due_date,currency,location,updated_by) VALUES (?,?,?,?,?,?,?)",
+        )
+        .bind(
+          projectId,
+          client || null,
+          reference || null,
+          dueDate || null,
+          npq.projectCurrency,
+          npq.location || null,
+          user.id,
+        ),
+
+      env.DB
+        .prepare(
+          `INSERT INTO project_npq_profile_versions (${npqColumns.join(",")}) VALUES (${npqColumns.map(() => "?").join(",")})`,
+        )
+        .bind(...npqValues),
+
+      env.DB
+        .prepare(
+          `INSERT INTO project_npq_profile_events (
+            id,
+            project_id,
+            profile_version_id,
+            action,
+            previous_value,
+            new_value,
+            reason,
+            actor_user_id,
+            actor_role,
+            request_id
+          ) VALUES (?,?,?,?,?,?,?,?,?,?)`,
+        )
+        .bind(
+          npqEventId,
+          projectId,
+          npqProfileId,
+          "NPQ Confirmed",
+          null,
+          JSON.stringify({
+            version: 1,
+            status: "Confirmed",
+            fingerprint: npqFingerprintValue,
+            profile: npq,
+          }),
+          confirmationReason,
+          user.id,
+          "Project Manager",
+          requestId,
+        ),
+
+      audit(
+        env.DB,
+        projectId,
+        "Project Created with NPQ",
+        null,
+        {
+          name,
+          organizationId: active.organization.id,
+          systemDomain,
+          initialStatus,
+          operationalClassification,
+          npqVersion: 1,
+          npqFingerprint: npqFingerprintValue,
+        },
+        confirmationReason,
+        user,
+        "Project Manager",
+        request,
+      ),
+    ]);
+
+    return json(
+      {
+        project: {
+          id: projectId,
+          name,
+          organizationId: active.organization.id,
+          ownerUserId: user.id,
+          client: client || null,
+          tenderNumber: reference || null,
+          dueDate: dueDate || null,
+          systemDomain,
+          initialStatus,
+          operationalClassification,
+          isTestFixture: operationalClassification !== "Operational",
+          role: "Project Manager",
+        },
+        npq: {
+          id: npqProfileId,
+          version: 1,
+          status: "Confirmed",
+          fingerprint: npqFingerprintValue,
+          profile: npq,
+          authority: "AUTHORITATIVE_PROJECT_CONTEXT",
+        },
+        organization: active.organization,
+      },
+      201,
+    );
+  }
+
   if (url.pathname === "/api/projects" && request.method === "POST") {
     const active = await resolveActiveOrganization(env.DB, user.id, ""); if (active.error) return json({ error: active.error }, active.error.status);
     if (!active.organization.roles.some((role) => ["Organization Owner", "Organization Administrator"].includes(role))) return json({ error: { status: 403, code: "ORGANIZATION_PROJECT_CREATE_DENIED", message: "Organization Owner or Administrator permission is required." } }, 403);

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { strToU8, zipSync } from "fflate";
-import { BOQ_ROW_TYPES, compareBoqRevisions, extractBoqBytes, normalizeUnit, parseQuantity } from "../app/domain/boq-extractor.mjs";
+import { BOQ_ROW_TYPES, compareBoqRevisions, extractBoqBytes, isPlausibleDescriptionText, normalizeUnit, parseQuantity } from "../app/domain/boq-extractor.mjs";
 import { decodeRkNumber } from "../app/document-parsers/xls.mjs";
 
 test("BOQ review loads every persisted extraction page", async () => {
@@ -105,6 +105,54 @@ test("extracts a native-text PDF table without flattening page provenance", () =
   assert.equal(result.summary.validBoqItems, 1);
   assert.equal(result.rows[0].source.page, 1);
   assert.equal(result.rows[0].description, "Addressable detector");
+});
+
+// Fire Alarm E2E fix 1 -- reproduces the exact "Div. 28" sheet row-shape mix
+// proven on Central Kitchen - Makkah: row 2 carries its description in the
+// sheet's dominant column (B), row 3 carries the same kind of content one
+// column to the right (C) because the source spreadsheet used a different
+// cell shape for that row, and row 4 is a genuine section header with no
+// description in any column. Before this fix, row 3 was stored with
+// description=null and rowType "Unknown" even though "Smoke detector
+// Addressable type ." was present in the raw cell the whole time.
+const mixedColumnWorkbook = () => zipSync({
+  "xl/workbook.xml": strToU8('<?xml version="1.0"?><workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Div. 28" sheetId="1" r:id="rId1"/></sheets></workbook>'),
+  "xl/_rels/workbook.xml.rels": strToU8('<?xml version="1.0"?><Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>'),
+  "xl/sharedStrings.xml": strToU8('<?xml version="1.0"?><sst><si><t>Item</t></si><si><t>Description</t></si><si><t>Quantity</t></si><si><t>Unit</t></si><si><t>28.28</t></si><si><t>Monitor module Addressable type.</t></si><si><t>No.</t></si><si><t>28.19</t></si><si><t>Smoke detector Addressable type .</t></si><si><t>Section (8) - Fire Alarm and Voice Evacuation Systems</t></si></sst>'),
+  "xl/worksheets/sheet1.xml": strToU8('<worksheet><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="D1" t="s"><v>2</v></c><c r="F1" t="s"><v>3</v></c></row><row r="2"><c r="A2" t="s"><v>4</v></c><c r="B2" t="s"><v>5</v></c><c r="D2"><v>11</v></c><c r="F2" t="s"><v>6</v></c></row><row r="3"><c r="A3" t="s"><v>7</v></c><c r="C3" t="s"><v>8</v></c><c r="D3"><v>230</v></c><c r="F3" t="s"><v>6</v></c></row><row r="4"><c r="A4" t="s"><v>9</v></c></row></sheetData></worksheet>'),
+});
+
+test("plausible-description check rejects blanks, short codes and pure numbers", () => {
+  assert.equal(isPlausibleDescriptionText(""), false);
+  assert.equal(isPlausibleDescriptionText("No."), false);
+  assert.equal(isPlausibleDescriptionText("230"), false);
+  assert.equal(isPlausibleDescriptionText("28.19"), false);
+  assert.equal(isPlausibleDescriptionText("Beam detector"), true);
+});
+
+test("recovers a row-level description from an adjacent column when the sheet's dominant description column is blank for that row, without touching quantity/unit/item-number or misclassifying headers", () => {
+  const result = extractBoqBytes(mixedColumnWorkbook(), { extension: "xlsx", fileName: "div28.xlsx" });
+  const [normalRow, shiftedRow, headerRow] = result.rows;
+
+  assert.equal(normalRow.rowType, "BOQ Item");
+  assert.equal(normalRow.description, "Monitor module Addressable type.");
+  assert.equal(normalRow.quantity.numeric, 11);
+  assert.equal(normalRow.unit.normalized, "Each");
+  assert.equal(normalRow.itemNumber, "28.28");
+  assert.equal(normalRow.source.cells.description, "B2");
+  assert.equal(normalRow.warnings.some((warning) => warning.code === "DESCRIPTION_COLUMN_ROW_LEVEL_OVERRIDE"), false);
+
+  assert.equal(shiftedRow.rowType, "BOQ Item");
+  assert.equal(shiftedRow.description, "Smoke detector Addressable type .");
+  assert.equal(shiftedRow.quantity.numeric, 230);
+  assert.equal(shiftedRow.unit.normalized, "Each");
+  assert.equal(shiftedRow.itemNumber, "28.19");
+  assert.equal(shiftedRow.source.cells.description, "C3");
+  assert.equal(shiftedRow.warnings.some((warning) => warning.code === "DESCRIPTION_COLUMN_ROW_LEVEL_OVERRIDE"), true);
+
+  assert.notEqual(headerRow.rowType, "BOQ Item");
+  assert.equal(headerRow.description, "Section (8) - Fire Alarm and Voice Evacuation Systems");
+  assert.equal(headerRow.warnings.some((warning) => warning.code === "DESCRIPTION_COLUMN_ROW_LEVEL_OVERRIDE"), false);
 });
 
 test("supports every required row type", () => {

@@ -1,6 +1,6 @@
 import { parseXlsxWorkbook } from "../document-parsers/xlsx.mjs";
 import { extractAttributes, extractStandards } from "./specification-extractor.mjs";
-import { FIRE_ALARM_ATTRIBUTE_PROFILES, FIRE_ALARM_TAXONOMY } from "./fire-alarm-taxonomy.mjs";
+import { FIRE_ALARM_ATTRIBUTE_PROFILES, FIRE_ALARM_TAXONOMY, classifyFireAlarmFamilyFromText } from "./fire-alarm-taxonomy.mjs";
 export { FIRE_ALARM_ATTRIBUTE_PROFILES, FIRE_ALARM_TAXONOMY, FIRE_ALARM_TAXONOMY_VERSION } from "./fire-alarm-taxonomy.mjs";
 
 export const PRODUCT_LIBRARY_VERSION = "product-price-library-1.0.0";
@@ -47,14 +47,40 @@ export const advanceProcessingJob = (job, stage, message) => { const stages = jo
 const text = (value) => String(value ?? "").trim();
 const cell = (row, column) => row.cells.find((entry) => entry.column === column)?.value ?? (column === 1 ? row.cells.find((entry) => entry.column === 2)?.value : null) ?? null;
 const source = (sheet, row, cells) => ({ sheet, row, cells, extractionMethod: "native-xlsx-structure", parserVersion: PRODUCT_LIBRARY_VERSION });
-const productFamily = (heading) => ({ name: text(heading), normalizedName: text(heading).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(), engineeringDomain: /fire|farenhyt|detector|alarm|panel/i.test(heading) ? "Fire Alarm" : "Unknown", reviewStatus: "Needs Review" });
+// Uses the same canonical System -> Category -> Family taxonomy as requirement
+// understanding (classifyFireAlarmFamilyFromText, from fire-alarm-taxonomy.mjs) --
+// no second taxonomy. When the raw price-list heading doesn't confidently map to a
+// canonical family, the heading's own text is preserved verbatim as the family
+// name (it is real evidence of how the manufacturer grouped these products) but
+// engineeringDomain is left null rather than guessed, since a free-text heading is
+// not itself a governed category.
+export const productFamily = (heading) => {
+  const canonical = classifyFireAlarmFamilyFromText(heading);
+  const name = canonical ? canonical.family : text(heading);
+  return { name, normalizedName: name.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim(), engineeringDomain: canonical ? canonical.category : null, reviewStatus: "Needs Review" };
+};
 const lifecycleState = (replacement) => /no replacement/i.test(replacement) ? "Discontinued — No Replacement" : text(replacement) ? "Discontinued — Replacement Candidate" : "Discontinued — Replacement Missing";
 
 export const ingestHoneywellFarenhytWorkbook = (bytes, metadata = {}) => {
   const workbook = parseXlsxWorkbook(bytes); const catalogue = workbook.sheets.find((sheet) => sheet.name === "2023 Farenhyt"); const release = workbook.sheets.find((sheet) => sheet.name === "Release Notes"); const archive = workbook.sheets.find((sheet) => sheet.name === "Obsolete & Replacement archive");
   if (!catalogue || !release) throw Object.assign(new Error("The expected Farenhyt catalogue and release-note sheets are missing."), { code: "PRICE_LIST_STRUCTURE_UNRECOGNIZED" });
   const releaseText = release.rows.flatMap((row) => row.cells.map((entry) => text(entry.value))).join(" "); const effective = releaseText.match(/effective from\s+(\d{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]+\s+\d{4})/i)?.[1] || null; const version = releaseText.match(/V\d{2}\.\d+/i)?.[0] || null; let family = productFamily("Unclassified Farenhyt Products"); const families = []; const products = []; const prices = [];
-  for (const row of catalogue.rows.slice(2)) { const partNumber = text(cell(row, 1)); const description = text(cell(row, 3) || cell(row, 4)); const countryOfOrigin = text(cell(row, 5)); const price = Number(cell(row, 6)); const comments = text(cell(row, 7)); if (partNumber && !description && !Number.isFinite(price)) { family = productFamily(partNumber); families.push({ ...family, source: source(catalogue.name, row.sourceRow, [row.cells[0]?.reference].filter(Boolean)) }); continue; } if (!partNumber || !description || !Number.isFinite(price) || price <= 0) continue; const productId = `product:honeywell:${partNumber.toLowerCase()}`; products.push({ id: productId, manufacturer: "Honeywell", brand: "Farenhyt", family: family.name, partNumber, normalizedPartNumber: partNumber.toUpperCase().replace(/\s+/g, ""), description, countryOfOrigin: countryOfOrigin || null, comments: comments || null, attributes: extractAttributes(description), standards: extractStandards(description), lifecycleStatus: "Unknown — Review Required", sourceAuthority: "Manufacturer Price List", reliability: "Historical Reference", reviewStatus: "Needs Review", source: source(catalogue.name, row.sourceRow, row.cells.map((entry) => entry.reference)) }); prices.push({ id: `price:${productId}:${row.sourceRow}`, productId, amount: price, currency: "USD", priceType: "Manufacturer List Price", scopeType: "Global Reference", effectiveFrom: effective, validUntil: null, validityState: "Historical — Validity End Missing", approvalStatus: "Needs Review", downstreamUse: "Discovery Only", source: source(catalogue.name, row.sourceRow, [row.cells.find((entry) => entry.column === 6)?.reference].filter(Boolean)) }); }
+  // Sprint 1.16 -- real Opera gap: a section heading in this workbook often
+  // spans several genuinely different device families at once (e.g. "IDP
+  // Addressable Detectors/Devices from System Sensor" covers smoke, heat,
+  // CO and module products alike), so productFamily(heading) correctly
+  // returns no confident governed match and family stays the heading's own
+  // raw text with no engineering domain -- yet every product under that
+  // heading was still being stamped with that one ungoverned heading text,
+  // never re-checked against its own, more specific description. When the
+  // governing heading is ungoverned, each product is reclassified from its
+  // OWN description through the exact same governed classifier used for the
+  // heading itself -- no second taxonomy, no part-number keying -- so a
+  // product whose own text is a real, specific match (e.g. "Thermal
+  // Detector", "Carbon Monoxide Detector") is no longer forced into its
+  // heading's generic fallback. A heading that already resolves confidently
+  // keeps governing every product beneath it exactly as before.
+  for (const row of catalogue.rows.slice(2)) { const partNumber = text(cell(row, 1)); const description = text(cell(row, 3) || cell(row, 4)); const countryOfOrigin = text(cell(row, 5)); const price = Number(cell(row, 6)); const comments = text(cell(row, 7)); if (partNumber && !description && !Number.isFinite(price)) { family = productFamily(partNumber); families.push({ ...family, source: source(catalogue.name, row.sourceRow, [row.cells[0]?.reference].filter(Boolean)) }); continue; } if (!partNumber || !description || !Number.isFinite(price) || price <= 0) continue; const rowFamily = family.engineeringDomain ? family : productFamily(description); if (!family.engineeringDomain && rowFamily.engineeringDomain) families.push({ ...rowFamily, source: source(catalogue.name, row.sourceRow, row.cells.map((entry) => entry.reference)) }); const productId = `product:honeywell:${partNumber.toLowerCase()}`; products.push({ id: productId, manufacturer: "Honeywell", brand: "Farenhyt", family: rowFamily.name, partNumber, normalizedPartNumber: partNumber.toUpperCase().replace(/\s+/g, ""), description, countryOfOrigin: countryOfOrigin || null, comments: comments || null, attributes: extractAttributes(description), standards: extractStandards(description), lifecycleStatus: "Unknown — Review Required", sourceAuthority: "Manufacturer Price List", reliability: "Historical Reference", reviewStatus: "Needs Review", source: source(catalogue.name, row.sourceRow, row.cells.map((entry) => entry.reference)) }); prices.push({ id: `price:${productId}:${row.sourceRow}`, productId, amount: price, currency: "USD", priceType: "Manufacturer List Price", scopeType: "Global Reference", effectiveFrom: effective, validUntil: null, validityState: "Historical — Validity End Missing", approvalStatus: "Needs Review", downstreamUse: "Discovery Only", source: source(catalogue.name, row.sourceRow, [row.cells.find((entry) => entry.column === 6)?.reference].filter(Boolean)) }); }
   const lifecycle = (archive?.rows || []).slice(1).map((row) => { const obsoletePart = text(cell(row, 1)); const description = text(cell(row, 2)); const replacement = text(cell(row, 3)); if (!obsoletePart) return null; return { obsoletePart, description, replacementCandidates: replacement && !/no replacement/i.test(replacement) ? replacement.split(/\s+or\s+|[,;/]/i).map(text).filter(Boolean) : [], originalReplacementText: replacement || null, lifecycleStatus: lifecycleState(replacement), reviewStatus: "Needs Review", source: source(archive.name, row.sourceRow, row.cells.map((entry) => entry.reference)) }; }).filter(Boolean);
   return { libraryVersion: PRODUCT_LIBRARY_VERSION, rulesetVersion: PRICE_INGESTION_RULESET, manufacturer: { name: "Honeywell", normalizedName: "HONEYWELL", reliability: "Historical Reference" }, brand: { name: "Farenhyt", manufacturer: "Honeywell" }, priceSource: { sourceType: "Manufacturer Price List", documentId: metadata.documentId || null, fileName: metadata.fileName || null, releaseVersion: version, effectiveFrom: effective, validUntil: null, currency: "USD", validityState: "Historical — Validity End Missing", reliability: "Historical Reference", approvalStatus: "Needs Review", downstreamUse: "Discovery Only" }, families, products, prices, lifecycle, excludedSheets: workbook.sheets.filter((sheet) => ![catalogue.name, release.name, archive?.name].includes(sheet.name)).map((sheet) => ({ name: sheet.name, reason: "Not a classified catalogue, release-note, or lifecycle sheet" })), summary: { sheetsReviewed: workbook.sheets.length, productFamilies: families.length, productsDetected: products.length, pricesDetected: prices.length, lifecycleRecords: lifecycle.length, validCurrentPrices: 0, historicalPrices: prices.length, currency: "USD", releaseVersion: version, effectiveFrom: effective } };
 };

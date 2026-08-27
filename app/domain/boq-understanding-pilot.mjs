@@ -9,7 +9,17 @@ export const BOQ_UNDERSTANDING_PILOT_EXCLUDED_EXAMPLES_MAX_ITEMS = 2;
 
 const clean = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
 const normalized = (value) => clean(value).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-const words = (value) => new Set(normalized(value).split(" ").filter((word) => word.length > 2));
+// Sprint 1.9 -- real Opera gap: "Manual Call Point MCLP" vs "Manual Call
+// Point MCLP WP" collapsed to the same word set once the 2-letter "WP"
+// (weatherproof) suffix was filtered out below >2, so selectPrimaryByDistinctFamily's
+// own variant backfill (see its comment) could never actually select the WP
+// row -- it was always flagged a near duplicate of the indoor row it was
+// meant to be included alongside, permanently, in every manifest. Short
+// technical qualifier suffixes (WP, IP, SS, ...) are exactly the kind of
+// token a real BOQ uses to distinguish two otherwise-identical rows, so they
+// must survive tokenization; only true noise (a/an/of/to bare-length-1
+// tokens) is filtered.
+const words = (value) => new Set(normalized(value).split(" ").filter((word) => word.length > 1));
 const stableRowOrder = (left, right) => Number(left.sequence ?? Number.MAX_SAFE_INTEGER) - Number(right.sequence ?? Number.MAX_SAFE_INTEGER) || String(left.boqItemId || left.id).localeCompare(String(right.boqItemId || right.id));
 const equipmentNoun = /\b(?:access point|amplifier|splitter|screen|network video recorder|nvr|hard disc|hard drive|storage unit|magnetic lock|exit (?:push )?button|drop bolt|door retainer|paging console|digital clock|master clock|ticket dispenser|kiosk|display|computer|work ?station|antenna|receiver|printer|microphone|terminator|call button|master station|touch screen|corridor lamp|zone control unit|detector|panel|module|camera|reader|controller|switch|server|speaker|outlet|rack|battery|sensor|interface|gateway|power supply|enclosure|cabinet)\b/i;
 const explicitMaterial = /\b(?:patch cords?|cables?|wires?|armature plate|access cards?|junction box|distribution box|back box)\b/i;
@@ -290,7 +300,7 @@ const excludedItem = ({ row, input, exclusionReasons }) => ({
   exclusionReasons,
 });
 
-export function buildBoqUnderstandingPilotManifest(projectId, authoritativeRows, { generatedAt = new Date().toISOString() } = {}) {
+export function buildBoqUnderstandingPilotManifest(projectId, authoritativeRows, { generatedAt = new Date().toISOString(), alreadyInterpretedItemIds = new Set() } = {}) {
   const candidates = [...authoritativeRows].sort(stableRowOrder).map((row) => {
     const input = prepareBoqUnderstandingInput(row);
     const evidenceSignals = genericProductEvidence(row);
@@ -311,8 +321,23 @@ export function buildBoqUnderstandingPilotManifest(projectId, authoritativeRows,
   const eligiblePrimary = candidates.filter(({ selectionLane }) => selectionLane === "GOVERNED_PRIMARY");
   const eligibleExploratory = candidates.filter(({ selectionLane }) => selectionLane === "CROSS_SYSTEM_EXPLORATORY");
   const excluded = candidates.filter(({ selectionLane }) => selectionLane === "DATA_QUALITY_EXCLUDED");
-  const selectedPrimary = selectPrimaryByDistinctFamily(eligiblePrimary, BOQ_UNDERSTANDING_PILOT_PRIMARY_MAX_ITEMS);
-  const selectedExploratory = selectExploratoryByCapability(eligibleExploratory, BOQ_UNDERSTANDING_PILOT_EXPLORATORY_MAX_ITEMS, selectedPrimary);
+  // Sprint 1.9 -- real Opera gap: the exploratory lane's cap (3 per manifest)
+  // is far smaller than a real project's cross-system row count, and
+  // selection is otherwise a pure function of the row set alone, with no
+  // memory of prior runs. Calling this repeatedly therefore picked the exact
+  // same 3 winners forever, permanently starving every other eligible
+  // exploratory (and, once primary exceeds its own cap, primary) row of ever
+  // reaching a current interpretation. Rows that already carry ANY
+  // interpretation (regardless of status -- reprocessing an unchanged row is
+  // already a cheap, safe no-op reuse one layer up in runUnderstandingBatch)
+  // are excluded here only from THIS round's candidate pool, so their slot
+  // rotates to a row that has never been attempted. This does not change
+  // which row wins when both are untried -- only fairness across repeated
+  // rounds.
+  const freshPrimary = eligiblePrimary.filter(({ input }) => !alreadyInterpretedItemIds.has(input.boqItemId));
+  const freshExploratory = eligibleExploratory.filter(({ input }) => !alreadyInterpretedItemIds.has(input.boqItemId));
+  const selectedPrimary = selectPrimaryByDistinctFamily(freshPrimary, BOQ_UNDERSTANDING_PILOT_PRIMARY_MAX_ITEMS);
+  const selectedExploratory = selectExploratoryByCapability(freshExploratory, BOQ_UNDERSTANDING_PILOT_EXPLORATORY_MAX_ITEMS, selectedPrimary);
   const executable = [...selectedPrimary, ...selectedExploratory];
   const itemIds = executable.map(({ input }) => input.boqItemId);
   const manifestFingerprint = createHash("sha256").update(stableStringify({

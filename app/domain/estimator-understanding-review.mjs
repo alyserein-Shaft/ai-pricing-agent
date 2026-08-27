@@ -1,4 +1,4 @@
-import { isCanonicalFireAlarmPair } from "./fire-alarm-taxonomy.mjs";
+import { hasGovernedTaxonomy, isCanonicalPair } from "./system-knowledge-registry.mjs";
 import { governedAttributeProfile, mandatoryMatchingAttributes } from "./engineering-attribute-profiles.mjs";
 import { stableStringify } from "./boq-understanding-engine.mjs";
 
@@ -6,7 +6,19 @@ export const UNDERSTANDING_REVIEW_ACTIONS = Object.freeze([
   "APPROVE_INTERPRETATION", "EDIT_AND_APPROVE", "REJECT_INTERPRETATION", "RETURN_TO_REVIEW",
 ]);
 export const UNDERSTANDING_REVIEW_STATUSES = Object.freeze(["AWAITING_REVIEW", "APPROVED", "REJECTED"]);
-export const ESSENTIAL_UNDERSTANDING_FIELDS = Object.freeze(["system", "category", "equipmentType", "productFamily"]);
+// Fire Alarm E2E fix (BOQ Understanding robustness) -- real Central Kitchen -
+// Makkah gap: "Monitor module Addressable type." resolved a fully correct,
+// governed system/category/productFamily, but the model's own response left
+// equipmentType (a reviewable free-text label, not a governed classification
+// field -- see boq-understanding-engine.mjs's own comment: "equipmentType
+// remains a reviewable description, not a product identity") empty, which
+// alone blocked APPROVE_INTERPRETATION and therefore candidate discovery.
+// description + system + category + productFamily are what a governed
+// family's own attribute profile and candidate search actually key off of;
+// equipmentType is never consumed by either. It stays a real, visible gap
+// (see informationalMissing below, the same treatment already given to
+// subcategory) -- just no longer one that blocks approval or discovery.
+export const ESSENTIAL_UNDERSTANDING_FIELDS = Object.freeze(["system", "category", "productFamily"]);
 const SAFE_ORIGINS = new Set(["EXTRACTED", "INFERRED", "MISSING", "NOT_APPLICABLE"]);
 const SAFE_FACT_KEYS = new Set(["value", "origin", "confidence"]);
 const SAFE_INTERPRETATION_KEYS = new Set([
@@ -75,8 +87,8 @@ export function validateUnderstandingForApproval(interpretation) {
   if (!value) return { ok: false, code: "UNDERSTANDING_REVIEW_PAYLOAD_INVALID", missing: [] };
   const missing = ESSENTIAL_UNDERSTANDING_FIELDS.filter((key) => !value[key]?.value || ["MISSING", "NOT_APPLICABLE"].includes(value[key]?.origin));
   if (missing.length) return { ok: false, code: "ESSENTIAL_UNDERSTANDING_MISSING", missing };
-  if (value.system.value === "Fire Alarm" && !isCanonicalFireAlarmPair(value.category.value, value.productFamily.value)) {
-    return { ok: false, code: "FIRE_ALARM_TAXONOMY_INVALID", missing: [] };
+  if (hasGovernedTaxonomy(value.system.value) && !isCanonicalPair(value.system.value, value.category.value, value.productFamily.value)) {
+    return { ok: false, code: "GOVERNED_TAXONOMY_INVALID", missing: [] };
   }
   return { ok: true, value, missing: [] };
 }
@@ -98,7 +110,10 @@ export function evaluateUnderstandingAuthority({ interpretation, reviewStatus = 
     : [fieldEntry("governed_attribute_profile", "REQUIRED_FOR_MATCHING", "A governed family-specific matching profile is not available.")];
   const laterProjectEvidenceNeeded = matchingBlockers.filter((entry) => entry.field !== "governed_attribute_profile")
     .map((entry) => fieldEntry(entry.field, "AWAITING_PROJECT_EVIDENCE", "A specification, drawing, schedule, legend, vendor list, or later project document may supply this evidence."));
-  const informationalMissing = value?.subcategory?.value == null ? [fieldEntry("subcategory", "MISSING_CURRENT_EVIDENCE", "Subcategory is informational and does not block understanding approval.")] : [];
+  const informationalMissing = [
+    ...(value?.subcategory?.value == null ? [fieldEntry("subcategory", "MISSING_CURRENT_EVIDENCE", "Subcategory is informational and does not block understanding approval.")] : []),
+    ...(value?.equipmentType?.value == null ? [fieldEntry("equipmentType", "MISSING_CURRENT_EVIDENCE", "Equipment type is a reviewable description and does not block understanding approval.")] : []),
+  ];
   const understandingApprovalEligible = Boolean(value && taxonomyValid && classificationBlockers.length === 0);
   const understandingApproved = reviewStatus === "APPROVED";
   return {
@@ -146,7 +161,14 @@ export function buildUnderstandingReviewActionPolicy({
   let stateReason = null;
 
   if (!actorAuthorized) stateReason = "ROLE_FORBIDDEN";
-  else if (proposalState !== "AVAILABLE") stateReason = proposalState === "FAILED" ? "AI_ATTEMPT_FAILED" : "INTERPRETATION_NOT_REVIEWABLE";
+  // Sprint 1.9 -- a previously-approved item whose approval no longer
+  // matches current evidence (reviewStatus="REVALIDATION_REQUIRED") is
+  // reported distinctly from an item that was never analyzed at all. No
+  // action becomes allowed here either way (allowedActions stays empty) --
+  // this only replaces a misleading generic denial reason with an accurate
+  // one. The real fix is to submit a fresh interpretation through the normal
+  // governed pipeline and re-approve it, not to unblock the stale one.
+  else if (proposalState !== "AVAILABLE") stateReason = proposalState === "FAILED" ? "AI_ATTEMPT_FAILED" : reviewStatus === "REVALIDATION_REQUIRED" ? "REVALIDATION_REQUIRED" : "INTERPRETATION_NOT_REVIEWABLE";
   else if (!authorityValid) stateReason = "CURRENT_AUTHORITY_INVALID";
   else if (reviewStatus === "AWAITING_REVIEW") {
     allowedActions.push("EDIT_AND_APPROVE", "REJECT_INTERPRETATION");
@@ -164,7 +186,8 @@ export function buildUnderstandingReviewActionPolicy({
     : stateReason === "TAXONOMY_INVALID" ? "Resolve the governed classification before approval."
       : stateReason === "AI_ATTEMPT_FAILED" ? "The failed AI attempt cannot be reviewed as a proposal."
         : stateReason === "CURRENT_AUTHORITY_INVALID" ? "Selection changed — reload the current item."
-          : null;
+          : stateReason === "REVALIDATION_REQUIRED" ? "This item was previously approved, but new confirmed evidence has been linked since. Submit a fresh interpretation and re-approve it."
+            : null;
   return { allowedActions, denialReasons, approvalDenialMessage, stateReason };
 }
 
@@ -179,6 +202,7 @@ export function summarizeUnderstandingReviewItems(items = []) {
     rejected: count("REJECTED"),
     failed: count("FAILED"),
     notAnalyzed: count("NOT_ANALYZED"),
+    revalidationRequired: count("REVALIDATION_REQUIRED"),
   };
 }
 

@@ -1,4 +1,5 @@
 import { authenticateLibraryActor } from "./library-auth.mjs";
+import { canonicalManufacturerName } from "../app/domain/manufacturer-identity.mjs";
 
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { "content-type": "application/json" } });
 const parse = (value, fallback) => { try { return value == null ? fallback : JSON.parse(value); } catch { return fallback; } };
@@ -144,9 +145,10 @@ export const persistGeneralXlsxPriceList = async (env, { bytes, document, user }
   const sourceId = id("productsource"), statements = [], manufacturerIds = new Map(), brandIds = new Map(), productIds = new Map();
   statements.push(env.DB.prepare("INSERT INTO product_sources (id, project_id, document_id, document_version_id, checksum, source_type, authority, scope_type, file_name, release_version, effective_from, valid_until, currency, validity_state, review_status, downstream_use, metadata, created_by) VALUES (?, NULL, ?, ?, ?, ?, 'Source Document — Review Required', 'Global', ?, NULL, NULL, NULL, ?, 'Validity Review Required', 'Needs Review', 'Discovery Only', ?, ?)").bind(sourceId, document.document_id, document.id, document.sha256, document.document_type, document.original_filename, extracted.priceSource.currency, JSON.stringify({ importer: extracted.importer, parserVersion: extracted.parserVersion, summary: extracted.summary, warnings: extracted.warnings, unresolvedRows: extracted.unresolvedRows, unknownCurrencyPriceCandidates: extracted.prices.filter(price => !price.currency) }), user.id));
   for (const product of extracted.products) {
-    const manufacturerKey = String(product.manufacturer).toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim();
+    const canonicalManufacturer = canonicalManufacturerName(product.manufacturer).canonical;
+    const manufacturerKey = String(canonicalManufacturer).toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim();
     let manufacturerId = manufacturerIds.get(manufacturerKey);
-    if (!manufacturerId) { const existingManufacturer = await env.DB.prepare("SELECT id FROM product_manufacturers WHERE normalized_name=?").bind(manufacturerKey).first(); manufacturerId = existingManufacturer?.id || id("manufacturer"); manufacturerIds.set(manufacturerKey, manufacturerId); if (!existingManufacturer) statements.push(env.DB.prepare("INSERT INTO product_manufacturers (id,name,normalized_name,status,created_by) VALUES (?,?,?,'Needs Review',?)").bind(manufacturerId, product.manufacturer, manufacturerKey, user.id)); }
+    if (!manufacturerId) { const existingManufacturer = await env.DB.prepare("SELECT id FROM product_manufacturers WHERE normalized_name=?").bind(manufacturerKey).first(); manufacturerId = existingManufacturer?.id || id("manufacturer"); manufacturerIds.set(manufacturerKey, manufacturerId); if (!existingManufacturer) statements.push(env.DB.prepare("INSERT INTO product_manufacturers (id,name,normalized_name,status,created_by) VALUES (?,?,?,'Needs Review',?)").bind(manufacturerId, canonicalManufacturer, manufacturerKey, user.id)); }
     let brandId = null;
     if (product.brand) { const brandKey = `${manufacturerId}:${String(product.brand).toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim()}`; brandId = brandIds.get(brandKey); if (!brandId) { const normalizedBrand = brandKey.slice(brandKey.indexOf(":") + 1), existingBrand = await env.DB.prepare("SELECT id FROM product_brands WHERE manufacturer_id=? AND normalized_name=?").bind(manufacturerId, normalizedBrand).first(); brandId = existingBrand?.id || id("brand"); brandIds.set(brandKey, brandId); if (!existingBrand) statements.push(env.DB.prepare("INSERT INTO product_brands (id,manufacturer_id,name,normalized_name,status) VALUES (?,?,?,?,'Needs Review')").bind(brandId, manufacturerId, product.brand, normalizedBrand)); } }
     let productId = productIds.get(product.id);
@@ -194,11 +196,20 @@ export const persistIfp75Datasheet = async (env, { document, user }) => {
 
 export const handleProductPriceLibraryApi = async (request, env) => {
   const url = new URL(request.url);
-  if (!url.pathname.startsWith("/api/library/") && !url.pathname.startsWith("/api/products/") && !url.pathname.startsWith("/api/price-sources/")) return null;
+  if (!url.pathname.startsWith("/api/library/") && !url.pathname.startsWith("/api/products/") && !url.pathname.startsWith("/api/price-sources/") && !url.pathname.startsWith("/api/price-records/")) return null;
   if (!env.DB) return json({ error: { code: "PRODUCT_LIBRARY_UNAVAILABLE", message: "Product library storage is unavailable." } }, 503);
   const authentication = await authenticateLibraryActor(request, env); if (authentication.error) return json({ error: authentication.error }, authentication.error.status); const user = authentication.actor;
 
-  if (url.pathname === "/api/library/taxonomy" && request.method === "GET") return json({ version: FIRE_ALARM_LIBRARY_VERSION, engineeringDomain: "Fire Alarm", taxonomy: FIRE_ALARM_TAXONOMY, attributeProfiles: FIRE_ALARM_ATTRIBUTE_PROFILES });
+  if (url.pathname === "/api/library/taxonomy" && request.method === "GET") {
+    // No caller today ever passes ?system=, so the default (Fire Alarm, the
+    // only registered pack) preserves today's sole behavior exactly. An
+    // explicit, unregistered system gets an honest unsupported result instead
+    // of silently receiving Fire Alarm's taxonomy.
+    const requestedSystem = url.searchParams.get("system") || "Fire Alarm";
+    const metadata = systemTaxonomyMetadata(requestedSystem);
+    if (!metadata) return json({ error: { code: "SYSTEM_TAXONOMY_UNAVAILABLE", message: `No governed taxonomy is registered for system "${requestedSystem}".` }, registeredSystems: registeredSystems() }, 404);
+    return json({ version: metadata.version, engineeringDomain: metadata.system, taxonomy: metadata.taxonomy, attributeProfiles: metadata.attributeProfiles });
+  }
 
   if (url.pathname === "/api/library/products" && request.method === "GET") {
     const sourceId = url.searchParams.get("sourceId");
@@ -266,7 +277,78 @@ export const handleProductPriceLibraryApi = async (request, env) => {
     if (sourceMatch[2] === "prices" && request.method === "GET") { const rows = await env.DB.prepare("SELECT r.*, p.id canonical_product_id,p.part_number, p.description FROM price_records r JOIN canonical_library_products p ON p.requested_product_id=r.product_id WHERE r.source_id=? ORDER BY p.part_number").bind(source.id).all(); return json({ prices: rows.results || [] }); }
     if (sourceMatch[2] === "review" && request.method === "POST") { if (source.scope_type === "Global" && !canGovernGlobal(user.role)) return json({ error: { code: "LIBRARY_ROLE_REQUIRED", message: "A Library Manager or Administrator must review global sources." } }, 403); const body = await request.json(); const reason = String(body.reason || "").trim(); if (reason.length < 10) return json({ error: { code: "REVIEW_REASON_REQUIRED", message: "Provide a substantive review reason." } }, 422); const requestedUse = body.downstreamUse === "Costing" ? "Costing" : "Discovery Only"; const validityCurrent = Boolean(source.valid_until) && source.valid_until >= today(); if (requestedUse === "Costing" && !validityCurrent) return json({ error: { code: "PRICE_VALIDITY_REQUIRED", message: "Costing approval requires a current explicit validity end date." } }, 409); await env.DB.batch([env.DB.prepare("UPDATE product_sources SET review_status='Reviewed', downstream_use=? WHERE id=?").bind(requestedUse, source.id), env.DB.prepare("UPDATE price_records SET approval_status='Approved', downstream_use=?, reviewed_by=?, reviewed_at=CURRENT_TIMESTAMP WHERE source_id=?").bind(requestedUse, user.id, source.id)]); await decision(env.DB, user, "Price Source", source.id, "Reviewed", { status: source.review_status, downstreamUse: source.downstream_use }, { status: "Reviewed", downstreamUse: requestedUse }, reason, source.project_id); return json({ reviewed: true, downstreamUse: requestedUse, costingEligible: requestedUse === "Costing" }); }
   }
+  // Per-record governance: the source-level review above always approves every
+  // price_records row under a source identically. When two records under the
+  // same source genuinely disagree (e.g. a conflict) or only one of several
+  // records is ready, an engineer needs to act on a single row -- approve it,
+  // set the validity that its own evidence actually provides, or reject one
+  // record without touching its siblings. price_records already carries the
+  // per-row approval_status/downstream_use/valid_until/reviewed_by columns the
+  // source-level path writes in bulk; this route is the missing single-record
+  // entry point onto those same columns.
+  const priceRecordMatch = url.pathname.match(/^\/api\/price-records\/([^/]+)\/review$/);
+  if (priceRecordMatch && request.method === "POST") {
+    const record = await env.DB.prepare("SELECT * FROM price_records WHERE id=?").bind(decodeURIComponent(priceRecordMatch[1])).first();
+    if (!record) return json({ error: { code: "PRICE_RECORD_NOT_FOUND", message: "Price record not found." } }, 404);
+    if (!(await ownedProject(env.DB, record.project_id, user.id))) return json({ error: { code: "PRICE_RECORD_NOT_FOUND", message: "Price record not found." } }, 404);
+    if (!record.project_id && !canGovernGlobal(user.role)) return json({ error: { code: "LIBRARY_ROLE_REQUIRED", message: "A Library Manager or Administrator must review global price evidence." } }, 403);
+    const body = await request.json();
+    const reason = String(body.reason || "").trim();
+    if (reason.length < 10) return json({ error: { code: "REVIEW_REASON_REQUIRED", message: "Provide a substantive review reason." } }, 422);
+    const decisionType = ["Approve", "Reject", "Supersede"].includes(body.decision) ? body.decision : null;
+    if (!decisionType) return json({ error: { code: "PRICE_RECORD_DECISION_REQUIRED", message: "decision must be Approve, Reject, or Supersede." } }, 422);
+    const previous = { approvalStatus: record.approval_status, downstreamUse: record.downstream_use, validUntil: record.valid_until, validityState: record.validity_state };
+    if (decisionType !== "Approve") {
+      const approvalStatus = decisionType === "Reject" ? "Rejected" : "Superseded";
+      await env.DB.prepare("UPDATE price_records SET approval_status=?, downstream_use='Discovery Only', validity_state=?, reviewed_by=?, reviewed_at=CURRENT_TIMESTAMP WHERE id=?").bind(approvalStatus, approvalStatus, user.id, record.id).run();
+      await decision(env.DB, user, "Price Record", record.id, approvalStatus, previous, { approvalStatus, downstreamUse: "Discovery Only", validityState: approvalStatus }, reason, record.project_id);
+      return json({ reviewed: true, approvalStatus, downstreamUse: "Discovery Only", costingEligible: false });
+    }
+    const requestedUse = body.downstreamUse === "Costing" ? "Costing" : "Discovery Only";
+    const suppliedValidUntil = body.validUntil ? String(body.validUntil).slice(0, 10) : null;
+    if (suppliedValidUntil && !/^\d{4}-\d{2}-\d{2}$/.test(suppliedValidUntil)) return json({ error: { code: "PRICE_VALIDITY_MALFORMED", message: "validUntil must be an explicit YYYY-MM-DD date drawn from real evidence." } }, 422);
+    const effectiveValidUntil = suppliedValidUntil || record.valid_until;
+    const validityCurrent = Boolean(effectiveValidUntil) && effectiveValidUntil >= today();
+    if (requestedUse === "Costing" && !validityCurrent) return json({ error: { code: "PRICE_VALIDITY_REQUIRED", message: "Costing approval requires a current explicit validity end date drawn from real evidence; none was supplied or already recorded." } }, 409);
+    // A validUntil supplied here is only ever what the reviewer's own reason/evidence
+    // asserts -- never derived or defaulted, so the historical catalogue rows this
+    // route was built for stay Historical unless a reviewer supplies real evidence.
+    const nextValidUntil = suppliedValidUntil || record.valid_until;
+    const nextValidityState = suppliedValidUntil ? (record.project_id ? "Project-Specific Approved" : "Current Approved") : record.validity_state;
+    await env.DB.prepare("UPDATE price_records SET approval_status='Approved', downstream_use=?, valid_until=?, validity_state=?, reviewed_by=?, reviewed_at=CURRENT_TIMESTAMP WHERE id=?").bind(requestedUse, nextValidUntil, nextValidityState, user.id, record.id).run();
+    await decision(env.DB, user, "Price Record", record.id, "Approved", previous, { approvalStatus: "Approved", downstreamUse: requestedUse, validUntil: nextValidUntil, validityState: nextValidityState }, reason, record.project_id);
+    return json({ reviewed: true, approvalStatus: "Approved", downstreamUse: requestedUse, validUntil: nextValidUntil, validityState: nextValidityState, costingEligible: requestedUse === "Costing" && validityCurrent });
+  }
+  // Conflict governance: price_conflicts already exists in the schema
+  // (product_id, price_record_ids, conflict_type, status, resolution,
+  // resolved_by, resolved_at) but nothing ever wrote to it. When multiple
+  // price records for one product disagree, this is where that disagreement
+  // gets recorded and -- only by an explicit, reasoned decision -- resolved.
+  // Resolving never deletes or silently prefers either record; both stay in
+  // price_records exactly as ingested.
+  const priceConflictsMatch = url.pathname.match(/^\/api\/products\/([^/]+)\/price-conflicts$/);
+  if (priceConflictsMatch) {
+    const productId = decodeURIComponent(priceConflictsMatch[1]);
+    if (!(await visibleProduct(env.DB, productId))) return json({ error: { code: "PRODUCT_NOT_FOUND", message: "Product not found." } }, 404);
+    if (request.method === "GET") { const rows = await env.DB.prepare("SELECT * FROM price_conflicts WHERE product_id=? ORDER BY created_at DESC").bind(productId).all(); return json({ conflicts: (rows.results || []).map((row) => ({ ...row, price_record_ids: parse(row.price_record_ids, []) })) }); }
+    if (request.method === "POST") {
+      if (!canGovernGlobal(user.role)) return json({ error: { code: "LIBRARY_ROLE_REQUIRED", message: "A Library Manager or Administrator must resolve price conflicts." } }, 403);
+      const body = await request.json();
+      const priceRecordIds = Array.isArray(body.priceRecordIds) ? body.priceRecordIds.filter(Boolean) : [];
+      if (priceRecordIds.length < 2) return json({ error: { code: "PRICE_CONFLICT_RECORDS_REQUIRED", message: "A conflict requires at least two price_records ids." } }, 422);
+      const conflictType = String(body.conflictType || "").trim();
+      if (!conflictType) return json({ error: { code: "PRICE_CONFLICT_TYPE_REQUIRED", message: "conflictType is required." } }, 422);
+      const status = body.status === "Resolved" ? "Resolved" : "Open";
+      const resolution = String(body.resolution || "").trim();
+      if (status === "Resolved" && resolution.length < 10) return json({ error: { code: "PRICE_CONFLICT_RESOLUTION_REQUIRED", message: "A resolved conflict requires a substantive resolution explaining the outcome." } }, 422);
+      const conflictId = id("priceconflict");
+      await env.DB.prepare("INSERT INTO price_conflicts (id, product_id, price_record_ids, conflict_type, status, resolution, resolved_by, resolved_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(conflictId, productId, JSON.stringify(priceRecordIds), conflictType, status, status === "Resolved" ? resolution : null, status === "Resolved" ? user.id : null, status === "Resolved" ? new Date().toISOString() : null).run();
+      await decision(env.DB, user, "Price Conflict", conflictId, status, {}, { conflictType, status, resolution: status === "Resolved" ? resolution : null, priceRecordIds }, resolution || conflictType);
+      return json({ id: conflictId, status, conflictType, resolution: status === "Resolved" ? resolution : null });
+    }
+  }
   return json({ error: { code: "PRODUCT_LIBRARY_API_NOT_FOUND", message: "Product library operation not found." } }, 404);
 };
-import { FIRE_ALARM_ATTRIBUTE_PROFILES, FIRE_ALARM_LIBRARY_VERSION, FIRE_ALARM_TAXONOMY, GENERAL_XLSX_PRICE_LIST_VERSION, hasHoneywellFarenhytWorkbookStructure, ingestGeneralXlsxPriceList, ingestHoneywellFarenhytWorkbook, PRODUCT_LIBRARY_VERSION } from "../app/domain/product-price-library.mjs";
+import { GENERAL_XLSX_PRICE_LIST_VERSION, hasHoneywellFarenhytWorkbookStructure, ingestGeneralXlsxPriceList, ingestHoneywellFarenhytWorkbook, PRODUCT_LIBRARY_VERSION } from "../app/domain/product-price-library.mjs";
+import { registeredSystems, systemTaxonomyMetadata } from "../app/domain/system-knowledge-registry.mjs";
 import { extractIfp75Datasheet, IFP75_DATASHEET_PARSER_VERSION, IFP75_DATASHEET_SOURCE_VERSION } from "../app/domain/ifp75-datasheet.mjs";

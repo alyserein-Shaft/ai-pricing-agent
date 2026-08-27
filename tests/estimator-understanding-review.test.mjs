@@ -38,8 +38,19 @@ test("AI proposal and engineer canonical review remain separate authorities", ()
 
 test("approval requires essential classification while optional subcategory does not block", () => {
   assert.equal(validateUnderstandingForApproval(valid()).ok, true);
-  const missing = validateUnderstandingForApproval(valid({ equipmentType: fact(null, "MISSING", 0) }));
+  const missing = validateUnderstandingForApproval(valid({ productFamily: fact(null, "MISSING", 0) }));
   assert.equal(missing.ok, false); assert.equal(missing.code, "ESSENTIAL_UNDERSTANDING_MISSING");
+});
+// Fire Alarm E2E fix (BOQ Understanding robustness) -- real Central Kitchen -
+// Makkah gap: "Monitor module Addressable type." had a fully correct,
+// governed system/category/productFamily but no equipmentType, and that
+// alone used to block approval and therefore candidate discovery.
+// equipmentType is a reviewable free-text label, never consumed by a
+// governed family's own attribute profile or candidate search -- unlike
+// system/category/productFamily, its absence must not block approval.
+test("a missing equipmentType alone does not block approval -- description + system + category + productFamily are what matching actually needs", () => {
+  const result = validateUnderstandingForApproval(valid({ equipmentType: fact(null, "MISSING", 0) }));
+  assert.equal(result.ok, true);
 });
 
 test("action policy enforces the governed transition matrix", () => {
@@ -117,7 +128,7 @@ test("current-scope summary preserves failed attempts and reconciles exactly", (
   ];
   assert.deepEqual(summarizeUnderstandingReviewItems(items), {
     authoritativeCurrentBoqItems: 204, aiAttempted: 13, aiAnalyzed: 13, awaitingReview: 12,
-    approved: 0, rejected: 0, failed: 1, notAnalyzed: 191,
+    approved: 0, rejected: 0, failed: 1, notAnalyzed: 191, revalidationRequired: 0,
   });
 });
 
@@ -155,7 +166,11 @@ test("classification approval succeeds without matching fields while missing cla
 
 test("Fire Alarm approval uses the shared canonical category and family", () => {
   const invalid = validateUnderstandingForApproval(valid({ productFamily: fact("Invented Detector") }));
-  assert.equal(invalid.ok, false); assert.equal(invalid.code, "FIRE_ALARM_TAXONOMY_INVALID");
+  assert.equal(invalid.ok, false); assert.equal(invalid.code, "GOVERNED_TAXONOMY_INVALID");
+});
+test("a system with no registered governed taxonomy is never blocked by taxonomy-pair validation", () => {
+  const result = validateUnderstandingForApproval(valid({ system: fact("CCTV"), category: fact("Cameras"), productFamily: fact("Anything At All") }));
+  assert.equal(result.ok, true);
 });
 
 test("governed command is item-only and reasons are mandatory for edit, reject and return", () => {
@@ -179,6 +194,8 @@ test("interpretation approval grants discovery only and no other authority", () 
 
 test("migration creates versioned immutable reviews and append-only idempotent events", async () => {
   const migration = await readFile(new URL("../drizzle/0060_estimator_understanding_review.sql", import.meta.url), "utf8");
+  const evidenceGuardFix = await readFile(new URL("../drizzle/0062_understanding_review_evidence_guard_reverted_evidence.sql", import.meta.url), "utf8");
+  const evidenceGuardFix2 = await readFile(new URL("../drizzle/0063_understanding_review_evidence_guard_ignore_failed_newer.sql", import.meta.url), "utf8");
   const db = new DatabaseSync(":memory:");
   db.exec(`PRAGMA foreign_keys=ON;
     CREATE TABLE projects(id TEXT PRIMARY KEY);
@@ -186,9 +203,11 @@ test("migration creates versioned immutable reviews and append-only idempotent e
     CREATE TABLE document_versions(id TEXT PRIMARY KEY,document_id TEXT);
     CREATE TABLE boq_extraction_versions(id TEXT PRIMARY KEY,document_id TEXT,document_version_id TEXT,version_number INTEGER,status TEXT,superseded_at TEXT);
     CREATE TABLE boq_items(id TEXT PRIMARY KEY,project_id TEXT,row_type TEXT,extraction_version_id TEXT,source_document_id TEXT);
-    CREATE TABLE estimator_item_interpretations(id TEXT PRIMARY KEY,boq_item_id TEXT,input_fingerprint TEXT,version_number INTEGER);`);
+    CREATE TABLE estimator_item_interpretations(id TEXT PRIMARY KEY,boq_item_id TEXT,input_fingerprint TEXT,version_number INTEGER,status TEXT DEFAULT 'NEEDS_REVIEW');`);
   db.exec(migration);
-  db.exec(`INSERT INTO projects VALUES('p'); INSERT INTO documents VALUES('doc','p','d',NULL,NULL); INSERT INTO document_versions VALUES('d','doc'); INSERT INTO boq_extraction_versions VALUES('x','doc','d',1,'Completed',NULL); INSERT INTO boq_items VALUES('b','p','BOQ Item','x','doc'); INSERT INTO estimator_item_interpretations VALUES('i','b','fp',1);
+  db.exec(evidenceGuardFix);
+  db.exec(evidenceGuardFix2);
+  db.exec(`INSERT INTO projects VALUES('p'); INSERT INTO documents VALUES('doc','p','d',NULL,NULL); INSERT INTO document_versions VALUES('d','doc'); INSERT INTO boq_extraction_versions VALUES('x','doc','d',1,'Completed',NULL); INSERT INTO boq_items VALUES('b','p','BOQ Item','x','doc'); INSERT INTO estimator_item_interpretations VALUES('i','b','fp',1,'NEEDS_REVIEW');
     INSERT INTO estimator_understanding_review_versions(id,project_id,boq_item_id,interpretation_id,version_number,review_status,canonical_interpretation,source_input_fingerprint,source_document_version_id,source_extraction_version,reviewed_by) VALUES('r','p','b','i',1,'APPROVED','{}','fp','d',1,'u');
     INSERT INTO estimator_understanding_review_events(id,project_id,boq_item_id,interpretation_id,review_version_id,action,new_status,actor_user_id,request_id,request_fingerprint) VALUES('e','p','b','i','r','APPROVE_INTERPRETATION','APPROVED','u','req','hash');`);
   assert.throws(() => db.exec(`UPDATE estimator_understanding_review_versions SET review_status='REJECTED' WHERE id='r'`), /immutable/);
@@ -196,6 +215,87 @@ test("migration creates versioned immutable reviews and append-only idempotent e
   assert.throws(() => db.exec(`INSERT INTO estimator_understanding_review_events(id,project_id,boq_item_id,interpretation_id,review_version_id,action,new_status,actor_user_id,request_id,request_fingerprint) VALUES('e2','p','b','i','r','APPROVE_INTERPRETATION','APPROVED','u','req','different')`), /UNIQUE/);
   db.exec(`UPDATE documents SET current_version_id='superseded' WHERE id='doc'`);
   assert.throws(() => db.exec(`INSERT INTO estimator_understanding_review_versions(id,project_id,boq_item_id,interpretation_id,version_number,review_status,canonical_interpretation,source_input_fingerprint,source_document_version_id,source_extraction_version,reviewed_by) VALUES('r2','p','b','i',2,'APPROVED','{}','fp','d',1,'u')`), /evidence is stale/);
+});
+
+// Fire Alarm E2E fix (evidence/config-aware pilot fairness, follow-up) --
+// real Central Kitchen - Makkah gap: the evidence guard trigger required
+// approving the item's absolute latest interpretation version, full stop --
+// so an item whose evidence reverted to a fingerprint an EARLIER attempt
+// already recorded could never be approved again, even though that earlier
+// attempt genuinely reflects current evidence (a later, higher-version
+// attempt made under a since-reverted evidence state does not). Migration
+// 0062 narrows the guard to only block approving an interpretation when a
+// NEWER interpretation exists for the SAME item AT THE SAME input_fingerprint
+// (a genuinely superseded attempt at the identical evidence state) -- proves
+// both halves: a same-fingerprint newer attempt still blocks (unchanged
+// safety), and a different-fingerprint newer attempt (reverted evidence) no
+// longer does.
+test("Fire Alarm E2E fix -- the evidence guard permits approving an older attempt whose fingerprint matches current evidence, even when a newer attempt exists under different (reverted) evidence, but still blocks a genuinely newer attempt at the SAME fingerprint", async () => {
+  const migration = await readFile(new URL("../drizzle/0060_estimator_understanding_review.sql", import.meta.url), "utf8");
+  const evidenceGuardFix = await readFile(new URL("../drizzle/0062_understanding_review_evidence_guard_reverted_evidence.sql", import.meta.url), "utf8");
+  const evidenceGuardFix2 = await readFile(new URL("../drizzle/0063_understanding_review_evidence_guard_ignore_failed_newer.sql", import.meta.url), "utf8");
+  const buildDb = () => {
+    const db = new DatabaseSync(":memory:");
+    db.exec(`PRAGMA foreign_keys=ON;
+      CREATE TABLE projects(id TEXT PRIMARY KEY);
+      CREATE TABLE documents(id TEXT PRIMARY KEY,project_id TEXT,current_version_id TEXT,deleted_at TEXT,archived_at TEXT);
+      CREATE TABLE document_versions(id TEXT PRIMARY KEY,document_id TEXT);
+      CREATE TABLE boq_extraction_versions(id TEXT PRIMARY KEY,document_id TEXT,document_version_id TEXT,version_number INTEGER,status TEXT,superseded_at TEXT);
+      CREATE TABLE boq_items(id TEXT PRIMARY KEY,project_id TEXT,row_type TEXT,extraction_version_id TEXT,source_document_id TEXT);
+      CREATE TABLE estimator_item_interpretations(id TEXT PRIMARY KEY,boq_item_id TEXT,input_fingerprint TEXT,version_number INTEGER,status TEXT DEFAULT 'NEEDS_REVIEW');`);
+    db.exec(migration);
+    db.exec(evidenceGuardFix);
+    db.exec(evidenceGuardFix2);
+    db.exec(`INSERT INTO projects VALUES('p'); INSERT INTO documents VALUES('doc','p','d',NULL,NULL); INSERT INTO document_versions VALUES('d','doc'); INSERT INTO boq_extraction_versions VALUES('x','doc','d',1,'Completed',NULL); INSERT INTO boq_items VALUES('b','p','BOQ Item','x','doc');`);
+    return db;
+  };
+
+  // Reverted evidence: v1(fp-A) -> v2(fp-B, evidence changed) -> current
+  // evidence is back to fp-A. Approving v1 (whose fingerprint matches
+  // CURRENT evidence) must now succeed, even though v2 is numerically newer.
+  const reverted = buildDb();
+  reverted.exec(`INSERT INTO estimator_item_interpretations VALUES('i1','b','fp-A',1,'NEEDS_REVIEW'); INSERT INTO estimator_item_interpretations VALUES('i2','b','fp-B',2,'NEEDS_REVIEW');`);
+  reverted.exec(`INSERT INTO estimator_understanding_review_versions(id,project_id,boq_item_id,interpretation_id,version_number,review_status,canonical_interpretation,source_input_fingerprint,source_document_version_id,source_extraction_version,reviewed_by) VALUES('r1','p','b','i1',1,'APPROVED','{}','fp-A','d',1,'u');`);
+  assert.equal(reverted.prepare("SELECT review_status FROM estimator_understanding_review_versions WHERE id='r1'").get()?.review_status, "APPROVED", "approving the older, current-fingerprint-matching attempt must succeed despite a newer, different-evidence attempt existing");
+
+  // Genuinely superseded: v1(fp-A) -> v2(fp-A, a re-run at the SAME
+  // evidence, e.g. an engine/prompt update). Approving the OLDER v1 must
+  // still be blocked -- v2 is a newer attempt at the identical fingerprint.
+  const sameFingerprintRerun = buildDb();
+  sameFingerprintRerun.exec(`INSERT INTO estimator_item_interpretations VALUES('i1','b','fp-A',1,'NEEDS_REVIEW'); INSERT INTO estimator_item_interpretations VALUES('i2','b','fp-A',2,'NEEDS_REVIEW');`);
+  assert.throws(() => sameFingerprintRerun.exec(`INSERT INTO estimator_understanding_review_versions(id,project_id,boq_item_id,interpretation_id,version_number,review_status,canonical_interpretation,source_input_fingerprint,source_document_version_id,source_extraction_version,reviewed_by) VALUES('r1','p','b','i1',1,'APPROVED','{}','fp-A','d',1,'u')`), /evidence is stale/, "a newer attempt at the SAME fingerprint must still block approving the older one");
+
+  // The genuinely newest, current one (v2 at fp-A) can still always be approved.
+  sameFingerprintRerun.exec(`INSERT INTO estimator_understanding_review_versions(id,project_id,boq_item_id,interpretation_id,version_number,review_status,canonical_interpretation,source_input_fingerprint,source_document_version_id,source_extraction_version,reviewed_by) VALUES('r2','p','b','i2',1,'APPROVED','{}','fp-A','d',1,'u');`);
+});
+
+// Fire Alarm E2E fix (evidence/config-aware pilot fairness, follow-up 2) --
+// real Central Kitchen - Makkah gap hit re-validating the fix above against
+// the real "Flasher" item: a newer attempt at the SAME fingerprint that
+// itself FAILED (a transient model error, e.g. AI_OUTPUT_INVALID_SCHEMA)
+// must never block approving an earlier, genuinely successful attempt at
+// that same fingerprint -- a FAILED attempt was never itself approvable, so
+// it cannot "supersede" one that was.
+test("Fire Alarm E2E fix -- a newer attempt at the SAME fingerprint that itself FAILED does not block approving an earlier successful attempt", async () => {
+  const migration = await readFile(new URL("../drizzle/0060_estimator_understanding_review.sql", import.meta.url), "utf8");
+  const evidenceGuardFix = await readFile(new URL("../drizzle/0062_understanding_review_evidence_guard_reverted_evidence.sql", import.meta.url), "utf8");
+  const evidenceGuardFix2 = await readFile(new URL("../drizzle/0063_understanding_review_evidence_guard_ignore_failed_newer.sql", import.meta.url), "utf8");
+  const db = new DatabaseSync(":memory:");
+  db.exec(`PRAGMA foreign_keys=ON;
+    CREATE TABLE projects(id TEXT PRIMARY KEY);
+    CREATE TABLE documents(id TEXT PRIMARY KEY,project_id TEXT,current_version_id TEXT,deleted_at TEXT,archived_at TEXT);
+    CREATE TABLE document_versions(id TEXT PRIMARY KEY,document_id TEXT);
+    CREATE TABLE boq_extraction_versions(id TEXT PRIMARY KEY,document_id TEXT,document_version_id TEXT,version_number INTEGER,status TEXT,superseded_at TEXT);
+    CREATE TABLE boq_items(id TEXT PRIMARY KEY,project_id TEXT,row_type TEXT,extraction_version_id TEXT,source_document_id TEXT);
+    CREATE TABLE estimator_item_interpretations(id TEXT PRIMARY KEY,boq_item_id TEXT,input_fingerprint TEXT,version_number INTEGER,status TEXT DEFAULT 'NEEDS_REVIEW');`);
+  db.exec(migration);
+  db.exec(evidenceGuardFix);
+  db.exec(evidenceGuardFix2);
+  db.exec(`INSERT INTO projects VALUES('p'); INSERT INTO documents VALUES('doc','p','d',NULL,NULL); INSERT INTO document_versions VALUES('d','doc'); INSERT INTO boq_extraction_versions VALUES('x','doc','d',1,'Completed',NULL); INSERT INTO boq_items VALUES('b','p','BOQ Item','x','doc');
+    INSERT INTO estimator_item_interpretations VALUES('i1','b','fp-A',3,'NEEDS_REVIEW');
+    INSERT INTO estimator_item_interpretations VALUES('i2','b','fp-A',5,'FAILED');`);
+  db.exec(`INSERT INTO estimator_understanding_review_versions(id,project_id,boq_item_id,interpretation_id,version_number,review_status,canonical_interpretation,source_input_fingerprint,source_document_version_id,source_extraction_version,reviewed_by) VALUES('r1','p','b','i1',1,'APPROVED','{}','fp-A','d',1,'u');`);
+  assert.equal(db.prepare("SELECT review_status FROM estimator_understanding_review_versions WHERE id='r1'").get()?.review_status, "APPROVED", "a FAILED newer attempt at the same fingerprint must never block approving the earlier successful one");
 });
 
 test("review API and UI preserve current evidence, privacy and downstream boundaries", async () => {

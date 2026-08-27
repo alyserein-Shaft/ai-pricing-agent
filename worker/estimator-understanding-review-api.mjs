@@ -3,6 +3,8 @@ import { resolveApplicationContext } from "./application-context.mjs";
 import { currentBoqEvidenceFrom, currentBoqItemPredicate, currentBoqEvidenceCounts } from "./current-evidence-scope.mjs";
 import { sanitizePilotSourceLocation } from "../app/domain/boq-understanding-pilot.mjs";
 import { resolveEffectiveUnderstandingInterpretation } from "./effective-understanding-interpretation.mjs";
+import { confirmedSpecifications } from "./estimator-understanding-api.mjs";
+import { hasGovernedTaxonomy } from "../app/domain/system-knowledge-registry.mjs";
 import {
   buildUnderstandingReviewActionPolicy, buildUnderstandingReviewLayers, evaluateUnderstandingAuthority, sanitizeReviewedInterpretation,
   summarizeUnderstandingReviewItems, understandingReviewRequestFingerprint,
@@ -38,24 +40,43 @@ export const loadUnderstandingReviewRows = async (db, projectId) => {
     FROM estimator_item_interpretations i JOIN estimator_understanding_runs r ON r.id=i.run_id WHERE i.project_id=? ORDER BY i.version_number DESC,i.created_at DESC,i.id DESC`).bind(projectId).all();
   const byItem = new Map();
   for (const interpretation of interpretations.results || []) byItem.set(interpretation.boqItemId, [...(byItem.get(interpretation.boqItemId) || []), interpretation]);
+  const specsByItem = await confirmedSpecifications(db, projectId);
   return (result.results || []).map((row) => {
-    const effective = resolveEffectiveUnderstandingInterpretation(row, byItem.get(row.boqItemId) || [], parse(row.sourceLocation, null));
+    const effective = resolveEffectiveUnderstandingInterpretation(row, byItem.get(row.boqItemId) || [], parse(row.sourceLocation, null), specsByItem[row.boqItemId] || []);
     const selected = effective.selected;
     return { ...row, effective, interpretationId: selected?.interpretationId || null, runId: selected?.runId || null, interpretationVersion: selected?.versionNumber || null, inputFingerprint: selected?.inputFingerprint || null, interpretationStatus: selected?.status || null, interpretation: selected?.interpretation || null, errorCode: selected?.errorCode || null, model: selected?.model || null, usageMetadata: selected?.usageMetadata || null, interpretedAt: selected?.createdAt || null };
   });
 };
 
+// A system with no registered governed taxonomy has nothing to validate a
+// candidate against, so it is never blocked here -- only a registered system's
+// items require an accepted governed candidate.
 const taxonomyValidFor = (row) => row.effective?.state === "AVAILABLE" && (
-  row.effective?.classification?.system !== "Fire Alarm" || row.effective?.taxonomy?.acceptedCandidate
+  !hasGovernedTaxonomy(row.effective?.classification?.system) || row.effective?.taxonomy?.acceptedCandidate
 );
 
 export const safeUnderstandingReviewItem = (row, { actorAuthorized = true } = {}) => {
   const quality = row.effective?.quality || null;
   const reviewMatchesEffective = Boolean(row.reviewVersionId && row.interpretationId && row.reviewInterpretationId === row.interpretationId && row.reviewInputFingerprint === row.effective?.currentInputFingerprint);
   const latestAttempt = row.effective?.latestCurrentAttempt || null;
+  // Sprint 1.9 -- an item that was genuinely APPROVED at some point (a real
+  // governed decision is on record: row.reviewVersionId exists and its
+  // review_status is "APPROVED") but whose approval no longer matches the
+  // current effective interpretation (e.g. a new confirmed specification
+  // link was added afterwards, shifting the recomputed fingerprint) is a
+  // fundamentally different situation from an item that was never analyzed
+  // at all. Collapsing both into "NOT_ANALYZED" (the previous behavior)
+  // silently downgraded a real approval to "never touched" with no trace of
+  // it having existed. REVALIDATION_REQUIRED preserves that distinction --
+  // it still blocks every review action (see buildUnderstandingReviewActionPolicy;
+  // nothing is approved without a fresh, current, governed decision -- no
+  // check is weakened), it only changes how the stale state is REPORTED.
+  const previouslyApproved = Boolean(row.reviewVersionId) && row.reviewStatus === "APPROVED";
   const reviewStatus = row.effective?.state === "AVAILABLE"
     ? (reviewMatchesEffective ? row.reviewStatus : "AWAITING_REVIEW")
-    : latestAttempt?.status === "FAILED" ? "FAILED" : "NOT_ANALYZED";
+    : latestAttempt?.status === "FAILED" ? "FAILED"
+    : previouslyApproved ? "REVALIDATION_REQUIRED"
+    : "NOT_ANALYZED";
   const source = sanitizePilotSourceLocation(parse(row.sourceLocation, {}));
   const layers = buildUnderstandingReviewLayers(
     row.effective?.proposal,
@@ -70,7 +91,19 @@ export const safeUnderstandingReviewItem = (row, { actorAuthorized = true } = {}
     proposalState,
     classificationBlockers: authority.classificationBlockers,
     taxonomyValid: taxonomyValidFor(row),
-    authorityValid: row.effective?.state === "AVAILABLE" && (!row.reviewVersionId || reviewMatchesEffective),
+    // A stale prior review record (reviewMatchesEffective=false) does not
+    // block action here -- the ternary above already downgrades a
+    // mismatched review to reviewStatus="AWAITING_REVIEW" (or
+    // "REVALIDATION_REQUIRED" when no current interpretation exists at
+    // all), and that IS the correct actionable state: a fresh interpretation
+    // was submitted and is waiting to be reviewed. Gating on
+    // reviewMatchesEffective here as well would permanently block the real
+    // governed revalidation path (fresh interpretation + re-approve) with a
+    // "reload" message that reloading can never fix, since the mismatch is
+    // against data, not a stale client read. Actual read/write race
+    // protection is the selectionAuthority + expectedVersion check in
+    // mutateUnderstandingReview, not this flag.
+    authorityValid: row.effective?.state === "AVAILABLE",
     actorAuthorized,
   });
   return {
@@ -129,6 +162,21 @@ const listReview = async (db, projectId, url) => {
 };
 
 const resolveCurrent = async (db, projectId, requestedKey) => (await loadUnderstandingReviewRows(db, projectId)).find((row) => reviewKey(row.boqItemId) === requestedKey) || null;
+
+// The single authority resolver for "what may a downstream engine (Requirement
+// Profile, Product Matching, ...) treat as classified fact for this BOQ item".
+// Only an APPROVED, current, non-stale understanding review qualifies — reusing
+// loadUnderstandingReviewRows/safeUnderstandingReviewItem's own staleness
+// resolution means a rejected, awaiting-review, or superseded-by-newer-extraction
+// interpretation can never reach a downstream engine through this call. Every
+// downstream consumer must call this instead of reading estimator_item_interpretations
+// or estimator_understanding_review_versions directly.
+export const currentApprovedUnderstandingFacts = async (db, projectId, boqItemId) => {
+  const row = (await loadUnderstandingReviewRows(db, projectId)).find((entry) => entry.boqItemId === boqItemId);
+  if (!row) return null;
+  const item = safeUnderstandingReviewItem(row);
+  return item.review.status === "APPROVED" ? item.canonicalReview?.interpretation || null : null;
+};
 
 const detail = async (db, projectId, row) => {
   const base = safeUnderstandingReviewItem(row);

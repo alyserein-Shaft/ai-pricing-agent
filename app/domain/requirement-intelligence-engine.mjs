@@ -37,6 +37,14 @@ export const extractRequirementIntelligence = (requirement) => {
   const normalized = clean(requirement.normalizedRequirement || original);
   const combined = `${original} ${normalized}`;
   const text = lower(combined);
+  // A requirement's own clause text is sometimes only half of the governing
+  // spec passage (e.g. "Manual pull stations shall be individually
+  // addressable..." and "Stations shall include a single action operating
+  // mechanism..." are separate extracted requirements from the same clause
+  // block). source.originalClauseText already captures the full block with
+  // provenance; scan it too, but only for rules proven against real evidence
+  // to need it (Action Type below), so unrelated rules keep prior behavior.
+  const clauseText = lower(clean(requirement.source?.originalClauseText || ""));
   const facts = [];
   const equipmentType = equipment(combined);
   add(facts, requirement, "Equipment Type", equipmentType, { confidence: equipmentType ? 92 : 0 });
@@ -62,6 +70,10 @@ export const extractRequirementIntelligence = (requirement) => {
   for (const power of explicitList(combined, /\b(\d+(?:\.\d+)?\s*(?:W|kW|VA|kVA))\b/gi)) add(facts, requirement, "Power Requirements", power);
   if (/addressable/.test(text)) add(facts, requirement, "Addressability", "Addressable");
   else if (/conventional/.test(text)) add(facts, requirement, "Addressability", "Conventional");
+
+  // Governed vocabulary matches fire-alarm-taxonomy.mjs ATTRIBUTE_VALUE_VALIDATORS.action_type.
+  if (/\bsingle action\b/.test(text) || /\bsingle action\b/.test(clauseText)) add(facts, requirement, "Action Type", "Single Action");
+  else if (/\bdual action\b/.test(text) || /\bdual action\b/.test(clauseText)) add(facts, requirement, "Action Type", "Dual Action");
 
   for (const standard of explicitList(combined, /\b((?:NFPA|UL|EN|IEC|ISO|BS)\s*\d+(?:[-:]\d+)*)\b/gi)) add(facts, requirement, "Required Standards", standard.toUpperCase());
   for (const certification of explicitList(combined, /\b((?:UL|FM|LPCB|VdS|CE)\s*(?:listed|approved|certified|mark(?:ed)?)?)\b/gi).filter((entry) => /listed|approved|certified|mark/i.test(entry))) add(facts, requirement, "Required Certifications", certification);

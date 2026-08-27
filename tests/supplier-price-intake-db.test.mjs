@@ -33,6 +33,7 @@ CREATE TABLE documents(id TEXT PRIMARY KEY);
 CREATE TABLE document_versions(id TEXT PRIMARY KEY, original_filename TEXT NOT NULL);
 CREATE TABLE product_manufacturers(id TEXT PRIMARY KEY,name TEXT NOT NULL);
 CREATE TABLE library_products(id TEXT PRIMARY KEY,manufacturer_id TEXT,part_number TEXT,normalized_part_number TEXT,description TEXT,identity_status TEXT,approved_for_discovery INTEGER,review_status TEXT,canonical_product_id TEXT);
+CREATE TABLE product_source_evidence(id TEXT PRIMARY KEY,product_id TEXT,source_id TEXT);
 CREATE VIEW canonical_library_products AS SELECT requested.id AS requested_product_id,canonical.* FROM library_products requested JOIN library_products canonical ON canonical.id=COALESCE(requested.canonical_product_id,requested.id);
 CREATE TABLE supplier_products(id TEXT PRIMARY KEY,product_id TEXT,supplier_id TEXT,supplier_product_code TEXT,deleted_at TEXT);
 CREATE TABLE suppliers(id TEXT PRIMARY KEY,name TEXT,normalized_name TEXT,status TEXT);
@@ -50,7 +51,7 @@ CREATE TABLE supplier_quote_intake_events(id TEXT PRIMARY KEY,project_id TEXT,in
 const fixture = () => {
   const raw = new DatabaseSync(":memory:");
   raw.exec(schema);
-  raw.exec("INSERT INTO projects VALUES ('p1'); INSERT INTO documents VALUES ('d1'); INSERT INTO document_versions VALUES ('vA','quote-A.xlsx'),('vB','quote-B.xlsx'); INSERT INTO product_manufacturers VALUES ('m1','Honeywell'); INSERT INTO library_products VALUES ('product1','m1','2151','2151','Smoke detector','Active',1,'Reviewed',NULL); INSERT INTO suppliers VALUES ('supplier1','Acme Fire','acmefire','Active');");
+  raw.exec("INSERT INTO projects VALUES ('p1'); INSERT INTO documents VALUES ('d1'); INSERT INTO document_versions VALUES ('vA','quote-A.xlsx'),('vB','quote-B.xlsx'); INSERT INTO product_manufacturers VALUES ('m1','Honeywell'); INSERT INTO library_products VALUES ('product1','m1','2151','2151','Smoke detector','Active',1,'Reviewed',NULL); INSERT INTO product_source_evidence VALUES ('evidence1','product1','source1'); INSERT INTO suppliers VALUES ('supplier1','Acme Fire','acmefire','Active');");
   const insertRun = raw.prepare("INSERT INTO supplier_quote_intake_runs VALUES (?,?,?,?,?,?)");
   insertRun.run("runA", "p1", "d1", "vA", "sha-A", "Q-100");
   insertRun.run("runB", "p1", "d1", "vB", "sha-B", "Q-100");
@@ -102,7 +103,7 @@ test("supplier intake candidates reuse canonical matching eligibility", async ()
   const row = raw.prepare("SELECT * FROM supplier_quote_intake_rows WHERE id='rowA'").get();
   assert.deepEqual((await canonicalSupplierProductCandidates(DB,row)).map(candidate => candidate.productId), ["product1"]);
   raw.prepare("UPDATE library_products SET approved_for_discovery=0 WHERE id='product1'").run();
-  assert.deepEqual(await canonicalSupplierProductCandidates(DB,row), []);
+  assert.deepEqual((await canonicalSupplierProductCandidates(DB,row)).map(candidate => candidate.productId), ["product1"], "technical discoverability must not depend on the separate approved_for_discovery business-review flag");
   raw.prepare("UPDATE library_products SET approved_for_discovery=1,identity_status='Inactive' WHERE id='product1'").run();
   assert.deepEqual(await canonicalSupplierProductCandidates(DB,row), []);
   raw.prepare("UPDATE library_products SET identity_status='Active',review_status='Rejected' WHERE id='product1'").run();

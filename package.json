@@ -23,6 +23,7 @@
     "test:e2e:golden": "bash scripts/run-golden-e2e.sh --grep @golden",
     "test:e2e:golden:smoke": "bash scripts/run-golden-e2e.sh --grep @golden-smoke",
     "test:e2e:golden:full": "bash scripts/run-golden-e2e.sh --grep @golden-full",
+    "test:fire-alarm-golden": "node scripts/fire-alarm-golden-evaluation-gate.mjs",
     "validate:artifact": "bash scripts/validate-artifact.sh",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"

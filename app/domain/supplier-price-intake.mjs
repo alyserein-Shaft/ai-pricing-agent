@@ -1,5 +1,6 @@
 import { parseXlsxWorkbook } from "../document-parsers/xlsx.mjs";
 import { parseXlsWorkbook } from "../document-parsers/xls.mjs";
+import { sameManufacturerIdentity } from "./manufacturer-identity.mjs";
 
 export const SUPPLIER_PRICE_INTAKE_VERSION = "supplier-price-intake-1.0.0";
 export const SUPPLIER_ROW_TYPES = ["SUPPLIER_LINE", "HEADER", "SECTION", "NOTE", "SUBTOTAL", "TOTAL", "UNKNOWN"];
@@ -104,7 +105,7 @@ export const exactProductCandidates = (line, products = [], supplierProducts = [
   if (!line?.partNumber) return [];
   const needle = normalizeIdentity(line.partNumber);
   const supplierIds = new Set(supplierProducts.filter(link => normalizeIdentity(link.supplier_product_code) === needle && link.product_id).map(link => link.product_id));
-  return products.filter(product => normalizeIdentity(product.part_number) === needle || normalizeIdentity(product.normalized_part_number) === needle || supplierIds.has(product.id)).map(product => ({ productId: product.id, basis: supplierIds.has(product.id) ? "EXACT_SUPPLIER_PRODUCT" : line.manufacturer && product.manufacturer && normalizeIdentity(line.manufacturer) === normalizeIdentity(product.manufacturer) ? "MANUFACTURER_EXACT_MODEL" : "EXACT_CANONICAL_MODEL" }));
+  return products.filter(product => normalizeIdentity(product.part_number) === needle || normalizeIdentity(product.normalized_part_number) === needle || supplierIds.has(product.id)).map(product => ({ productId: product.id, basis: supplierIds.has(product.id) ? "EXACT_SUPPLIER_PRODUCT" : line.manufacturer && product.manufacturer && sameManufacturerIdentity(line.manufacturer, product.manufacturer) ? "MANUFACTURER_EXACT_MODEL" : "EXACT_CANONICAL_MODEL" }));
 };
 
 export const supplierPriceEligibility = (line, { at = new Date() } = {}) => {

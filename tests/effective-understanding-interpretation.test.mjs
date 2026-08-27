@@ -44,6 +44,31 @@ test("no single valid current interpretation returns unavailable rather than fab
   assert.equal(result.classification, null);
 });
 
+// Sprint 1.0 -- the real Opera bug: runUnderstandingBatch (worker/estimator-understanding-api.mjs)
+// stores an interpretation's input_fingerprint FROM prepareBoqUnderstandingInput(row,
+// confirmedSpecifications[...]), but this function used to always recompute the
+// "current" fingerprint with NO confirmed specification evidence at all -- so a
+// real BOQ row like "Smoke Detector Ceiling Mounted" (no "Addressable" in its own
+// text) whose family only resolves once a linked, approved specification clause
+// supplies the word "addressable" could never be recognized as current, and
+// review would report UNAVAILABLE_OR_STALE forever regardless of approval.
+test("an interpretation whose classification depended on confirmed specification evidence is recognized as current when that evidence is supplied", () => {
+  const plainRow = { boqItemId: "boqitem-smoke-detector", rowType: "BOQ Item", description: "Smoke Detector Ceiling Mounted", numericQuantity: "516", originalQuantity: "516", normalizedUnit: "Each", originalUnit: "No.", sourceSystem: "28.01 - Fire Alarm System", sourceCategory: null, sourceSubcategory: null, manufacturer: null, sourceModel: null, sourcePartNumber: null, currentValues: "{}", sourceLocation: null, evidenceDocumentVersionId: "document-version-current", evidenceExtractionVersion: 1 };
+  const confirmedSpecification = [{ id: "requirement-334", normalizedRequirement: "spot detector mounting bases shall be individually addressable suitable for two wire operation", sourceLocation: { pageFrom: 30, clause: "A" } }];
+  // The fingerprint a real runUnderstandingBatch call would have stored, built
+  // the same way: row fields + confirmedSpecification.
+  const storedInput = prepareBoqUnderstandingInput({ id: plainRow.boqItemId, rowType: plainRow.rowType, description: plainRow.description, numericQuantity: plainRow.numericQuantity, originalQuantity: plainRow.originalQuantity, normalizedUnit: plainRow.normalizedUnit, originalUnit: plainRow.originalUnit, system: plainRow.sourceSystem, category: plainRow.sourceCategory, subcategory: plainRow.sourceSubcategory, manufacturer: plainRow.manufacturer, model: plainRow.sourceModel, partNumber: plainRow.sourcePartNumber, currentValues: {}, sourceLocation: null }, confirmedSpecification);
+  const storedFingerprint = interpretationInputFingerprint(storedInput);
+  const stored = { interpretationId: "smoke-detector-interp", runId: "run-1", runMode: "CONTROLLED_PILOT", parentRunId: null, versionNumber: 1, createdAt: "2026-08-24", inputFingerprint: storedFingerprint, status: "NEEDS_REVIEW", interpretation: proposal({ system: "Fire Alarm", category: "Detection Devices", equipmentType: "Addressable Smoke Detector", productFamily: "Addressable Smoke Detector" }), model: "8b" };
+
+  const withEvidence = resolveEffectiveUnderstandingInterpretation(plainRow, [stored], null, confirmedSpecification);
+  assert.equal(withEvidence.state, "AVAILABLE", "supplying the same confirmed specification evidence used at storage time must recognize the interpretation as current");
+  assert.equal(withEvidence.classification.productFamily, "Addressable Smoke Detector");
+
+  const withoutEvidence = resolveEffectiveUnderstandingInterpretation(plainRow, [stored], null);
+  assert.equal(withoutEvidence.state, "UNAVAILABLE_OR_STALE", "omitting confirmed specification evidence must not accidentally match a fingerprint that was computed WITH it");
+});
+
 test("review mutation authority binds to the exact effective interpretation", () => {
   const first = { ...row, effective: { currentInputFingerprint: currentFingerprint, selected: { interpretationId: "retry", versionNumber: 3 } }, reviewVersion: 0 };
   const changed = { ...row, effective: { currentInputFingerprint: currentFingerprint, selected: { interpretationId: "another", versionNumber: 4 } }, reviewVersion: 0 };

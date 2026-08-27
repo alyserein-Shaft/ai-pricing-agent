@@ -6,7 +6,20 @@ const parse = (value, fallback = null) => {
   try { return value == null ? fallback : (typeof value === "string" ? JSON.parse(value) : value); } catch { return fallback; }
 };
 
-const currentInputFor = (row, source) => prepareBoqUnderstandingInput({
+// Sprint 1.0 -- confirmedSpecification must be included here, matching
+// worker/estimator-understanding-api.mjs's runUnderstandingBatch (the real
+// path that ORIGINALLY computes and stores an interpretation's
+// input_fingerprint via prepareBoqUnderstandingInput(row, confirmedSpecifications[...])).
+// Before this fix, this function always recomputed the "current" fingerprint
+// with no confirmed specification evidence at all, so an interpretation whose
+// classification depended on confirmed specification evidence (e.g. a
+// governed family resolved only because a linked, approved specification
+// clause supplied a distinguishing word the BOQ row text itself lacks) could
+// never be matched back to as current -- review would report
+// UNAVAILABLE_OR_STALE forever, independent of approval status. Defaults to
+// [] so a caller that hasn't been updated to pass confirmedSpecification
+// keeps its prior (unaffected-by-this-fix) behavior.
+const currentInputFor = (row, source, confirmedSpecification = []) => prepareBoqUnderstandingInput({
   id: row.boqItemId,
   rowType: row.rowType,
   description: row.description,
@@ -22,7 +35,7 @@ const currentInputFor = (row, source) => prepareBoqUnderstandingInput({
   partNumber: row.sourcePartNumber,
   currentValues: parse(row.currentValues, {}),
   sourceLocation: source,
-});
+}, confirmedSpecification);
 
 const newestFirst = (left, right) => {
   if (left.runMode === "CONTROLLED_RETRY" && left.parentRunId === right.runId) return -1;
@@ -32,8 +45,8 @@ const newestFirst = (left, right) => {
     || String(right.interpretationId || "").localeCompare(String(left.interpretationId || ""));
 };
 
-export function resolveEffectiveUnderstandingInterpretation(row, interpretations, source) {
-  const input = currentInputFor(row, source);
+export function resolveEffectiveUnderstandingInterpretation(row, interpretations, source, confirmedSpecification = []) {
+  const input = currentInputFor(row, source, confirmedSpecification);
   const currentInputFingerprint = interpretationInputFingerprint(input);
   const currentAttempts = (Array.isArray(interpretations) ? interpretations : [])
     .filter((entry) => entry.inputFingerprint === currentInputFingerprint)

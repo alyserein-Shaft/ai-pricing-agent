@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import { authorizeControlledPilotSelection, BOQ_UNDERSTANDING_PILOT_MAX_ITEMS, BOQ_UNDERSTANDING_PILOT_SELECTION_VERSION, buildBoqUnderstandingPilotManifest, sanitizePilotSourceLocation, validateControlledPilotRequest } from "../app/domain/boq-understanding-pilot.mjs";
 import { handleEstimatorUnderstandingApi, loadPilotManifest } from "../worker/estimator-understanding-api.mjs";
+import { prepareBoqUnderstandingInput, interpretationInputFingerprint } from "../app/domain/boq-understanding-engine.mjs";
 
 const row = (index, overrides = {}) => ({
   boqItemId: `boq-${String(index).padStart(3, "0")}`,
@@ -223,6 +224,33 @@ test("primary selection exhausts distinct canonical families before retaining va
   assert.equal(families.includes("Sounder"), false);
 });
 
+test("Sprint 1.9 -- already-interpreted rows free their capped slot so a repeated manifest call rotates to a row that has never been attempted", () => {
+  const exploratoryRows = [
+    row(50, { description: "Wireless Access Point", system: null, manufacturer: null, model: null }),
+    row(51, { description: "Main Amplifier", system: null, manufacturer: null, model: null }),
+    row(52, { description: "6 Way Splitter", system: null, manufacturer: null, model: null }),
+    row(53, { description: "8 Way Splitter", system: null, manufacturer: null, model: null }),
+  ];
+  const first = buildBoqUnderstandingPilotManifest("project", exploratoryRows, { generatedAt: "fixed" });
+  assert.equal(first.selectedExploratoryCount, 3);
+  const firstIds = new Set(first.exploratoryItems.map((item) => item.boqItemId));
+  // Without alreadyInterpretedItemIds, the same manifest called again is
+  // byte-identical -- proving the real gap: a repeated pilot round can never
+  // reach the 4th row on its own.
+  const repeat = buildBoqUnderstandingPilotManifest("project", exploratoryRows, { generatedAt: "fixed" });
+  assert.deepEqual(repeat.itemIds, first.itemIds);
+  // Marking the 3 already-selected rows as interpreted rotates the capped
+  // slots to the one row that has never been attempted.
+  const second = buildBoqUnderstandingPilotManifest("project", exploratoryRows, { generatedAt: "fixed", alreadyInterpretedItemIds: firstIds });
+  assert.equal(second.selectedExploratoryCount, 1);
+  assert.equal(second.itemIds[0], "boq-053");
+  assert.equal(second.eligibleExploratoryCount, first.eligibleExploratoryCount, "eligibility counts stay based on the full row set, not what has already been attempted");
+  // Marking every row as interpreted leaves nothing left to select -- an
+  // honest empty round, not a fabricated re-selection.
+  const done = buildBoqUnderstandingPilotManifest("project", exploratoryRows, { generatedAt: "fixed", alreadyInterpretedItemIds: new Set(exploratoryRows.map((r) => r.boqItemId)) });
+  assert.equal(done.selectedItemCount, 0);
+});
+
 test("manifest fingerprint changes with relevant current evidence", () => {
   const first = buildBoqUnderstandingPilotManifest("project", rows(), { generatedAt: "same" });
   const changedRows = rows();
@@ -241,17 +269,112 @@ test("excluded diagnostic content does not grant authority or perturb the execut
   assert.deepEqual(first.itemIds, changed.itemIds);
 });
 
-test("manifest loading performs one authoritative read with zero writes and zero AI calls", async () => {
+// Sprint 1.11 -- a second read (confirmed specification links) is now
+// unavoidable: alreadyInterpretedItemIds must compute each row's REAL current
+// fingerprint (confirmedSpecification-aware, matching runUnderstandingBatch's
+// own fingerprint) to tell a genuinely current interpretation apart from one
+// left stale by a newly-confirmed requirement link -- see
+// worker/estimator-understanding-api.mjs's Sprint 1.11 comment. Both reads
+// remain writes/AI-free.
+test("manifest loading performs bounded authoritative reads (BOQ evidence + confirmed specification links) with zero writes and zero AI calls", async () => {
   let reads = 0, writes = 0, aiCalls = 0;
-  const db = { prepare(sql) { assert.match(sql, /currentBoqItemPredicate|row_type IN|boq_extraction_versions/); return { bind() { return this; }, all() { reads += 1; return { results: rows() }; }, run() { writes += 1; throw new Error("write forbidden"); } }; } };
+  const db = { prepare(sql) { assert.match(sql, /currentBoqItemPredicate|row_type IN|boq_extraction_versions|boq_requirement_links/); return { bind() { return this; }, all() { reads += 1; return { results: /boq_requirement_links/.test(sql) ? [] : rows() }; }, run() { writes += 1; throw new Error("write forbidden"); } }; } };
   const manifest = await loadPilotManifest(db, "project", { generatedAt: "fixed" });
-  assert.equal(reads, 1); assert.equal(writes, 0); assert.equal(aiCalls, 0); assert.ok(manifest.selectedItemCount <= 13);
+  assert.equal(reads, 2); assert.equal(writes, 0); assert.equal(aiCalls, 0); assert.ok(manifest.selectedItemCount <= 13);
+});
+
+test("Sprint 1.11 -- a newly-confirmed specification link changes an item's real current fingerprint, so it is no longer treated as already interpreted and can be freshly re-selected", async () => {
+  const boqRow = { boqItemId: "boq-mcp-1", itemNumber: "34", sequence: 1, rowType: "BOQ Item", description: "Manual Call Point MCLP", numericQuantity: 16, originalQuantity: 16, normalizedUnit: "Each", originalUnit: "Each", system: "28.01 - Fire Alarm System", category: null, subcategory: null, manufacturer: null, model: null, partNumber: null, sourceDocumentId: "doc-1", evidenceDocumentVersionId: "dv-1", evidenceExtractionVersion: 1, currentValues: {}, sourceLocation: null };
+  const priorFingerprint = interpretationInputFingerprint(prepareBoqUnderstandingInput(boqRow, []));
+
+  const buildDb = (confirmedLinks) => ({ prepare(sql) {
+    return { bind() { return this; }, all() {
+      if (/boq_requirement_links/.test(sql)) return { results: confirmedLinks };
+      return { results: [{ ...boqRow, interpretationFingerprints: priorFingerprint }] };
+    } };
+  } });
+
+  const stale = await loadPilotManifest(buildDb([]), "project", { generatedAt: "fixed" });
+  assert.equal(stale.itemIds.includes("boq-mcp-1"), false, "an item whose only interpretation matches its current (no confirmed spec) fingerprint is already covered");
+
+  const fresh = await loadPilotManifest(buildDb([{ boqItemId: "boq-mcp-1", id: "req-1", normalizedRequirement: "manual pull stations shall be individually addressable", sourceLocation: null }]), "project", { generatedAt: "fixed" });
+  assert.equal(fresh.itemIds.includes("boq-mcp-1"), true, "confirming a new specification link changed the real current fingerprint, so the stale interpretation must no longer count as coverage");
+});
+
+// Fire Alarm E2E fix (evidence/config-aware pilot fairness) -- real Central
+// Kitchen - Makkah gap: alreadyInterpretedItemIds used to key coverage on
+// input_fingerprint alone. When a project's evidence/requirement-link state
+// changes and then REVERTS (e.g. a system-wide requirement link confirmed,
+// then correctly superseded once it was found to be mis-scoped), the item's
+// current input fingerprint can land back on a value that already matches
+// an EARLIER interpretation attempt -- one made under a materially
+// different effective config/evidence state than the one that attempt was
+// actually recorded under. Fingerprint-only matching could not tell a
+// genuinely-already-covered attempt apart from this reverted-evidence case,
+// permanently excluding the item from ever being re-selected for a fresh
+// governed attempt. These three tests prove the fix directly against
+// loadPilotManifest -- no boq-understanding-pilot.mjs change was needed;
+// this lives entirely in how worker/estimator-understanding-api.mjs builds
+// the alreadyInterpretedItemIds set it feeds into that function.
+test("Fire Alarm E2E fix -- same input and same config fingerprint remains covered (no duplicate retry, no pointless re-selection)", async () => {
+  const boqRow = { boqItemId: "boq-mcp-1", itemNumber: "34", sequence: 1, rowType: "BOQ Item", description: "Manual Call Point MCLP", numericQuantity: 16, originalQuantity: 16, normalizedUnit: "Each", originalUnit: "Each", system: "28.01 - Fire Alarm System", category: null, subcategory: null, manufacturer: null, model: null, partNumber: null, sourceDocumentId: "doc-1", evidenceDocumentVersionId: "dv-1", evidenceExtractionVersion: 1, currentValues: {}, sourceLocation: null };
+  const priorFingerprint = interpretationInputFingerprint(prepareBoqUnderstandingInput(boqRow, []));
+  const db = ({ prepare(sql) {
+    return { bind() { return this; }, all() {
+      if (/boq_requirement_links/.test(sql)) return { results: [] };
+      return { results: [{ ...boqRow, interpretationFingerprints: `${priorFingerprint}:config-a` }] };
+    } };
+  } });
+  const manifest = await loadPilotManifest(db, "project", { generatedAt: "fixed" }, "config-a");
+  assert.equal(manifest.itemIds.includes("boq-mcp-1"), false, "identical input AND identical config/evidence must remain protected from a pointless repeated attempt");
+});
+
+test("Fire Alarm E2E fix -- same input but a materially changed config/evidence fingerprint is eligible for a fresh governed attempt", async () => {
+  const boqRow = { boqItemId: "boq-mcp-1", itemNumber: "34", sequence: 1, rowType: "BOQ Item", description: "Manual Call Point MCLP", numericQuantity: 16, originalQuantity: 16, normalizedUnit: "Each", originalUnit: "Each", system: "28.01 - Fire Alarm System", category: null, subcategory: null, manufacturer: null, model: null, partNumber: null, sourceDocumentId: "doc-1", evidenceDocumentVersionId: "dv-1", evidenceExtractionVersion: 1, currentValues: {}, sourceLocation: null };
+  const priorFingerprint = interpretationInputFingerprint(prepareBoqUnderstandingInput(boqRow, []));
+  // The only attempt on file was made under an OLDER config/evidence
+  // fingerprint ("config-a") -- the CURRENT one ("config-b", e.g. a
+  // governed requirement-link/engine-version change) never matches it.
+  const db = ({ prepare(sql) {
+    return { bind() { return this; }, all() {
+      if (/boq_requirement_links/.test(sql)) return { results: [] };
+      return { results: [{ ...boqRow, interpretationFingerprints: `${priorFingerprint}:config-a` }] };
+    } };
+  } });
+  const manifest = await loadPilotManifest(db, "project", { generatedAt: "fixed" }, "config-b");
+  assert.equal(manifest.itemIds.includes("boq-mcp-1"), true, "the same raw input text under a materially changed effective config/evidence state must be eligible for a fresh attempt, not treated as already covered");
+});
+
+test("Fire Alarm E2E fix -- evidence that changes and then reverts is correctly recognized as materially changed, because the item's own LATEST attempt (not just any attempt in its history) was made under a different effective config", async () => {
+  const boqRow = { boqItemId: "boq-beam-1", itemNumber: "28.29", sequence: 1, rowType: "BOQ Item", description: "Beam detector", numericQuantity: 4, originalQuantity: 4, normalizedUnit: "Each", originalUnit: "Each", system: "Fire Alarm", category: null, subcategory: null, manufacturer: null, model: null, partNumber: null, sourceDocumentId: "doc-1", evidenceDocumentVersionId: "dv-1", evidenceExtractionVersion: 1, currentValues: {}, sourceLocation: null };
+  const priorFingerprint = interpretationInputFingerprint(prepareBoqUnderstandingInput(boqRow, []));
+  // The item's CURRENT input fingerprint (no confirmed spec evidence, same
+  // as its ORIGINAL attempt) coincidentally matches a fingerprint recorded
+  // "long ago" -- but the item's own real LATEST attempt on file (the only
+  // one activeRows' SQL ever surfaces, by version_number) was made while a
+  // since-superseded requirement link was mistakenly confirmed, under a
+  // different effective config ("config-during-mistake"). Reverting must be
+  // judged against THAT latest attempt specifically -- not against some
+  // earlier attempt's fingerprint match alone -- exactly mirroring the
+  // governed review lifecycle's own "only the latest interpretation version
+  // may be approved" rule.
+  const db = ({ prepare(sql) {
+    return { bind() { return this; }, all() {
+      if (/boq_requirement_links/.test(sql)) return { results: [] };
+      return { results: [{ ...boqRow, interpretationFingerprints: `${priorFingerprint}:config-during-mistake` }] };
+    } };
+  } });
+  const revertedButLatestStillDuringMistakeConfig = await loadPilotManifest(db, "project", { generatedAt: "fixed" }, "config-during-mistake");
+  assert.equal(revertedButLatestStillDuringMistakeConfig.itemIds.includes("boq-beam-1"), false, "the current effective config genuinely matches the item's own latest attempt -- still covered, no pointless retry");
+
+  const revertedToADifferentConfig = await loadPilotManifest(db, "project", { generatedAt: "fixed" }, "config-after-correction");
+  assert.equal(revertedToADifferentConfig.itemIds.includes("boq-beam-1"), true, "the item's own latest attempt was recorded under a different effective config than the current one -- materially changed, eligible for a fresh attempt");
 });
 
 test("manifest endpoint performs no writes or AI calls", async () => {
   let writes = 0, aiCalls = 0;
   const env = {
-    DB: { prepare(sql) { return { bind() { return this; }, first() { return /FROM projects/.test(sql) ? { id: "project" } : null; }, all() { assert.match(sql, /boq_extraction_versions/); return { results: rows() }; }, run() { writes += 1; throw new Error("write forbidden"); } }; } },
+    DB: { prepare(sql) { return { bind() { return this; }, first() { return /FROM projects/.test(sql) ? { id: "project" } : null; }, all() { assert.match(sql, /boq_extraction_versions|boq_requirement_links/); return { results: /boq_requirement_links/.test(sql) ? [] : rows() }; }, run() { writes += 1; throw new Error("write forbidden"); } }; } },
     AI: { run() { aiCalls += 1; throw new Error("AI forbidden"); } },
   };
   const response = await handleEstimatorUnderstandingApi(new Request("http://localhost/api/projects/project/estimator-understanding/pilot-manifest"), env);
@@ -288,7 +411,13 @@ test("API and UI retain current-scope, retry and listing while removing broad au
   assert.doesNotMatch(page, />Analyze BOQ items</);
   assert.match(page, /Prepare AI pilot/);
   assert.match(page, /Run AI pilot on/);
-  assert.match(page, /window\.confirm/);
+  // A native window.confirm() blocks the page's render thread until a human
+  // dismisses it and cannot be dismissed by automated/CDP-driven browser
+  // clients, which prevented the run request from ever reaching the server.
+  // Confirmation is now a non-blocking two-step arm/confirm button instead.
+  assert.doesNotMatch(page, /window\.confirm/);
+  assert.match(page, /understandingPilotArmed/);
+  assert.match(page, /understandingRetryArmed/);
   assert.match(page, /AI has not run yet/);
   assert.match(page, /Governed Fire Alarm primary items/);
   assert.match(page, /Cross-system exploratory items/);

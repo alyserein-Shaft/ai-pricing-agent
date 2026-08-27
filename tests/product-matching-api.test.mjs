@@ -17,13 +17,37 @@ test("Task 10 persists immutable runs, candidates, comparisons, reviews and run 
   assert.match(schema, /searchVersion/);
 });
 
+// Sprint 1.26 -- scope-audit fix: loadProducts()'s compatibility subquery
+// previously read every approved engineering_relationships row for a
+// product with no project_id filter at all, so a future project-scoped
+// compatibility fact (the column and a real project-scoped consumer both
+// already exist -- see technical-requirement-api.mjs's own project-scoped
+// relationship query) would have leaked into every other project's Product
+// Matching. This locks in the fix at the source level (this file has no
+// mocked-D1 harness, so the existing tests in this file already verify
+// worker wiring via source inspection, not live queries) and is
+// cross-checked against the real database in
+// scripts/proof-new-project-scope-isolation.mjs.
+test("Sprint 1.26 -- product compatibility evidence is scoped to the calling project, not read globally", async () => {
+  const worker = await readFile(new URL("../worker/product-matching-api.mjs", import.meta.url), "utf8");
+  assert.match(worker, /FROM engineering_relationships r WHERE r\.left_entity_type='Product' AND r\.left_entity_id=p\.id AND r\.status='Approved' AND \(r\.project_id IS NULL OR r\.project_id=\?\)/);
+  assert.match(worker, /loadProducts\(env\.DB, item\.project_id\)/);
+});
+
 test("worker exposes queue, history, comparison, evidence and feedback operations", async () => {
   const [worker, index, authority] = await Promise.all([readFile(new URL("../worker/product-matching-api.mjs", import.meta.url), "utf8"), readFile(new URL("../worker/index.ts", import.meta.url), "utf8"), readFile(new URL("../worker/canonical-product-authority.mjs", import.meta.url), "utf8")]);
   for (const contract of ["start", "recalculate", "status", "candidates", "history", "compare-runs", "manual-candidate", "comparisons", "explanation", "reject", "feedback"]) assert.match(worker, new RegExp(contract));
   assert.match(worker, /resolveApplicationContext/);
   assert.doesNotMatch(worker, /oai-authenticated-user-id|x-user-id|x-user-role/);
   assert.match(worker, /CANONICAL_DISCOVERY_PRODUCT_PREDICATE/);
-  assert.match(authority, /approved_for_discovery=1/);
+  // Technical discoverability requires canonical identity integrity and real
+  // source evidence, but must NOT be gated on the separate business-review
+  // workflow (approved_for_discovery/review_status='Reviewed') -- see
+  // worker/canonical-product-authority.mjs.
+  assert.match(authority, /identity_status='Active'/);
+  assert.match(authority, /product_source_evidence/);
+  assert.doesNotMatch(authority, /approved_for_discovery=1/);
+  assert.doesNotMatch(authority, /review_status='Reviewed'/);
   assert.match(index, /handleProductMatchingApi/);
 });
 

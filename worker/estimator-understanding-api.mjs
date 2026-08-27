@@ -281,18 +281,114 @@ export async function runUnderstandingBatch(rows, { provider, existing = async (
 }
 
 export const activeRows = async (db, projectId, itemId = null) => {
-  const result = await db.prepare(`SELECT b.id boqItemId,b.item_number itemNumber,b.sequence,b.row_type rowType,b.description,b.numeric_quantity numericQuantity,b.original_quantity originalQuantity,b.normalized_unit normalizedUnit,b.original_unit originalUnit,b.system_value system,b.category,b.subcategory,b.manufacturer,b.model,b.part_number partNumber,b.source_document_id sourceDocumentId,b.evidence_document_version_id evidenceDocumentVersionId,b.evidence_extraction_version evidenceExtractionVersion,b.current_values currentValues,b.source_location sourceLocation
+  // Sprint 1.9 -- interpretationFingerprints is a correlated group_concat on
+  // the same single read (not a second query) so buildBoqUnderstandingPilotManifest
+  // can exclude already-attempted rows from competing for this round's
+  // capped exploratory/primary slots -- see its own comment for why that's
+  // needed -- without breaking the "one authoritative read" contract this
+  // query is relied on for. It carries every interpretation this row has
+  // ever gotten (not just whether one exists) so alreadyInterpretedItemIds
+  // below can tell a genuinely current interpretation apart from a stale one
+  // left over from before governed taxonomy/prompt logic changed -- a row
+  // whose only interpretation no longer matches its own current input
+  // fingerprint must still be treated as needing a fresh attempt, not as
+  // already covered.
+  //
+  // Fire Alarm E2E fix (evidence/config-aware pilot fairness) -- real
+  // Central Kitchen - Makkah gap: this used to carry every historical
+  // input_fingerprint the row ever got, so an item whose evidence/
+  // requirement-link state changed and then REVERTED (e.g. a system-wide
+  // requirement link confirmed, then correctly superseded once found to be
+  // mis-scoped) could land back on a fingerprint matching an OLD attempt --
+  // one no longer the item's LATEST attempt -- and still count as "already
+  // covered" against that old match alone, even though the item's real
+  // approval lifecycle (estimator_understanding_review_current_evidence_guard's
+  // "only the latest interpretation version may be approved" rule) had moved
+  // on and needed a fresh one. This now carries ONLY the item's single
+  // latest (highest version_number) attempt, as its own
+  // input_fingerprint:config_fingerprint pair (colon-joined; both sides are
+  // hex digests, so a literal colon cannot appear in either half) -- "already
+  // covered" is judged against exactly the same attempt the approval
+  // lifecycle itself treats as authoritative, never an arbitrary older one.
+  const result = await db.prepare(`SELECT b.id boqItemId,b.item_number itemNumber,b.sequence,b.row_type rowType,b.description,b.numeric_quantity numericQuantity,b.original_quantity originalQuantity,b.normalized_unit normalizedUnit,b.original_unit originalUnit,b.system_value system,b.category,b.subcategory,b.manufacturer,b.model,b.part_number partNumber,b.source_document_id sourceDocumentId,b.evidence_document_version_id evidenceDocumentVersionId,b.evidence_extraction_version evidenceExtractionVersion,b.current_values currentValues,b.source_location sourceLocation,
+    (SELECT i.input_fingerprint || ':' || i.config_fingerprint FROM estimator_item_interpretations i WHERE i.boq_item_id=b.id ORDER BY i.version_number DESC LIMIT 1) interpretationFingerprints
     FROM ${currentBoqEvidenceFrom("b")}
     WHERE b.project_id=? AND ${currentBoqItemPredicate("b")} ${itemId ? "AND b.id=?" : ""} ORDER BY b.sequence,b.id`).bind(...(itemId ? [projectId, itemId] : [projectId])).all();
-  return (result.results || []).map((row) => ({ ...row, currentValues: parse(row.currentValues, {}), sourceLocation: parse(row.sourceLocation, null) }));
+  return (result.results || []).map((row) => ({ ...row, currentValues: parse(row.currentValues, {}), sourceLocation: parse(row.sourceLocation, null), interpretationFingerprints: String(row.interpretationFingerprints || "").split(",").filter(Boolean) }));
 };
 
-export const loadPilotManifest = async (db, projectId, options) => buildBoqUnderstandingPilotManifest(projectId, await activeRows(db, projectId), options);
+// Sprint 1.9 -- "already interpreted" for rotation purposes must mean
+// genuinely current, not just present. Sprint 1.11 -- that current fingerprint
+// must include confirmedSpecification, exactly as runUnderstandingBatch/
+// executeRun's own fingerprint does when it originally stores an
+// interpretation (see effective-understanding-interpretation.mjs's Sprint 1.0
+// comment for the same reasoning applied to the review layer). Without this,
+// confirming a NEW specification link to an item (which changes its real,
+// governed current fingerprint and correctly puts its approval into
+// REVALIDATION_REQUIRED -- see estimator-understanding-review-api.mjs)
+// left the pilot manifest still treating that item as "already interpreted"
+// at its stale, pre-link fingerprint, so it could never be re-selected for a
+// fresh attempt through the real pipeline -- the exact real gap hit tracing
+// item 34 after linking requirement_364 to it this sprint.
+//
+// Fire Alarm E2E fix (evidence/config-aware pilot fairness) -- currentConfigFingerprint
+// is the SAME provider/config fingerprint executeRun computes and persists
+// alongside every real interpretation attempt (see interpretationConfigFingerprint).
+// A row only counts as "already interpreted" (excluded from this round's
+// fresh candidate pool) when its single LATEST attempt matches on BOTH
+// halves -- identical input AND identical effective config state. Passing
+// null (the default, used only by callers that genuinely have no config
+// context, e.g. some direct tests) falls back to fingerprint-only matching
+// against that latest attempt, unchanged from before this fix. Judging
+// freshness against the LATEST attempt specifically (never "any attempt in
+// this row's history") is what actually resolves a reverted-evidence state:
+// an item whose current input fingerprint reverts to match an OLDER,
+// no-longer-latest attempt is correctly recognized as materially changed
+// and made eligible again, exactly tracking the same "only the latest
+// version may be approved" rule the governed review lifecycle itself
+// enforces -- so a fresh attempt made here can always actually be approved
+// afterward. This never creates an infinite retry loop on its own: a
+// genuinely unchanged (input, config) pair against the item's own latest
+// attempt still counts as covered exactly as before, and the manifest's own
+// primary/exploratory caps are completely unchanged.
+const alreadyInterpretedItemIds = (rows, confirmedSpecificationByItem, currentConfigFingerprint = null) => new Set(rows.filter((row) => {
+  const currentFingerprint = interpretationInputFingerprint(prepareBoqUnderstandingInput(row, confirmedSpecificationByItem[row.boqItemId] || []));
+  return row.interpretationFingerprints.some((latestAttempt) => {
+    const separator = latestAttempt.indexOf(":");
+    const inputFingerprint = separator === -1 ? latestAttempt : latestAttempt.slice(0, separator);
+    const configFingerprint = separator === -1 ? null : latestAttempt.slice(separator + 1);
+    return inputFingerprint === currentFingerprint && (currentConfigFingerprint == null || configFingerprint == null || configFingerprint === currentConfigFingerprint);
+  });
+}).map((row) => row.boqItemId));
 
-const confirmedSpecifications = async (db, projectId) => {
+export const loadPilotManifest = async (db, projectId, options, currentConfigFingerprint = null) => {
+  const [rows, specs] = await Promise.all([activeRows(db, projectId), confirmedSpecifications(db, projectId)]);
+  return buildBoqUnderstandingPilotManifest(projectId, rows, { alreadyInterpretedItemIds: alreadyInterpretedItemIds(rows, specs, currentConfigFingerprint), ...options });
+};
+
+// Sprint 1.0 -- exported so worker/estimator-understanding-review-api.mjs's
+// review reconciliation (loadUnderstandingReviewRows) can pass the SAME real,
+// confirmed, approved-for-downstream requirement evidence into
+// resolveEffectiveUnderstandingInterpretation's currentInputFor as this
+// module's own runUnderstandingBatch already uses when it originally stores
+// an interpretation's input_fingerprint. Without this, the two computations
+// diverged: an interpretation whose classification depended on confirmed
+// specification evidence could never be recognized as "current" by review,
+// permanently reporting UNAVAILABLE_OR_STALE regardless of approval status.
+export const confirmedSpecifications = async (db, projectId) => {
+  // Sprint 1.13 -- l.superseded_at IS NULL was missing here: a link's own
+  // status column stays 'Confirmed' forever on its original row even after
+  // /supersede marks it superseded (that row is never rewritten -- see
+  // engineering-knowledge-api.mjs's Sprint 1.13 comment), so without this
+  // filter a corrected/superseded confirmation kept feeding Understanding's
+  // confirmedSpecification input as if it were still current. Every other
+  // consumer of Confirmed links (loadInputs in technical-requirement-api.mjs,
+  // the engineering-knowledge links list, knowledge-profile) already filters
+  // on this; this was the one gap where a superseded link could still reach
+  // downstream evidence.
   const result = await db.prepare(`SELECT l.boq_item_id boqItemId,r.id,r.normalized_requirement normalizedRequirement,r.source_location sourceLocation
     FROM boq_requirement_links l JOIN technical_requirements r ON r.id=l.requirement_id
-    WHERE l.project_id=? AND l.status='Confirmed' AND r.approved_for_downstream=1 AND r.review_status='Approved'`).bind(projectId).all();
+    WHERE l.project_id=? AND l.status='Confirmed' AND l.superseded_at IS NULL AND r.approved_for_downstream=1 AND r.review_status='Approved'`).bind(projectId).all();
   return (result.results || []).reduce((map, row) => { (map[row.boqItemId] ||= []).push({ id: row.id, normalizedRequirement: row.normalizedRequirement, sourceLocation: parse(row.sourceLocation, null) }); return map; }, {});
 };
 
@@ -360,6 +456,21 @@ export async function executeRun(env, context, projectId, rows, options = {}) {
     provider,
     configFingerprint,
     confirmedSpecifications: specs,
+    // NOTE (Fire Alarm E2E fix, evidence/config-aware pilot fairness) -- this
+    // reuse check deliberately still matches ANY historical attempt sharing
+    // this exact (input_fingerprint, config_fingerprint) pair, not just the
+    // item's own latest -- estimator_item_interpretations has a real,
+    // load-bearing UNIQUE(boq_item_id, input_fingerprint, config_fingerprint)
+    // constraint, so a fresh save() for a pair that already exists on an
+    // older, non-latest row would fail outright, not merely "waste" an
+    // attempt. Restricting eligibility for the pilot MANIFEST to the item's
+    // own latest attempt (see alreadyInterpretedItemIds below) is what
+    // resolves the reverted-evidence gap safely: it lets the item compete
+    // for a slot again, and this reuse check still protects the one thing it
+    // has always protected -- never re-attempting AI work for content
+    // already on file, under any version. See that function's comment for
+    // why the deeper "which version may be approved" question is a
+    // different, review-lifecycle-owned concern this does not change.
     existing: async (boqItemId, inputFingerprint, fingerprint) => {
       const row = await env.DB.prepare(`SELECT status,validated_interpretation interpretation,error_code errorCode,error_message errorMessage FROM estimator_item_interpretations WHERE boq_item_id=? AND input_fingerprint=? AND config_fingerprint=?`).bind(boqItemId, inputFingerprint, fingerprint).first();
       return row ? { boqItemId, status: row.status, interpretation: parse(row.interpretation), error: row.errorCode ? { code: row.errorCode, message: row.errorMessage } : null } : null;
@@ -445,7 +556,12 @@ export const handleEstimatorUnderstandingApi = async (request, env) => {
     const projectId = decodeURIComponent(projectMatch[1]);
     const operation = projectMatch[2] || null;
     if (!(await projectAccess(env.DB, projectId, resolved.context))) return json({ error: { code: "PROJECT_NOT_FOUND", message: "Project not found." } }, 404);
-    if (request.method === "GET" && operation === "pilot-manifest") return json(await loadPilotManifest(env.DB, projectId));
+    // Fire Alarm E2E fix (evidence/config-aware pilot fairness) -- the SAME
+    // config fingerprint executeRun computes and persists on every real
+    // interpretation attempt, so manifest eligibility is judged on exactly
+    // the pair uniqueness the pipeline itself already keys on.
+    const currentConfigFingerprint = interpretationConfigFingerprint((createConfiguredBoqUnderstandingProvider(env)?.metadata) || { provider: "unavailable", model: "unavailable", modelVersion: "unavailable" });
+    if (request.method === "GET" && operation === "pilot-manifest") return json(await loadPilotManifest(env.DB, projectId, undefined, currentConfigFingerprint));
     if (request.method === "GET" && operation === null) {
       const latestRun = await env.DB.prepare(`SELECT id FROM estimator_understanding_runs WHERE project_id=? ORDER BY started_at DESC,id DESC LIMIT 1`).bind(projectId).first();
       return json({ projectId, providerReadiness: boqUnderstandingProviderReadiness(env), items: await listLatest(env.DB, projectId), latestQualityRunId: latestRun?.id || null, latestQualityReport: latestRun ? await loadPilotQualityReport(env.DB, projectId, latestRun.id) : null });
@@ -455,8 +571,8 @@ export const handleEstimatorUnderstandingApi = async (request, env) => {
     try { body = await request.json(); } catch { return json({ error: { code: "CONTROLLED_ITEM_SELECTION_REQUIRED", message: "Select 1 to 15 authorized pilot items from a current manifest." } }, 400); }
     const controlled = validateControlledPilotRequest(body);
     if (controlled.error) return json({ error: { code: controlled.error, message: "Select 1 to 15 authorized pilot items from a current manifest." } }, 400);
-    const allRows = await activeRows(env.DB, projectId);
-    const manifest = buildBoqUnderstandingPilotManifest(projectId, allRows);
+    const [allRows, allSpecs] = await Promise.all([activeRows(env.DB, projectId), confirmedSpecifications(env.DB, projectId)]);
+    const manifest = buildBoqUnderstandingPilotManifest(projectId, allRows, { alreadyInterpretedItemIds: alreadyInterpretedItemIds(allRows, allSpecs, currentConfigFingerprint) });
     const authorized = authorizeControlledPilotSelection(controlled.value, manifest, allRows);
     if (authorized.error) return json({ error: { code: authorized.error, message: authorized.error === "PILOT_ITEM_NOT_AUTHORIZED" ? "One or more items are outside the current controlled pilot manifest." : "The pilot manifest is stale. Prepare the pilot again." } }, authorized.status);
     return json(await executeRun(env, resolved.context, projectId, authorized.value.rows), 200);
@@ -465,5 +581,58 @@ export const handleEstimatorUnderstandingApi = async (request, env) => {
   const itemId = decodeURIComponent(retryMatch[1]);
   const item = await env.DB.prepare(`SELECT b.project_id projectId FROM ${currentBoqEvidenceFrom("b")} WHERE b.id=? AND ${currentBoqItemPredicate("b")}`).bind(itemId).first();
   if (!item || !(await projectAccess(env.DB, item.projectId, resolved.context))) return json({ error: { code: "BOQ_ITEM_NOT_FOUND", message: "BOQ item not found." } }, 404);
-  return json({ error: { code: "CONTROLLED_RETRY_MANIFEST_REQUIRED", message: "Retry only through the current server-authorized controlled retry manifest." } }, 409);
+  return handlePerItemRetry(env, resolved.context, item.projectId, itemId, request);
 };
+
+// Sprint 1.18 -- real gap: an item whose AI interpretation failed with a
+// transient MODEL-OUTPUT problem (invalid schema, an unsupported field, a
+// malformed confidence value, or a provider error) had no way back into the
+// pipeline except the CONTROLLED_RETRY batch mechanism, which requires the
+// project's OWN quality report to recommend exactly 6 items project-wide --
+// an unrelated, narrow pilot-comparison control, not a general per-item
+// retry path. This reuses the EXACT SAME executeRun/existing()/config-
+// fingerprint-mixing machinery CONTROLLED_RETRY already relies on (no new
+// interpretation logic, no second cache, no weaker schema validation) --
+// only the ELIGIBILITY GATE, idempotency, and attempt cap around it are new.
+//
+// Eligible only when the item's OWN latest interpretation attempt is
+// currently FAILED with one of these codes -- never for a COMPLETED/
+// NEEDS_REVIEW (approved-or-awaiting-review) interpretation, which keeps
+// going through the existing controlled-pilot/controlled-retry governance
+// exactly as before.
+export const TRANSIENT_MODEL_FAILURE_CODES = new Set(["AI_OUTPUT_INVALID_SCHEMA", "AI_OUTPUT_INVALID_UNSUPPORTED_FIELD", "AI_OUTPUT_INVALID_CONFIDENCE", "AI_PROVIDER_ERROR"]);
+// A deliberate, small bound -- not "no retry" and not "unbounded" -- so a
+// genuinely still-failing item cannot be retried indefinitely through this
+// path; beyond this it requires a full CONTROLLED_RETRY batch or a real
+// evidence change (which shifts the input fingerprint and clears this path
+// on its own).
+export const MAX_PER_ITEM_RETRY_ATTEMPTS = 3;
+export async function handlePerItemRetry(env, context, projectId, itemId, request) {
+  const db = env.DB;
+  let body; try { body = await request.json(); } catch { body = {}; }
+  const reason = String(body?.reason || "").trim();
+  if (reason.length < 10) return json({ error: { code: "PER_ITEM_RETRY_REASON_REQUIRED", message: "Provide a substantive reason for retrying this failed interpretation." } }, 422);
+  const latest = await db.prepare(`SELECT * FROM estimator_item_interpretations WHERE boq_item_id=? ORDER BY version_number DESC LIMIT 1`).bind(itemId).first();
+  if (!latest) return json({ error: { code: "PER_ITEM_RETRY_NOT_ELIGIBLE", message: "This item has no prior interpretation attempt to retry." } }, 409);
+  if (latest.status !== "FAILED" || !TRANSIENT_MODEL_FAILURE_CODES.has(latest.error_code)) return json({ error: { code: "PER_ITEM_RETRY_NOT_ELIGIBLE", message: "Only an item whose latest attempt failed with a transient model-output error is eligible -- a normal approved or awaiting-review interpretation must go through the existing review path, never this one." } }, 409);
+  const [rows, specs] = await Promise.all([activeRows(db, projectId, itemId), confirmedSpecifications(db, projectId)]);
+  const row = rows[0];
+  if (!row) return json({ error: { code: "BOQ_ITEM_NOT_FOUND", message: "BOQ item not found." } }, 404);
+  const currentInputFingerprint = interpretationInputFingerprint(prepareBoqUnderstandingInput(row, specs[row.boqItemId] || []));
+  if (currentInputFingerprint !== latest.input_fingerprint) return json({ error: { code: "PER_ITEM_RETRY_EVIDENCE_CHANGED", message: "The item's evidence has changed since the failed attempt; it is eligible for the normal understanding pilot instead of a same-input retry." } }, 409);
+  // Sprint 1.19 -- the cap is scoped to the CURRENT engine's own prompt_version
+  // (an existing, already-persisted column on every interpretation), not to
+  // input_fingerprint alone. A genuine engine/validation fix (see
+  // boq-understanding-engine.mjs's BOQ_UNDERSTANDING_PROMPT_VERSION Sprint
+  // 1.19 comment) is a materially different situation from "retry the same
+  // broken thing again" -- prior failures recorded under an OLDER prompt
+  // version are real history (never deleted, still fully queryable) but must
+  // not count against the NEW version's own fresh, still-bounded budget.
+  const attemptCount = (await db.prepare(`SELECT COUNT(*) count FROM estimator_item_interpretations WHERE boq_item_id=? AND input_fingerprint=? AND status='FAILED' AND prompt_version=?`).bind(itemId, currentInputFingerprint, BOQ_UNDERSTANDING_PROMPT_VERSION).first())?.count || 0;
+  if (attemptCount >= MAX_PER_ITEM_RETRY_ATTEMPTS) return json({ error: { code: "PER_ITEM_RETRY_LIMIT_REACHED", message: `This item has already failed ${attemptCount} times at its current evidence under the current engine version; a per-item retry can no longer help. Use the controlled batch retry or provide new evidence.` } }, 409);
+  const authorizationFingerprint = fingerprint({ mode: "PER_ITEM_RETRY", boqItemId: itemId, failedInterpretationId: latest.id, reason });
+  const existingRetryRun = await db.prepare(`SELECT id, status FROM estimator_understanding_runs WHERE run_mode='PER_ITEM_RETRY' AND parent_run_id=? AND authorization_fingerprint=?`).bind(latest.run_id, authorizationFingerprint).first();
+  if (existingRetryRun) return json({ retryRunId: existingRetryRun.id, status: existingRetryRun.status, idempotent: true });
+  const result = await executeRun(env, context, projectId, [row], { mode: "PER_ITEM_RETRY", parentRunId: latest.run_id, authorizationFingerprint });
+  return json({ retryRunId: result.runId, status: result.status, idempotent: false, previousFailure: { interpretationId: latest.id, errorCode: latest.error_code, version: latest.version_number }, summary: result.summary });
+}

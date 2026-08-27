@@ -1,17 +1,39 @@
 import { createHash } from "node:crypto";
 import {
-  FIRE_ALARM_ATTRIBUTE_PROFILES,
-  FIRE_ALARM_TAXONOMY,
-  FIRE_ALARM_TAXONOMY_VERSION,
-  buildFireAlarmTaxonomyContext,
-  isCanonicalFireAlarmPair,
-  normalizeFireAlarmAttributeName,
-  normalizeFireAlarmCategory,
-  normalizeFireAlarmFamily,
-} from "./fire-alarm-taxonomy.mjs";
+  buildTaxonomyContext,
+  governedAttributeProfile,
+  isCanonicalPair,
+  normalizeAttributeName,
+  normalizeCategoryFamily,
+  resolveSystemNameFromText,
+  validateAttributeValue,
+} from "./system-knowledge-registry.mjs";
+// Passive re-export only (object-identity compatibility for existing consumers);
+// the understanding flow itself no longer references these directly -- see
+// system-knowledge-registry.mjs.
 export { FIRE_ALARM_ATTRIBUTE_PROFILES, FIRE_ALARM_TAXONOMY, FIRE_ALARM_TAXONOMY_VERSION } from "./fire-alarm-taxonomy.mjs";
 
-export const BOQ_UNDERSTANDING_PROMPT_VERSION = "boq-understanding-compact-prompt-v4-semantic-safety";
+// Sprint 1.19 -- bumped from v4 to v5: interpretBoqItem's redundant,
+// wrongly-ordered pre-validation was removed (see its own Sprint 1.19
+// comment), materially changing which real model responses are accepted --
+// a MISSING/null technicalAttributes entry on the model's own 0-1 confidence
+// scale no longer fails closed. The prompt TEXT itself is unchanged; this
+// version bump exists so interpretationConfigFingerprint (keyed on
+// promptVersion) produces a genuinely new config fingerprint, letting items
+// 32/33 -- whose per-item retry budget is exhausted at the OLD fingerprint --
+// legitimately attempt a fresh interpretation through the normal governed
+// pilot path, without resetting, bypassing, or deleting any prior retry
+// history (every earlier attempt stays exactly as recorded, at its own,
+// still-distinct fingerprint).
+// Fire Alarm E2E fix (Top-1/Top-3 accuracy) -- bumped from v5 to v6: the
+// prompt TEXT is unchanged, but this sprint changed both the deterministic
+// facts fed into every interpretation (new ip_rating/indoor_outdoor
+// recognition) and the merge logic itself (a deterministic-only fallback for
+// a genuine AI schema-validation failure). Per the same reasoning as the
+// v4->v5 bump above: interpretationConfigFingerprint is keyed on this
+// version specifically so a stale cached interpretation from before these
+// changes is never silently reused as if it already reflected them.
+export const BOQ_UNDERSTANDING_PROMPT_VERSION = "boq-understanding-compact-prompt-v6-environmental-and-schema-fallback";
 export const BOQ_UNDERSTANDING_SCHEMA_VERSION = "boq-understanding-compact-v2";
 export const BOQ_UNDERSTANDING_ENGINE_VERSION = "boq-understanding-engine-v2";
 export const INTERPRETATION_STATUSES = Object.freeze(["PENDING", "PROCESSING", "COMPLETED", "NEEDS_REVIEW", "FAILED", "AI_UNAVAILABLE"]);
@@ -135,8 +157,48 @@ export function prepareBoqUnderstandingInput(row, confirmedSpecification = []) {
   if (megapixels) explicit.resolutionMegapixels = fact(Number(megapixels[1]));
   if (voltage) explicit.operatingVoltage = fact(`${voltage[1]} ${voltage[2].toUpperCase()}`);
   if (/\bPoE\b/i.test(description)) explicit.power = fact("PoE");
-  if (/\baddressable\b/i.test(description)) explicit.technology = fact("Addressable");
+  // Sprint 1.2 -- the BOQ row's own text is not the only governed evidence
+  // for "addressable": a real, approved, confirmed specification requirement
+  // linked to this item (e.g. "Manual pull stations shall be individually
+  // addressable...") is exactly the same class of evidence Sprint 1.0 already
+  // trusts for taxonomy candidate resolution (buildFireAlarmTaxonomyContext's
+  // own sourceText combination). Checked here as a SEPARATE combined text
+  // (never folded into `description` itself) so the other description-only
+  // deterministic rules above (ports/PoE/voltage/Cat6/etc.) are unaffected by
+  // specification text that has nothing to do with them.
+  const addressableEvidenceText = [description, ...(Array.isArray(confirmedSpecification) ? confirmedSpecification : []).map((entry) => typeof entry === "string" ? entry : entry?.normalizedRequirement || entry?.originalText)].filter(Boolean).join(" ");
+  if (/\baddressable\b/i.test(addressableEvidenceText)) explicit.technology = fact("Addressable");
+  // Fire Alarm E2E fix (environmental discrimination) -- real Central
+  // Kitchen - Makkah gap: "siren with bult in flusher , IP-65" never
+  // triggered indoor_outdoor at all (the prior rule only recognized the
+  // literal words "weatherproof"/"outdoor"/"external"), so the candidate
+  // ranker had no signal to prefer the catalog's own already-evidenced
+  // Outdoor variant (P2RK) over an Indoor one (P2RL/P2RL-LF) -- a real,
+  // governed catalog distinction going unused purely because the BOQ's own
+  // "IP-65" wording was never read as an environmental cue. ip_rating is
+  // recorded as its own separate, literal fact (never inferred beyond the
+  // digits actually present); indoor_outdoor is only ever inferred from an
+  // explicit IP rating or explicit weatherproof/outdoor/external wording --
+  // never from product family, and never guessed when the description is
+  // silent on environment.
+  const ipRatingMatch = description.match(/\bIP\s?-?\s?(\d{2})\b/i);
+  if (ipRatingMatch) explicit.ip_rating = fact(`IP${ipRatingMatch[1]}`);
+  if (ipRatingMatch || /\b(?:weather\s*proof|weatherproof|outdoor|external)\b/i.test(description)) explicit.indoor_outdoor = fact("Outdoor");
+  else if (/\bindoor\b/i.test(description)) explicit.indoor_outdoor = fact("Indoor");
   if (/\bCat\s*6\b/i.test(description)) explicit.cablingCategory = fact("Cat6");
+  // Sprint 0.5 -- only ever set when the BOQ description literally states
+  // "Dual Action"/"Single Action" (e.g. a governed Pull Station requirement);
+  // a bare "Manual Call Point"/"Pull Station" description with no action text
+  // never sets this, so action_type stays MISSING rather than guessed.
+  const actionType = description.match(/\b(Dual|Single)\s+Action\b/i);
+  if (actionType) explicit.actionType = fact(`${actionType[1][0].toUpperCase()}${actionType[1].slice(1).toLowerCase()} Action`);
+  // Sprint 1.0 -- only ever set on the literal word "Sounder" (word-boundary,
+  // e.g. real Opera item 29 "Smoke Detector Ceiling Mounted with Sounder"),
+  // never a substring match, so "Soundproof"/"Surround" etc. never trigger it.
+  // This attribute is only governed for "Addressable Smoke Detector" (see
+  // fire-alarm-taxonomy.mjs FAMILY_SPECIFIC_ATTRIBUTES), so it is silently
+  // dropped downstream for any row that doesn't resolve to that family.
+  if (/\bsounder\b/i.test(description)) explicit.notificationFeature = fact("Sounder Required");
   const input = {
     boqItemId: row.boqItemId || row.id,
     rowType: row.rowType || "BOQ Item",
@@ -153,7 +215,7 @@ export function prepareBoqUnderstandingInput(row, confirmedSpecification = []) {
     confirmedSpecification: Array.isArray(confirmedSpecification) ? confirmedSpecification : [],
     deterministicFacts: explicit,
   };
-  return { ...input, taxonomyContext: buildFireAlarmTaxonomyContext(input) };
+  return { ...input, taxonomyContext: buildTaxonomyContext(input) };
 }
 
 export function buildBoqUnderstandingPrompt(input) {
@@ -240,9 +302,39 @@ export function validateAndMergeBoqInterpretation(input, response) {
       if (output[name].origin === "NOT_APPLICABLE") output[name] = missing();
     }
   }
-  const taxonomyContext = input.taxonomyContext || buildFireAlarmTaxonomyContext(input);
-  const fireAlarmProposed = taxonomyContext.system === "Fire Alarm" || /^fire alarm(?: system)?$/i.test(String(output.system.value || ""));
-  if (fireAlarmProposed) {
+  const taxonomyContext = input.taxonomyContext || buildTaxonomyContext(input);
+  // governedSystem is set only when either (a) this row's own evidence was
+  // recognized by a registered pack, or (b) the AI's own proposed system value
+  // names a registered pack (tolerating that pack's own synonyms). Both paths
+  // only ever resolve to a system that actually has a governed taxonomy, so an
+  // unregistered/unrecognized system never enters this branch.
+  const detectedSystem = taxonomyContext.system || null;
+  const proposedSystemName = resolveSystemNameFromText(output.system.value);
+  // Fire Alarm E2E fix 3 -- real Central Kitchen - Makkah gap: a plain "6W
+  // Recessed in false ceiling speaker" row, already tagged system="Public
+  // Address" by the deterministic BOQ extractor (it sits in that project's
+  // own Public Address subsection, and the historical BOM independently
+  // confirms it was supplied as an L-PCP06A Public Address speaker, not a
+  // Fire Alarm device), still matched the Fire Alarm taxonomy's own bare
+  // "Speaker" family purely because the word "speaker" appears in its
+  // description. When the row's own already-established, deterministically
+  // extracted system is a real, different system (not Fire Alarm, and not
+  // blank/unclassified), that prior evidence is authoritative and Fire Alarm
+  // governance must never activate for it -- no candidate, no
+  // taxonomyCandidateKey requirement, no governed attribute profile. This
+  // does not affect any row whose system is blank/unclassified (still free
+  // to resolve from description alone) or already "Fire Alarm".
+  const priorSystemValue = clean(input.system);
+  const priorSystemIsConfidentlyNotFireAlarm = Boolean(priorSystemValue) && !/\bfire\s*alarm\b/i.test(priorSystemValue);
+  const governedSystem = priorSystemIsConfidentlyNotFireAlarm ? null : (detectedSystem || proposedSystemName);
+  const governedProposed = Boolean(governedSystem);
+  // The prior deterministic system value is not just a gate on governance
+  // below -- it must also override a model that (as observed on the real
+  // Speaker row) confidently but wrongly claims "Fire Alarm" for itself, so
+  // the row's own already-known real system is what survives, not the
+  // model's free-text guess.
+  if (priorSystemIsConfidentlyNotFireAlarm) output.system = { value: priorSystemValue, origin: "EXTRACTED", confidence: 95 };
+  if (governedProposed) {
     const candidates = Array.isArray(taxonomyContext.families) ? taxonomyContext.families : [];
     const selectedKeyFact = normalizeFact(response[taxonomySelectionField], missing());
     const selectedKey = selectedKeyFact.value === null ? null : String(selectedKeyFact.value);
@@ -250,7 +342,7 @@ export function validateAndMergeBoqInterpretation(input, response) {
     const duplicateContextKeys = new Set(candidates.map((candidate) => candidate.selectionKey).filter((key, index, keys) => keys.indexOf(key) !== index));
     if (selectedKey !== null) {
       const selected = selectedCandidates.length === 1 && !duplicateContextKeys.has(selectedKey) ? selectedCandidates[0] : null;
-      if (!selected || !isCanonicalFireAlarmPair(selected.category, selected.family)) {
+      if (!selected || !isCanonicalPair(governedSystem, selected.category, selected.family)) {
         output.system = missing();
         output.category = missing();
         output.productFamily = missing();
@@ -258,40 +350,88 @@ export function validateAndMergeBoqInterpretation(input, response) {
         reviewReasons.push("GOVERNED_CANDIDATE_KEY_INVALID");
       } else {
         const canonicalFact = { value: null, origin: "INFERRED", confidence: Math.min(selectedKeyFact.confidence, 70) };
-        output.system = { ...canonicalFact, value: "Fire Alarm" };
+        output.system = { ...canonicalFact, value: governedSystem };
         output.category = { ...canonicalFact, value: selected.category };
         output.productFamily = { ...canonicalFact, value: selected.family };
       }
     } else {
       if (candidates.length) reviewReasons.push("GOVERNED_CANDIDATE_KEY_MISSING");
-      if (/^fire alarm(?: system)?$/i.test(String(output.system.value || "")) && taxonomyContext.system === "Fire Alarm") output.system = { ...output.system, value: "Fire Alarm" };
-      else if (taxonomyContext.system === "Fire Alarm" || output.system.value) output.system = missing();
-      const category = normalizeFireAlarmCategory(output.category.value);
-      const family = normalizeFireAlarmFamily(output.productFamily.value);
+      if (proposedSystemName === governedSystem && detectedSystem === governedSystem) output.system = { ...output.system, value: governedSystem };
+      else if (detectedSystem === governedSystem || output.system.value) output.system = missing();
+      const { category, family } = normalizeCategoryFamily(governedSystem, output.category.value, output.productFamily.value);
       const allowedPairs = new Set(candidates.map((entry) => `${entry.category}\u0000${entry.family}`));
-      if (!category || !family || !isCanonicalFireAlarmPair(category, family) || !allowedPairs.has(`${category}\u0000${family}`)) {
-        if (output.category.value || output.productFamily.value) output.ambiguities = [itemFact("Proposed Fire Alarm classification is outside the governed candidate context", "INFERRED", 100)];
-        output.category = category && candidates.some((entry) => entry.category === category) ? { ...output.category, value: category } : missing();
-        output.productFamily = missing();
+      if (!category || !family || !isCanonicalPair(governedSystem, category, family) || !allowedPairs.has(`${category}\u0000${family}`)) {
+        if (output.category.value || output.productFamily.value) output.ambiguities = [itemFact("Proposed classification is outside the governed candidate context", "INFERRED", 100)];
+        // Fire Alarm E2E fix 3 -- real Central Kitchen - Makkah gap, proven on
+        // "FACP Addressable type." and "siren with bult in flusher , IP-65":
+        // both rows had exactly one confident governed taxonomy candidate
+        // (Fire Alarm Control Panel / Sounder-Strobe respectively, visible in
+        // this same taxonomyContext), yet the model returned no
+        // taxonomyCandidateKey AND no category/productFamily/ambiguities of
+        // its own -- a genuinely silent, unexplained null, not a reasoned
+        // disagreement. A confident deterministic classification must not be
+        // erased by the model simply saying nothing. Deliberately narrow: it
+        // only ever fires when there is exactly one candidate (a genuine
+        // ambiguity between candidates is never auto-resolved) and the model
+        // supplied literally no classification and no explicit
+        // evidence-backed contradiction of its own (a model-asserted
+        // out-of-context category/family, or a non-empty ambiguities list,
+        // still blocks the override below, exactly as before).
+        const soleCandidate = candidates.length === 1 ? candidates[0] : null;
+        const modelWasSilent = !output.category.value && !output.productFamily.value && !(Array.isArray(response.ambiguities) && response.ambiguities.length > 0);
+        if (soleCandidate && modelWasSilent) {
+          const governedFact = { value: null, origin: "INFERRED", confidence: 70 };
+          output.system = { ...governedFact, value: governedSystem };
+          output.category = { ...governedFact, value: soleCandidate.category };
+          output.productFamily = { ...governedFact, value: soleCandidate.family };
+          reviewReasons.push("GOVERNED_CANDIDATE_ACCEPTED_OVER_SILENT_MODEL_NULL");
+        } else {
+          output.category = category && candidates.some((entry) => entry.category === category) ? { ...output.category, value: category } : missing();
+          output.productFamily = missing();
+        }
       } else {
         output.category = { ...output.category, value: category };
         output.productFamily = { ...output.productFamily, value: family };
       }
     }
   }
+  // Sprint 0.6 -- a correctly-named governed attribute can still carry a
+  // semantically invalid value (e.g. addressing="MCLP": "MCLP" genuinely is a
+  // substring of the BOQ description, so verifiedFact's text-containment check
+  // above correctly leaves it EXTRACTED -- but "MCLP" is a product-name
+  // fragment, not one of the real addressing concepts). This is the one place
+  // that catches that: only ever applied when governedProposed (an ungoverned
+  // system's attributes are never subject to Fire Alarm's semantic rules), and
+  // only for a name the registered pack actually defines semantics for -- an
+  // unvalidated value is left exactly as verifiedFact produced it. A rejected
+  // value becomes MISSING (never an authoritative fact); the raw rejected
+  // value is preserved only in reviewReasons, never promoted.
+  const semanticallyValidated = (name, candidate) => {
+    if (candidate.value === null) return candidate;
+    const { valid, normalizedValue } = validateAttributeValue(governedSystem, name, candidate.value);
+    if (valid) return { ...candidate, value: normalizedValue };
+    reviewReasons.push(`ATTRIBUTE_VALUE_REJECTED:${name}:${String(candidate.value).slice(0, 60)}`);
+    return missing();
+  };
   output.attributes = {};
   for (const entry of response.technicalAttributes || []) {
-    const key = fireAlarmProposed ? (output.productFamily.value ? normalizeFireAlarmAttributeName(entry.name, output.productFamily.value) : null) : clean(entry.name);
+    const key = governedProposed ? (output.productFamily.value ? normalizeAttributeName(governedSystem, entry.name, output.productFamily.value) : null) : clean(entry.name);
     if (!key) continue;
     if (forbidden.test(key)) throw new Error(`Unsafe interpretation attribute: ${key}`);
-    output.attributes[key] = verifiedFact({ value: entry.value, origin: entry.origin, confidence: entry.confidence });
+    const candidate = verifiedFact({ value: entry.value, origin: entry.origin, confidence: entry.confidence });
+    output.attributes[key] = governedProposed ? semanticallyValidated(key, candidate) : candidate;
   }
   for (const [rawKey, value] of Object.entries(input.deterministicFacts)) {
-    const key = fireAlarmProposed ? (output.productFamily.value ? normalizeFireAlarmAttributeName(rawKey, output.productFamily.value) : null) : rawKey;
-    if (key) output.attributes[key] = value;
+    const key = governedProposed ? (output.productFamily.value ? normalizeAttributeName(governedSystem, rawKey, output.productFamily.value) : null) : rawKey;
+    if (key) output.attributes[key] = governedProposed ? semanticallyValidated(key, value) : value;
   }
-  if (output.productFamily.value && FIRE_ALARM_ATTRIBUTE_PROFILES[output.productFamily.value]) {
-    const applicableAttributes = (taxonomyContext.attributeNames || []).filter((name) => FIRE_ALARM_ATTRIBUTE_PROFILES[output.productFamily.value].attributes.includes(name));
+  // Gated on governedSystem (not just output.productFamily.value) so a row that
+  // never resolved to a registered system cannot have another system's governed
+  // attribute profile applied merely because the AI's free-text productFamily
+  // guess happens to collide with a governed family name.
+  const attributeProfile = governedSystem && output.productFamily.value ? governedAttributeProfile(governedSystem, output.productFamily.value) : null;
+  if (attributeProfile) {
+    const applicableAttributes = (taxonomyContext.attributeNames || []).filter((name) => attributeProfile.attributes.includes(name));
     for (const name of applicableAttributes) {
       if (!output.attributes[name] || output.attributes[name].value === null || output.attributes[name].origin === "MISSING") {
         output.attributes[name] = missing();
@@ -325,18 +465,84 @@ export function validateAndMergeBoqInterpretation(input, response) {
 export const interpretationInputFingerprint = (input) => hash(input);
 export const interpretationConfigFingerprint = (config) => hash({ provider: config.provider, model: config.model, modelVersion: config.modelVersion, promptVersion: BOQ_UNDERSTANDING_PROMPT_VERSION, schemaVersion: BOQ_UNDERSTANDING_SCHEMA_VERSION });
 
+// Fire Alarm E2E fix (BOQ Understanding robustness) -- real Central Kitchen -
+// Makkah gap: "Flasher" has an unambiguous, single-candidate governed
+// classification (buildFireAlarmTaxonomyContext resolves it to Strobe at
+// 100% confidence) that has nothing to do with whatever made the model's OWN
+// response fail strict schema validation -- yet the prior behavior discarded
+// that already-known deterministic fact along with the broken response,
+// leaving the row completely unclassified (FAILED, no candidate at all)
+// instead of NEEDS_REVIEW with a real, correct proposal. This only ever
+// recovers a classification built from deterministic evidence alone
+// (input.description plus the governed taxonomy candidate) through the exact
+// same validateAndMergeBoqInterpretation merge/validation path used for a
+// real model response -- never from any part of the untrusted, invalid raw
+// response itself. It can therefore only ever succeed when there really is a
+// sole confident governed candidate (the same guard Fix 3's silent-null
+// acceptance already relies on), and the row is still forced to NEEDS_REVIEW
+// (LOW confidence), never silently promoted to COMPLETED.
+function deterministicOnlyFallbackInterpretation(input) {
+  if (!input.description) return null;
+  let merged;
+  try {
+    merged = validateAndMergeBoqInterpretation(input, { normalizedDescription: fact(input.description, "EXTRACTED", 100), confidence: "LOW" });
+  } catch {
+    return null;
+  }
+  if (!merged.interpretation.productFamily?.value) return null;
+  return { ...merged, interpretation: { ...merged.interpretation, reviewReasons: [...new Set([...merged.interpretation.reviewReasons, "DETERMINISTIC_FALLBACK_AFTER_AI_SCHEMA_FAILURE"])].slice(0, 12) } };
+}
+
 export async function interpretBoqItem(input, { provider }) {
   if (!provider) return { status: "AI_UNAVAILABLE", error: { code: "AI_UNAVAILABLE", message: "No AI understanding provider is configured." } };
   try {
     const raw = await provider.interpret({ input, prompt: buildBoqUnderstandingPrompt(input) });
-    validateBoqUnderstandingResponseSchema(raw);
+    // Sprint 1.19 -- real gap, proven on items 32/33 ("Voice Evacuation
+    // Speaker with strobe"): this used to call validateBoqUnderstandingResponseSchema
+    // on the model's RAW response, BEFORE normalizeBoqUnderstandingModelResponse
+    // (called inside validateAndMergeBoqInterpretation, below) had a chance to
+    // apply its own confidence-scale correction. The model legitimately
+    // returns MISSING/null attributes with confidence 1 on its own 0-1 scale
+    // (not literal 0), and this file's own existing self-healing rule
+    // (`entry.origin === "MISSING" && entry.value === null` -> confidence 0,
+    // in normalizeBoqUnderstandingModelResponse) already exists specifically
+    // to correct exactly that -- but the redundant pre-check ran first, against
+    // the not-yet-corrected raw value, and threw "violates the MISSING
+    // contract" on a genuinely valid response. validateAndMergeBoqInterpretation
+    // already performs the identical schema validation itself, in the correct
+    // order (normalize, then validate) -- this removes the earlier, wrongly-
+    // ordered duplicate. No rule is relaxed: the same strict
+    // validateBoqUnderstandingResponseSchema call still runs, once, on
+    // correctly-normalized data, and any error it throws is still caught below.
     return { ...validateAndMergeBoqInterpretation(input, raw), usageMetadata: provider.lastCallMetadata || null };
   } catch (error) {
     const providerError = error?.code === "AI_PROVIDER_ERROR" || error?.code === "AI_PROVIDER_TIMEOUT";
+    // Sprint 1.19 -- with the redundant pre-validation removed above, an
+    // unsafe/unsupported field is now caught by validateAndMergeBoqInterpretation's
+    // own scan() first ("Unsafe interpretation fields: ..."), not only by
+    // validateBoqUnderstandingResponseSchema's whitelist ("...unsupported
+    // field..."). Both phrasings must still classify as the same
+    // AI_OUTPUT_INVALID_UNSUPPORTED_FIELD code -- this is a wording
+    // reconciliation, not a new rule.
     const validationCode = error?.validationCode
-      || (/unsupported field/i.test(String(error?.message || "")) ? "AI_OUTPUT_INVALID_UNSUPPORTED_FIELD"
+      || (/unsupported field|unsafe (?:interpretation )?fields?/i.test(String(error?.message || "")) ? "AI_OUTPUT_INVALID_UNSUPPORTED_FIELD"
         : /confidence/i.test(String(error?.message || "")) ? "AI_OUTPUT_INVALID_CONFIDENCE"
           : "AI_OUTPUT_INVALID_SCHEMA");
+    // Scoped to genuine structural/shape malformation only -- never to
+    // AI_OUTPUT_INVALID_UNSUPPORTED_FIELD (a forbidden field such as
+    // "approved"/"price" is a real safety signal, e.g. of prompt injection),
+    // never to AI_OUTPUT_INVALID_CONFIDENCE, and never to a message
+    // indicating the model asserted an internally CONTRADICTORY fact (e.g.
+    // "violates the MISSING contract" -- claiming MISSING while also
+    // supplying a real value/confidence) rather than merely a malformed one.
+    // Those are data-integrity concerns, not benign formatting mistakes, and
+    // must keep failing loudly, never be quietly papered over with a
+    // deterministic classification.
+    const contractViolation = /contract|values must be null|confidence must be zero/i.test(String(error?.message || ""));
+    if (!providerError && validationCode === "AI_OUTPUT_INVALID_SCHEMA" && !contractViolation) {
+      const fallback = deterministicOnlyFallbackInterpretation(input);
+      if (fallback) return { ...fallback, usageMetadata: provider.lastCallMetadata || null };
+    }
     return { status: "FAILED", error: { code: providerError ? "AI_PROVIDER_ERROR" : validationCode, message: providerError ? "Workers AI could not complete the request." : "AI interpretation failed strict schema validation." }, usageMetadata: provider.lastCallMetadata || null };
   }
 }

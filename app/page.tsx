@@ -329,6 +329,40 @@ type ProjectIntakeProfile = {
   contactEmail?: string;
   contactPhone?: string;
 };
+
+type ProjectNpQDraft = {
+  additionalSystems: string[];
+  deliveryScope:
+    | "Materials Only"
+    | "Supply and Installation"
+    | "Supply, Installation, Testing and Commissioning";
+
+  manufacturerStrategy:
+    | "Fixed Manufacturer"
+    | "Preferred Manufacturer"
+    | "Approved Manufacturers"
+    | "Open Manufacturer"
+    | "Detect from Specification";
+  preferredManufacturer: string;
+  approvedManufacturers: string;
+  manufacturerNotes: string;
+
+  pricingStrategy:
+    | "Price List"
+    | "Supplier Quotation"
+    | "Historical Project"
+    | "Contract Price"
+    | "Manual Price"
+    | "Mixed Sources";
+  primaryPricingSourceType: string;
+  primaryPricingSourceId: string;
+  fallbackPricingSources: string[];
+  projectCurrency: string;
+  pricingNotes: string;
+
+  expectedEvidence: string[];
+};
+
 type PricingSettingsDraft = {
   exchangeRate: number;
   exchangeRateEvidence: ExchangeRateEvidence;
@@ -2182,7 +2216,28 @@ export default function Home() {
       contactEmail: "",
       contactPhone: "",
     });
-  const [newProjectStep, setNewProjectStep] = useState<1 | 2>(1);
+  const [newProjectStep, setNewProjectStep] = useState<1 | 2 | 3>(1);
+
+  const [draftNpQ, setDraftNpQ] = useState<ProjectNpQDraft>({
+    additionalSystems: [],
+    deliveryScope: "Supply and Installation",
+    manufacturerStrategy: "Detect from Specification",
+    preferredManufacturer: "",
+    approvedManufacturers: "",
+    manufacturerNotes: "",
+    pricingStrategy: "Price List",
+    primaryPricingSourceType: "",
+    primaryPricingSourceId: "",
+    fallbackPricingSources: ["Supplier Quotation", "Historical Project"],
+    projectCurrency: "SAR",
+    pricingNotes: "",
+    expectedEvidence: [
+      "BOQ",
+      "Technical Specifications",
+      "Price Lists",
+    ],
+  });
+
   const [showSettings, setShowSettings] = useState(false);
   const [showQuotation, setShowQuotation] = useState(false);
   const [showValidationReport, setShowValidationReport] = useState(false);
@@ -2735,6 +2790,8 @@ export default function Home() {
     useState<EstimatorReadiness | null>(null);
   const [understandingRunning, setUnderstandingRunning] = useState(false);
   const [understandingMessage, setUnderstandingMessage] = useState("");
+  const [understandingPilotArmed, setUnderstandingPilotArmed] = useState(false);
+  const [understandingRetryArmed, setUnderstandingRetryArmed] = useState(false);
   type UnderstandingRunSummary = {
     processed: number;
     completed: number;
@@ -3948,7 +4005,7 @@ export default function Home() {
       return;
     }
     const runtime = createRuntimeContext();
-    const response = await fetch("/api/projects", {
+    const response = await fetch("/api/projects/onboard", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
@@ -3958,6 +4015,42 @@ export default function Home() {
         dueDate: draftProjectDueDate,
         system: draftIntakeProfile.system,
         status: "Draft",
+        npqConfirmationReason:
+          "Initial NPQ estimation strategy confirmed from project onboarding",
+        npq: {
+          country: draftIntakeProfile.country,
+          city: draftIntakeProfile.city,
+          location: draftIntakeProfile.location,
+          inquirySubject: draftIntakeProfile.inquirySubject || "",
+          inquiryReceived: draftIntakeProfile.inquiryReceived || "",
+          contactName: draftIntakeProfile.contactName || "",
+          contactEmail: draftIntakeProfile.contactEmail || "",
+          contactPhone: draftIntakeProfile.contactPhone || "",
+
+          primarySystem: draftIntakeProfile.system,
+          additionalSystems: draftNpQ.additionalSystems,
+          deliveryScope: draftNpQ.deliveryScope,
+          scopeNotes: draftIntakeProfile.buildings,
+
+          manufacturerStrategy: draftNpQ.manufacturerStrategy,
+          preferredManufacturer: draftNpQ.preferredManufacturer,
+          approvedManufacturers: draftNpQ.approvedManufacturers
+            .split(",")
+            .map((value) => value.trim())
+            .filter(Boolean),
+          manufacturerNotes: draftNpQ.manufacturerNotes,
+
+          pricingStrategy: draftNpQ.pricingStrategy,
+          primaryPricingSourceType: draftNpQ.primaryPricingSourceType,
+          primaryPricingSourceId: draftNpQ.primaryPricingSourceId,
+          fallbackPricingSources: draftNpQ.fallbackPricingSources,
+          projectCurrency: draftNpQ.projectCurrency,
+          pricingNotes: draftNpQ.pricingNotes,
+
+          expectedEvidence: draftNpQ.expectedEvidence,
+          boqAvailability: draftIntakeProfile.boqAvailability,
+          drawingAvailability: draftIntakeProfile.drawingAvailability,
+        },
       }),
     });
     const payload = await response.json();
@@ -12739,10 +12832,19 @@ export default function Home() {
               <ul>
                 {understandingRetryManifest.items.map((item) => <li key={item.itemReference}><strong>{item.itemReference}</strong> · {item.description}</li>)}
               </ul>
+              {understandingRetryArmed && understandingRetryState !== "running" && (
+                <p className="intake-guardrail-confirm-notice">
+                  Running the controlled AI understanding retry for exactly these {understandingRetryManifest.itemCount} items. The historical run will remain unchanged, and matching and pricing will not start.
+                </p>
+              )}
               <button
                 disabled={understandingRetryState === "running"}
                 onClick={async () => {
-                  if (!window.confirm("Run the controlled AI understanding retry for exactly these 6 items? The historical run will remain unchanged, and matching and pricing will not start.")) return;
+                  if (!understandingRetryArmed) {
+                    setUnderstandingRetryArmed(true);
+                    return;
+                  }
+                  setUnderstandingRetryArmed(false);
                   setUnderstandingRetryState("running");
                   setUnderstandingRetryMessage("Running the controlled retry…");
                   try {
@@ -12760,8 +12862,13 @@ export default function Home() {
                   }
                 }}
               >
-                {understandingRetryState === "running" ? "Retry running…" : "Confirm and run 6-item retry"}
+                {understandingRetryState === "running" ? "Retry running…" : understandingRetryArmed ? `Confirm: run ${understandingRetryManifest.itemCount}-item retry` : `Confirm and run ${understandingRetryManifest.itemCount}-item retry`}
               </button>
+              {understandingRetryArmed && understandingRetryState !== "running" && (
+                <button type="button" className="intake-guardrail-cancel" onClick={() => setUnderstandingRetryArmed(false)}>
+                  Cancel
+                </button>
+              )}
             </div>
           )}
           {understandingRetryMessage && <small role="status">{understandingRetryMessage}</small>}
@@ -12805,10 +12912,19 @@ export default function Home() {
                   </ul>
                 </>
               )}
+              {understandingPilotArmed && !understandingRunning && (
+                <p className="intake-guardrail-confirm-notice">
+                  Running AI understanding on {understandingPilotManifest.selectedItemCount} selected BOQ items. Results will require engineer review and will not start matching or pricing.
+                </p>
+              )}
               <button
                 disabled={understandingRunning || understandingPilotManifest.selectedItemCount < 1}
                 onClick={async () => {
-                  if (!window.confirm(`Run AI understanding on ${understandingPilotManifest.selectedItemCount} selected BOQ items? Results will require engineer review and will not start matching or pricing.`)) return;
+                  if (!understandingPilotArmed) {
+                    setUnderstandingPilotArmed(true);
+                    return;
+                  }
+                  setUnderstandingPilotArmed(false);
                   setUnderstandingRunning(true);
                   setUnderstandingMessage(`Running the controlled AI pilot on ${understandingPilotManifest.selectedItemCount} items…`);
                   try {
@@ -12828,8 +12944,17 @@ export default function Home() {
                   }
                 }}
               >
-                {understandingRunning ? "Running AI pilot…" : `Run AI pilot on ${understandingPilotManifest.selectedItemCount} items`}
+                {understandingRunning
+                  ? "Running AI pilot…"
+                  : understandingPilotArmed
+                    ? `Confirm: run on ${understandingPilotManifest.selectedItemCount} items`
+                    : `Run AI pilot on ${understandingPilotManifest.selectedItemCount} items`}
               </button>
+              {understandingPilotArmed && !understandingRunning && (
+                <button type="button" className="intake-guardrail-cancel" onClick={() => setUnderstandingPilotArmed(false)}>
+                  Cancel
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -18910,11 +19035,13 @@ export default function Home() {
           <section className="project-wizard">
             <header>
               <div>
-                <small>NEW LOCAL PROJECT · STEP {newProjectStep} OF 2</small>
+                <small>NEW PROJECT · STEP {newProjectStep} OF 3</small>
                 <h2 id="new-project-title">
                   {newProjectStep === 1
                     ? "Project identity"
-                    : "Review startup policy"}
+                    : newProjectStep === 2
+                      ? "NPQ estimation strategy"
+                      : "Review & confirm"}
                 </h2>
               </div>
               <button onClick={closeNewProjectWizard} aria-label="Close">
@@ -18927,7 +19054,10 @@ export default function Home() {
             >
               <span className="active">1 · Identity</span>
               <span className={newProjectStep === 2 ? "active" : ""}>
-                2 · Startup controls
+                2 · NPQ Strategy
+              </span>
+              <span className={newProjectStep === 3 ? "active" : ""}>
+                3 · Review
               </span>
             </div>
             <div className="wizard-body">
@@ -19234,51 +19364,280 @@ export default function Home() {
                     </div>
                   )}
                 </>
+              ) : newProjectStep === 2 ? (
+                <>
+                  <div className="intake-only-note">
+                    <strong>NPQ estimation context</strong>
+                    <p>
+                      Define how this inquiry should be estimated before documents,
+                      BOQ understanding, product matching or pricing starts. This
+                      strategy does not approve a product, price or quotation.
+                    </p>
+                  </div>
+
+                  <div className="field-row">
+                    <label>
+                      Primary system *
+                      <select
+                        value={draftIntakeProfile.system}
+                        onChange={(event) =>
+                          setDraftIntakeProfile((current) => ({
+                            ...current,
+                            system: event.target.value,
+                          }))
+                        }
+                      >
+                        <option>Fire Detection &amp; Alarm</option>
+                        <option>Public Address &amp; Voice Alarm</option>
+                        <option>Building Management Systems</option>
+                        <option>Lighting Control Systems</option>
+                        <option>Guest Room Management Systems</option>
+                        <option>CCTV</option>
+                        <option>Access Control Systems</option>
+                        <option>Intrusion Detection Systems</option>
+                        <option>Disabled Toilet Alarm Systems</option>
+                        <option>Nurse Call Systems</option>
+                        <option>Structured Data &amp; Network Infrastructure</option>
+                        <option>IPTV / MATV / SMATV Systems</option>
+                        <option>Digital Signage Systems</option>
+                        <option>Audio Visual Systems</option>
+                        <option>Car Park Management Systems</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Delivery scope *
+                      <select
+                        value={draftNpQ.deliveryScope}
+                        onChange={(event) =>
+                          setDraftNpQ((current) => ({
+                            ...current,
+                            deliveryScope:
+                              event.target.value as ProjectNpQDraft["deliveryScope"],
+                          }))
+                        }
+                      >
+                        <option>Materials Only</option>
+                        <option>Supply and Installation</option>
+                        <option>
+                          Supply, Installation, Testing and Commissioning
+                        </option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <label>
+                    Additional systems
+                    <input
+                      value={draftNpQ.additionalSystems.join(", ")}
+                      onChange={(event) =>
+                        setDraftNpQ((current) => ({
+                          ...current,
+                          additionalSystems: event.target.value
+                            .split(",")
+                            .map((value) => value.trim())
+                            .filter(Boolean),
+                        }))
+                      }
+                      placeholder="Comma separated, e.g. CCTV, Access Control"
+                    />
+                  </label>
+
+                  <div className="field-row">
+                    <label>
+                      Manufacturer strategy *
+                      <select
+                        value={draftNpQ.manufacturerStrategy}
+                        onChange={(event) =>
+                          setDraftNpQ((current) => ({
+                            ...current,
+                            manufacturerStrategy:
+                              event.target
+                                .value as ProjectNpQDraft["manufacturerStrategy"],
+                          }))
+                        }
+                      >
+                        <option>Detect from Specification</option>
+                        <option>Fixed Manufacturer</option>
+                        <option>Preferred Manufacturer</option>
+                        <option>Approved Manufacturers</option>
+                        <option>Open Manufacturer</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Preferred / fixed manufacturer
+                      <input
+                        value={draftNpQ.preferredManufacturer}
+                        onChange={(event) =>
+                          setDraftNpQ((current) => ({
+                            ...current,
+                            preferredManufacturer: event.target.value,
+                          }))
+                        }
+                        placeholder="e.g. Notifier, Honeywell, Siemens"
+                      />
+                    </label>
+                  </div>
+
+                  <label>
+                    Approved manufacturers
+                    <input
+                      value={draftNpQ.approvedManufacturers}
+                      onChange={(event) =>
+                        setDraftNpQ((current) => ({
+                          ...current,
+                          approvedManufacturers: event.target.value,
+                        }))
+                      }
+                      placeholder="Comma separated approved brands"
+                    />
+                  </label>
+
+                  <label>
+                    Manufacturer notes
+                    <textarea
+                      value={draftNpQ.manufacturerNotes}
+                      onChange={(event) =>
+                        setDraftNpQ((current) => ({
+                          ...current,
+                          manufacturerNotes: event.target.value,
+                        }))
+                      }
+                      placeholder="Compatibility, existing system, approved vendor or brand restrictions"
+                    />
+                  </label>
+
+                  <div className="field-row">
+                    <label>
+                      Pricing strategy *
+                      <select
+                        value={draftNpQ.pricingStrategy}
+                        onChange={(event) =>
+                          setDraftNpQ((current) => ({
+                            ...current,
+                            pricingStrategy:
+                              event.target
+                                .value as ProjectNpQDraft["pricingStrategy"],
+                          }))
+                        }
+                      >
+                        <option>Price List</option>
+                        <option>Supplier Quotation</option>
+                        <option>Historical Project</option>
+                        <option>Contract Price</option>
+                        <option>Manual Price</option>
+                        <option>Mixed Sources</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Project currency *
+                      <select
+                        value={draftNpQ.projectCurrency}
+                        onChange={(event) =>
+                          setDraftNpQ((current) => ({
+                            ...current,
+                            projectCurrency: event.target.value,
+                          }))
+                        }
+                      >
+                        <option>SAR</option>
+                        <option>USD</option>
+                        <option>EUR</option>
+                        <option>AED</option>
+                        <option>EGP</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <div className="field-row">
+                    <label>
+                      Primary pricing source type
+                      <select
+                        value={draftNpQ.primaryPricingSourceType}
+                        onChange={(event) =>
+                          setDraftNpQ((current) => ({
+                            ...current,
+                            primaryPricingSourceType: event.target.value,
+                          }))
+                        }
+                      >
+                        <option value="">Select source type…</option>
+                        <option>Global Product Price List</option>
+                        <option>Project Price List</option>
+                        <option>Supplier Quotation</option>
+                        <option>Contract Price</option>
+                        <option>Historical Project</option>
+                      </select>
+                    </label>
+
+                    <label>
+                      Selected price source / list
+                      <input
+                        value={draftNpQ.primaryPricingSourceId}
+                        onChange={(event) =>
+                          setDraftNpQ((current) => ({
+                            ...current,
+                            primaryPricingSourceId: event.target.value,
+                          }))
+                        }
+                        placeholder="Select from library later or enter reference"
+                      />
+                    </label>
+                  </div>
+
+                  <label>
+                    Pricing notes
+                    <textarea
+                      value={draftNpQ.pricingNotes}
+                      onChange={(event) =>
+                        setDraftNpQ((current) => ({
+                          ...current,
+                          pricingNotes: event.target.value,
+                        }))
+                      }
+                      placeholder="Discount policy, supplier preference, project-specific commercial assumptions"
+                    />
+                  </label>
+
+                  <div className="project-focus-card">
+                    <span>EXPECTED PROJECT EVIDENCE</span>
+                    <strong>Declared inputs for this NPQ</strong>
+                    <div className="field-row">
+                      {[
+                        "BOQ",
+                        "Technical Specifications",
+                        "Drawings",
+                        "Approved Vendor List",
+                        "Datasheets",
+                        "Supplier Quotations",
+                        "Previous Projects",
+                        "Price Lists",
+                      ].map((evidence) => (
+                        <label key={evidence}>
+                          <input
+                            type="checkbox"
+                            checked={draftNpQ.expectedEvidence.includes(evidence)}
+                            onChange={(event) =>
+                              setDraftNpQ((current) => ({
+                                ...current,
+                                expectedEvidence: event.target.checked
+                                  ? [...current.expectedEvidence, evidence]
+                                  : current.expectedEvidence.filter(
+                                      (entry) => entry !== evidence,
+                                    ),
+                              }))
+                            }
+                          />
+                          {evidence}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </>
               ) : (
                 <>
-                  <div className="startup-policy-grid">
-                    <article>
-                      <span>1</span>
-                      <div>
-                        <strong>Empty evidence workspace</strong>
-                        <p>
-                          Documents are added after creation through the
-                          controlled role-first intake.
-                        </p>
-                      </div>
-                    </article>
-                    <article>
-                      <span>2</span>
-                      <div>
-                        <strong>No inherited prices</strong>
-                        <p>
-                          No catalogue discount, supplier price, RFQ, award or
-                          quotation approval is assumed.
-                        </p>
-                      </div>
-                    </article>
-                    <article>
-                      <span>3</span>
-                      <div>
-                        <strong>Commercial controls start open</strong>
-                        <p>
-                          Exchange rate, client payment, delivery location,
-                          delivery period and freight terms require later
-                          confirmation.
-                        </p>
-                      </div>
-                    </article>
-                    <article>
-                      <span>4</span>
-                      <div>
-                        <strong>Existing project stays unchanged</strong>
-                        <p>
-                          Creating this workspace does not rename, blank,
-                          archive or modify the active project.
-                        </p>
-                      </div>
-                    </article>
-                  </div>
                   <div className="new-project-review">
                     <span>
                       <small>PROJECT</small>
@@ -19301,36 +19660,63 @@ export default function Home() {
                       <strong>{draftProjectDueDate || "Not set"}</strong>
                     </span>
                     <span>
-                      <small>INQUIRY</small>
+                      <small>PRIMARY SYSTEM</small>
+                      <strong>{draftIntakeProfile.system}</strong>
+                    </span>
+                    <span>
+                      <small>DELIVERY SCOPE</small>
+                      <strong>{draftNpQ.deliveryScope}</strong>
+                    </span>
+                    <span>
+                      <small>MANUFACTURER STRATEGY</small>
                       <strong>
-                        {draftIntakeProfile.inquirySubject?.trim() ||
-                          "Not recorded"}
-                        {draftIntakeProfile.inquiryReceived
-                          ? ` · ${draftIntakeProfile.inquiryReceived}`
+                        {draftNpQ.manufacturerStrategy}
+                        {draftNpQ.preferredManufacturer.trim()
+                          ? ` · ${draftNpQ.preferredManufacturer.trim()}`
                           : ""}
                       </strong>
                     </span>
                     <span>
-                      <small>CONTACT</small>
+                      <small>PRICING STRATEGY</small>
                       <strong>
-                        {draftIntakeProfile.contactName?.trim() ||
-                          "Not assigned"}
-                        {draftIntakeProfile.contactEmail
-                          ? ` · ${draftIntakeProfile.contactEmail}`
+                        {draftNpQ.pricingStrategy} · {draftNpQ.projectCurrency}
+                      </strong>
+                    </span>
+                    <span>
+                      <small>PRICE SOURCE</small>
+                      <strong>
+                        {draftNpQ.primaryPricingSourceType ||
+                          "Not selected yet"}
+                        {draftNpQ.primaryPricingSourceId.trim()
+                          ? ` · ${draftNpQ.primaryPricingSourceId.trim()}`
                           : ""}
                       </strong>
                     </span>
                     <span>
-                      <small>DECLARED SCOPE</small>
-                      <strong>{draftIntakeProfile.scopeIntent}</strong>
+                      <small>EXPECTED EVIDENCE</small>
+                      <strong>
+                        {draftNpQ.expectedEvidence.length
+                          ? draftNpQ.expectedEvidence.join(" · ")
+                          : "None declared"}
+                      </strong>
                     </span>
                     <span>
-                      <small>DOCUMENTS</small>
+                      <small>DOCUMENT AVAILABILITY</small>
                       <strong>
                         BOQ {draftIntakeProfile.boqAvailability} · Drawings{" "}
                         {draftIntakeProfile.drawingAvailability}
                       </strong>
                     </span>
+                  </div>
+
+                  <div className="intake-only-note">
+                    <strong>Authority boundary</strong>
+                    <p>
+                      Confirming this onboarding strategy will establish project
+                      context only. Product selection, technical compliance,
+                      pricing approval and quotation approval remain separate
+                      governed decisions.
+                    </p>
                   </div>
                 </>
               )}
@@ -19342,8 +19728,8 @@ export default function Home() {
                     Cancel
                   </button>
                   <span>
-                    Only the project name is required; any supplied reference
-                    must be unique.
+                    Project identity starts the NPQ. Strategy is defined before
+                    document processing.
                   </span>
                   <button
                     disabled={
@@ -19353,10 +19739,10 @@ export default function Home() {
                     }
                     onClick={() => setNewProjectStep(2)}
                   >
-                    Review startup controls →
+                    Define NPQ strategy →
                   </button>
                 </>
-              ) : (
+              ) : newProjectStep === 2 ? (
                 <>
                   <button
                     className="secondary"
@@ -19364,7 +19750,41 @@ export default function Home() {
                   >
                     ← Back
                   </button>
-                  <span>Nothing changes until the project is created.</span>
+                  <span>
+                    Strategy remains a draft until the final confirmation step.
+                  </span>
+                  <button
+                    disabled={
+                      !draftIntakeProfile.system ||
+                      !draftNpQ.deliveryScope ||
+                      !draftNpQ.projectCurrency ||
+                      (draftNpQ.manufacturerStrategy === "Fixed Manufacturer" &&
+                        !draftNpQ.preferredManufacturer.trim()) ||
+                      (draftNpQ.manufacturerStrategy ===
+                        "Approved Manufacturers" &&
+                        !draftNpQ.approvedManufacturers.trim()) ||
+                      (["Price List", "Supplier Quotation", "Contract Price"].includes(
+                        draftNpQ.pricingStrategy,
+                      ) &&
+                        !draftNpQ.primaryPricingSourceType.trim())
+                    }
+                    onClick={() => setNewProjectStep(3)}
+                  >
+                    Review NPQ →
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    className="secondary"
+                    onClick={() => setNewProjectStep(2)}
+                  >
+                    ← Back
+                  </button>
+                  <span>
+                    Project identity and NPQ strategy are committed together.
+                    If NPQ confirmation fails, no project is created.
+                  </span>
                   <button
                     disabled={
                       Boolean(draftProjectIdentityConflict) ||
@@ -19372,7 +19792,7 @@ export default function Home() {
                     }
                     onClick={createLocalProject}
                   >
-                    Create separate project
+                    Create project
                   </button>
                 </>
               )}

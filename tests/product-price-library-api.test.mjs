@@ -38,6 +38,39 @@ test("general price-list persistence is idempotent by document SHA-256", async (
   assert.deepEqual(result, { sourceId: "source-existing", idempotent: true, duplicateBasis: "SHA-256" });
 });
 
+test("per-record price review can approve, reject, or supersede independently of the bulk source-level review path", async () => {
+  const source = await readFile(new URL("../worker/product-price-library-api.mjs", import.meta.url), "utf8");
+  assert.match(source, /\/api\\\/price-records\\\/\(\[\^\/\]\+\)\\\/review/);
+  assert.match(source, /"Approve", "Reject", "Supersede"/);
+  assert.match(source, /REVIEW_REASON_REQUIRED/);
+  assert.match(source, /PRICE_RECORD_DECISION_REQUIRED/);
+});
+
+test("per-record Costing approval requires a reviewer-supplied or already-recorded current validity date, never a default", async () => {
+  const source = await readFile(new URL("../worker/product-price-library-api.mjs", import.meta.url), "utf8");
+  const recordReviewBlock = source.slice(source.indexOf("priceRecordMatch"), source.indexOf("priceConflictsMatch"));
+  assert.match(recordReviewBlock, /PRICE_VALIDITY_REQUIRED/);
+  assert.match(recordReviewBlock, /PRICE_VALIDITY_MALFORMED/);
+  assert.doesNotMatch(recordReviewBlock, /new Date\(\)\.toISOString\(\)\.slice/);
+});
+
+test("rejecting or superseding a price record forces it out of Costing and off approval, never silently deleted", async () => {
+  const source = await readFile(new URL("../worker/product-price-library-api.mjs", import.meta.url), "utf8");
+  const recordReviewBlock = source.slice(source.indexOf("priceRecordMatch"), source.indexOf("priceConflictsMatch"));
+  assert.match(recordReviewBlock, /approvalStatus = decisionType === "Reject" \? "Rejected" : "Superseded"/);
+  assert.match(recordReviewBlock, /downstream_use='Discovery Only'/);
+  assert.doesNotMatch(recordReviewBlock, /DELETE FROM price_records/);
+});
+
+test("price conflicts use the existing price_conflicts table -- never resolved by a hidden cheapest-wins default", async () => {
+  const source = await readFile(new URL("../worker/product-price-library-api.mjs", import.meta.url), "utf8");
+  const conflictBlock = source.slice(source.indexOf("priceConflictsMatch"), source.indexOf("return json({ error: { code: \"PRODUCT_LIBRARY_API_NOT_FOUND\""));
+  assert.match(conflictBlock, /INSERT INTO price_conflicts/);
+  assert.match(conflictBlock, /PRICE_CONFLICT_RECORDS_REQUIRED/);
+  assert.match(conflictBlock, /PRICE_CONFLICT_RESOLUTION_REQUIRED/);
+  assert.doesNotMatch(conflictBlock, /\.sort\(|Math\.min|MIN\(/);
+});
+
 test("confirmed catalogue and price-list ingestion selects structure-specific or general importer without BOQ extraction", async () => {
   const source = await readFile(new URL("../worker/product-price-library-api.mjs", import.meta.url), "utf8");
   assert.match(source, /hasHoneywellFarenhytWorkbookStructure\(bytes\)/);

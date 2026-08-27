@@ -1,6 +1,7 @@
 import { REQUIREMENT_ENGINE_VERSION, REQUIREMENT_MODEL_VERSION, REQUIREMENT_RULESET_VERSION, buildTechnicalRequirementProfile } from "../app/domain/technical-requirement-engine.mjs";
 import { REQUIREMENT_INTELLIGENCE_VERSION } from "../app/domain/requirement-intelligence-engine.mjs";
 import { applicationActor, resolveApplicationContext } from "./application-context.mjs";
+import { currentApprovedUnderstandingFacts } from "./estimator-understanding-review-api.mjs";
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 const id = (prefix) => `${prefix}_${crypto.randomUUID()}`; const now = () => new Date().toISOString();
@@ -9,6 +10,33 @@ const ownedItem = (db, itemId, userId) => db.prepare(`SELECT b.*, b.evidence_doc
 const currentProfile = (db, itemId) => db.prepare("SELECT * FROM requirement_profile_versions WHERE boq_item_id=? AND superseded_at IS NULL ORDER BY version_number DESC LIMIT 1").bind(itemId).first();
 const fingerprint = async (value) => [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(value))))].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 const updateRun = async (db, runId, stage, status, progress, error = null) => { if (!runId) return; const stamp = now(); await db.batch([db.prepare("UPDATE document_processing_runs SET stage=?, status=?, progress=?, error_code=?, error_message=?, technical_details=?, suggested_action=?, started_at=COALESCE(started_at, ?), completed_at=CASE WHEN ? IN ('Completed','Needs Review','Failed','Cancelled') THEN ? ELSE NULL END, updated_at=? WHERE id=?").bind(stage, status, progress, error?.code || null, error?.message || null, error?.technicalDetails || null, error?.suggestedAction || null, stamp, status, stamp, stamp, runId), db.prepare("INSERT INTO processing_history (id, run_id, from_status, to_status, progress, actor, error_code, message) VALUES (?, ?, NULL, ?, ?, 'Technical Requirement Engine', ?, ?)").bind(id("history"), runId, status, progress, error?.code || null, error?.message || stage)]); };
+
+const understandingFactValue = (fact) => fact && fact.value != null && !["MISSING", "NOT_APPLICABLE"].includes(fact.origin) ? fact.value : null;
+
+// Requirement Intelligence facts (deterministic, evidence-derived) are a
+// separate, reviewable layer from requirement_attributes (AI spec-extraction
+// output). Only a fact an engineer has explicitly APPROVED -- for a
+// requirement that is CURRENTLY confirmed-linked to THIS BOQ item -- may
+// reach Product Matching. Scoping the join through requirement_profile_versions
+// (boq_item_id) and intersecting with the currently-loaded confirmed
+// requirement ids together guarantee no leakage from another BOQ item, from a
+// rejected/removed link, or from an unreviewed suggestion. Only fact types
+// with a proven, governed canonical attribute name are promoted -- explicit
+// aliases only, no fuzzy merging.
+const INTELLIGENCE_ATTRIBUTE_NAME = { Addressability: "addressing", "Action Type": "action_type" };
+const loadApprovedIntelligenceAttributes = async (db, item, requirementIds) => {
+  if (!requirementIds.length) return new Map();
+  const placeholders = requirementIds.map(() => "?").join(",");
+  const rows = await db.prepare(`SELECT rif.* FROM requirement_intelligence_facts rif JOIN requirement_profile_versions rpv ON rpv.id = rif.profile_version_id WHERE rpv.boq_item_id = ? AND rif.review_status = 'Approved' AND rif.requirement_id IN (${placeholders}) ORDER BY rif.reviewed_at DESC`).bind(item.id, ...requirementIds).all();
+  const byRequirement = new Map();
+  for (const fact of rows.results || []) {
+    const canonicalName = INTELLIGENCE_ATTRIBUTE_NAME[fact.fact_type]; if (!canonicalName) continue;
+    const list = byRequirement.get(fact.requirement_id) || []; if (list.some((entry) => entry.name === canonicalName)) continue; // most-recent approval wins per attribute (ORDER BY reviewed_at DESC)
+    list.push({ name: canonicalName, operator: "Equal", normalizedValue: parse(fact.current_value, fact.current_value), normalizedUnit: null, confidence: fact.confidence, origin: "PROJECT_SPECIFICATION", source: { page: fact.source_page, pageTo: fact.source_page_to, clause: fact.source_clause, section: fact.source_section } });
+    byRequirement.set(fact.requirement_id, list);
+  }
+  return byRequirement;
+};
 
 const loadInputs = async (db, item) => {
   const [linksResult, factsResult, relationsResult] = await Promise.all([
@@ -24,6 +52,8 @@ const loadInputs = async (db, item) => {
     requirements.push({ id: row.requirement_id, originalText: row.original_text, normalizedRequirement: row.normalized_requirement, requirementType: row.requirement_type, requirementCategory: row.requirement_category, system: row.system, category: row.category, condition: row.condition, confidence: row.confidence, sourceType: "Specification", source: parse(row.source_location, {}), attributes: (attributes.results || []).map((entry) => ({ name: entry.name, operator: entry.operator, normalizedValue: parse(entry.normalized_value, entry.normalized_value), normalizedUnit: entry.normalized_unit, confidence: entry.confidence, source: parse(entry.source_location, {}) })), standards: standards.results || [], manufacturers: manufacturers.results || [], compatibility: (compatibility.results || []).map((entry) => ({ ...entry, targetItem: entry.target_item, relationshipType: entry.relationship_type })), accessories: accessories.results || [] });
     links.push({ requirementId: row.requirement_id, status: row.status, confidence: row.confidence, linkMethod: row.link_method, evidence: parse(row.evidence, []) });
   }
+  const approvedIntelligence = await loadApprovedIntelligenceAttributes(db, item, requirements.map((entry) => entry.id));
+  for (const requirement of requirements) { const promoted = approvedIntelligence.get(requirement.id); if (promoted?.length) requirement.attributes = [...requirement.attributes, ...promoted]; }
   return { requirements, links, facts: factsResult.results || [], relationships: (relationsResult.results || []).map((entry) => ({ ...entry, relationshipType: entry.relationship_type, rightEntityId: entry.right_entity_id })) };
 };
 
@@ -41,7 +71,12 @@ const persistProfile = async (db, item, userId, profile, inputFingerprint, previ
 };
 
 export const executeRequirementProfile = async (env, { itemId, userId, runId = null }) => {
-  try { const item = await ownedItem(env.DB, itemId, userId); if (!item) throw Object.assign(new Error("BOQ item not found."), { code: "BOQ_ITEM_NOT_FOUND" }); await updateRun(env.DB, runId, "Collecting Sources", "Processing", 15); const previous = await currentProfile(env.DB, item.id); const inputs = await loadInputs(env.DB, item); await updateRun(env.DB, runId, "Resolving Applicability", "Processing", 40); const boqItem = { id: item.id, itemNumber: item.item_number, description: item.description, system: item.system_value, category: item.category, subcategory: item.subcategory, unit: item.normalized_unit || item.original_unit, quantity: item.numeric_quantity, productFamily: item.subcategory || item.category, manufacturer: item.manufacturer || null, partNumber: item.part_number || null, specificationReference: item.specification_reference, classificationConfidence: item.system_confidence || item.extraction_confidence, source: parse(item.source_location, {}) }; const inputFingerprint = await fingerprint({ boqItem, links: inputs.links, requirements: inputs.requirements, facts: inputs.facts, relationships: inputs.relationships, ruleset: REQUIREMENT_RULESET_VERSION }); if (previous?.input_fingerprint === inputFingerprint) { await updateRun(env.DB, runId, "Completed", "Completed", 100); return { profileId: previous.id, status: previous.status, idempotent: true }; } await updateRun(env.DB, runId, "Consolidating Requirements", "Processing", 60); const profile = buildTechnicalRequirementProfile({ boqItem, links: inputs.links, requirements: inputs.requirements, knowledgeFacts: inputs.facts, relationships: inputs.relationships, previousVersion: Number(previous?.version_number || 0) }); await updateRun(env.DB, runId, "Saving Profile", "Processing", 85); const persisted = await persistProfile(env.DB, item, userId, profile, inputFingerprint, previous, runId); await updateRun(env.DB, runId, "Completed", persisted.status === "Blocked" ? "Needs Review" : persisted.status, 100); return { ...persisted, profile, idempotent: false }; } catch (error) { await updateRun(env.DB, runId, "Failed", "Failed", 100, { code: error.code || "REQUIREMENT_PROFILE_FAILED", message: error.message, technicalDetails: error.stack, suggestedAction: "Review source links and retry profile generation." }); throw error; }
+  try { const item = await ownedItem(env.DB, itemId, userId); if (!item) throw Object.assign(new Error("BOQ item not found."), { code: "BOQ_ITEM_NOT_FOUND" }); await updateRun(env.DB, runId, "Collecting Sources", "Processing", 15); const previous = await currentProfile(env.DB, item.id); const inputs = await loadInputs(env.DB, item); await updateRun(env.DB, runId, "Resolving Applicability", "Processing", 40);
+    const approved = await currentApprovedUnderstandingFacts(env.DB, item.project_id, item.id);
+    const approvedSystem = understandingFactValue(approved?.system); const approvedCategory = understandingFactValue(approved?.category); const approvedProductFamily = understandingFactValue(approved?.productFamily);
+    const approvedAttributes = approved ? Object.fromEntries(Object.entries(approved.attributes || {}).map(([name, fact]) => [name, understandingFactValue(fact)]).filter(([, value]) => value != null)) : {};
+    const boqItem = { id: item.id, itemNumber: item.item_number, description: item.description, system: approvedSystem || item.system_value, category: approvedCategory || item.category, subcategory: item.subcategory, unit: item.normalized_unit || item.original_unit, quantity: item.numeric_quantity, productFamily: approvedProductFamily || item.subcategory || item.category, manufacturer: item.manufacturer || null, partNumber: item.part_number || null, specificationReference: item.specification_reference, classificationConfidence: item.system_confidence || item.extraction_confidence, source: parse(item.source_location, {}), attributes: approvedAttributes, classificationProvenance: { system: approvedSystem ? "Approved AI Understanding" : "BOQ Extraction", category: approvedCategory ? "Approved AI Understanding" : "BOQ Extraction", productFamily: approvedProductFamily ? "Approved AI Understanding" : "BOQ Extraction" } };
+    const inputFingerprint = await fingerprint({ boqItem, links: inputs.links, requirements: inputs.requirements, facts: inputs.facts, relationships: inputs.relationships, ruleset: REQUIREMENT_RULESET_VERSION }); if (previous?.input_fingerprint === inputFingerprint) { await updateRun(env.DB, runId, "Completed", "Completed", 100); return { profileId: previous.id, status: previous.status, idempotent: true }; } await updateRun(env.DB, runId, "Consolidating Requirements", "Processing", 60); const profile = buildTechnicalRequirementProfile({ boqItem, links: inputs.links, requirements: inputs.requirements, knowledgeFacts: inputs.facts, relationships: inputs.relationships, previousVersion: Number(previous?.version_number || 0) }); await updateRun(env.DB, runId, "Saving Profile", "Processing", 85); const persisted = await persistProfile(env.DB, item, userId, profile, inputFingerprint, previous, runId); await updateRun(env.DB, runId, "Completed", persisted.status === "Blocked" ? "Needs Review" : persisted.status, 100); return { ...persisted, profile, idempotent: false }; } catch (error) { await updateRun(env.DB, runId, "Failed", "Failed", 100, { code: error.code || "REQUIREMENT_PROFILE_FAILED", message: error.message, technicalDetails: error.stack, suggestedAction: "Review source links and retry profile generation." }); throw error; }
 };
 
 const decision = async (db, profile, user, entityType, entityId, action, previousValue, newValue, reason, evidence) => db.batch([db.prepare("INSERT INTO requirement_profile_decisions (id, project_id, profile_version_id, entity_type, entity_id, action, previous_value, new_value, reason, evidence, decided_by, decided_role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(id("profileDecision"), profile.project_id, profile.id, entityType, entityId, action, JSON.stringify(previousValue), JSON.stringify(newValue), reason, JSON.stringify(evidence || null), user.id, user.role), db.prepare("INSERT INTO document_audit_events (id, project_id, actor_user_id, action, old_value, new_value, reason, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(id("audit"), profile.project_id, user.id, `Requirement Profile ${action}`, JSON.stringify(previousValue), JSON.stringify(newValue), reason, id("request"))]);

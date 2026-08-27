@@ -1,3 +1,5 @@
+import { sameManufacturerIdentity } from "./manufacturer-identity.mjs";
+
 export const IDENTITY_RULESET_VERSION = "identity-resolution-1.0.0";
 export const IDENTITY_RULESET_STATUS = "Active";
 
@@ -163,7 +165,7 @@ export const analyzeIdentityPair = async (leftInput, rightInput, context = {}) =
   add("IR-001", inputValid ? { matched: true, confidence: 100, humanExplanation: "Both product observations contain manufacturer, order code, description, and traceable record context.", machineExplanation: { left: sourceRefs(left), right: sourceRefs(right) } } : { matched: true, terminal: true, decision: "Needs Review", confidence: 100, failureReason: "IDENTITY_INPUT_INCOMPLETE", humanExplanation: "Required identity input is incomplete.", machineExplanation: { missing: [!left.manufacturerId && "left.manufacturer", !right.manufacturerId && "right.manufacturer", !text(left.partNumber) && "left.partNumber", !text(right.partNumber) && "right.partNumber", !text(left.description) && "left.description", !text(right.description) && "right.description"].filter(Boolean) } });
   if (terminal) return finish("Ambiguous");
 
-  const sameManufacturer = left.manufacturerId === right.manufacturerId || (compactText(left.manufacturer) && compactText(left.manufacturer) === compactText(right.manufacturer));
+  const sameManufacturer = left.manufacturerId === right.manufacturerId || (compactText(left.manufacturer) && sameManufacturerIdentity(left.manufacturer, right.manufacturer));
   add("IR-002", sameManufacturer ? { matched: true, confidence: 100, humanExplanation: "Both observations are in the same verified manufacturer namespace.", machineExplanation: { leftManufacturerId: left.manufacturerId, rightManufacturerId: right.manufacturerId } } : { matched: true, terminal: true, decision: "Different Products", confidence: 100, failureReason: "MANUFACTURER_NAMESPACE_DIFFERENT_OR_UNKNOWN", humanExplanation: "Manufacturer namespaces differ; identity cannot be shared.", machineExplanation: { leftManufacturerId: left.manufacturerId, rightManufacturerId: right.manufacturerId } });
   if (terminal) return finish("Different products");
 

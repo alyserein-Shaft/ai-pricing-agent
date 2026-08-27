@@ -92,7 +92,7 @@ export default defineConfig(async () => {
     },
     server: {
       host: "0.0.0.0",
-      allowedHosts: ["terminal.local"],
+      allowedHosts: ["terminal.local", "curve-administered-accountability-living.trycloudflare.com"],
       ...(isCodexSeatbeltSandbox
         ? { watch: { useFsEvents: false, usePolling: true } }
         : {}),

@@ -25,6 +25,42 @@ const normalized = (value) => String(value ?? "").toLowerCase().replace(/[^a-z0-
 const text = (value) => String(value ?? "").replace(/\s+/g, " ").trim();
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 
+// Sprint (Fire Alarm E2E fix 1) -- a single Excel sheet can hold rows whose
+// item-description text lands in different columns row-to-row (a merged- or
+// inconsistently-shaped source cell, not a parsing error): proven on Central
+// Kitchen - Makkah's "Div. 28" sheet, where 9 of 18 real Fire Alarm device
+// rows carried their description one column to the right of every sibling
+// row's description column, and were previously stored with description=null
+// (row_type "Unknown") even though the raw cell text was present all along.
+// detectHeaders/refineHeaderMapping still choose one dominant description
+// column for the sheet -- that stays the fast path for well-formed rows.
+// isPlausibleDescriptionText + the row-level fallback in extractRows below
+// only engage when that dominant column is blank/implausible for a
+// PARTICULAR row, and only ever look at the immediately adjacent columns
+// that are not already claimed by another mapped field (item number,
+// quantity, unit, ...) -- so a legitimate blank row, header row, or a
+// quantity/unit-bearing cell can never be mistaken for a description.
+const PLAUSIBLE_DESCRIPTION_MIN_LENGTH = 4;
+export const isPlausibleDescriptionText = (value) => {
+  const trimmed = text(value);
+  if (trimmed.length < PLAUSIBLE_DESCRIPTION_MIN_LENGTH) return false;
+  if (/^-?\d+(?:[.,]\d+)?$/.test(trimmed)) return false;
+  return /[a-z]/i.test(trimmed);
+};
+const ROW_LEVEL_DESCRIPTION_COLUMN_OFFSETS = [1, -1];
+const resolveRowDescription = (header, row, claimedColumns) => {
+  const assignedColumn = header.columns.description;
+  const assignedValue = text(row.values[assignedColumn]);
+  if (isPlausibleDescriptionText(assignedValue)) return { value: assignedValue, column: assignedColumn, rowLevelOverride: false };
+  for (const offset of ROW_LEVEL_DESCRIPTION_COLUMN_OFFSETS) {
+    const candidateColumn = assignedColumn + offset;
+    if (candidateColumn < 0 || claimedColumns.has(candidateColumn)) continue;
+    const candidateValue = text(row.values[candidateColumn]);
+    if (isPlausibleDescriptionText(candidateValue)) return { value: candidateValue, column: candidateColumn, rowLevelOverride: true };
+  }
+  return { value: assignedValue, column: assignedColumn, rowLevelOverride: false };
+};
+
 export class BoqExtractionError extends Error {
   constructor(code, userMessage, technicalDetails, suggestedAction, source = {}) {
     super(userMessage); this.name = "BoqExtractionError"; this.code = code; this.userMessage = userMessage; this.technicalDetails = technicalDetails; this.suggestedAction = suggestedAction; this.source = source;
@@ -127,10 +163,13 @@ const classifySheet = (sheet, header) => {
 const extractRows = ({ rows, header, sourceSheet = null, sourcePage = null, sourceKind, sequenceOffset = 0 }) => {
   if (!header) return [];
   const items = []; const sectionStack = [];
+  const claimedDescriptionNeighbors = new Set(Object.entries(header.columns).filter(([field]) => field !== "description").map(([, col]) => col));
   for (const row of rows.slice(header.rowIndex + header.depth)) {
     const value = (field) => header.columns[field] === undefined ? "" : row.values[header.columns[field]] ?? "";
     const formula = (field) => header.columns[field] === undefined ? null : row.formulas?.[header.columns[field]] || null;
     const mapped = Object.fromEntries(Object.keys(aliases).map((field) => [field, text(value(field))]));
+    const resolvedDescription = resolveRowDescription(header, row, claimedDescriptionNeighbors);
+    mapped.description = resolvedDescription.value;
     const quantity = parseQuantity(value("quantity"), formula("quantity")); const unit = normalizeUnit(value("unit"));
     const type = classifyBoqRowType({ values: row.values, mapped, quantity, unit });
     if (type === "Blank Separator") continue;
@@ -146,11 +185,12 @@ const extractRows = ({ rows, header, sourceSheet = null, sourcePage = null, sour
     if (type === "BOQ Item" && !quantity.original) warnings.push({ code: "MISSING_QUANTITY", message: "Quantity is missing" });
     if (unit.warning) warnings.push({ code: "UNIT_REVIEW", message: unit.warning });
     if (quantity.warning) warnings.push({ code: "QUANTITY_REVIEW", message: quantity.warning });
+    if (resolvedDescription.rowLevelOverride && description) warnings.push({ code: "DESCRIPTION_COLUMN_ROW_LEVEL_OVERRIDE", message: "This row's description was read from an adjacent column because the sheet's dominant description column was blank here." });
     const system = mapped.section ? { value: mapped.section, sourceType: "Extracted", confidence: 95, explicitlyStated: true } : detectSystem(`${sectionStack.join(" ")} ${description}`);
     const completeness = [description, type !== "BOQ Item" || unit.original, type !== "BOQ Item" || quantity.original].filter(Boolean).length;
     let confidence = clamp(Math.round((header.confidence + unit.confidence + quantity.confidence + completeness * 18) / 4), 0, 99);
     if (warnings.length || ["Unknown", "Section Header", "Subsection Header"].includes(type)) confidence = Math.min(confidence, warnings.length ? 74 : 89);
-    const sourceCells = Object.fromEntries(Object.entries(header.columns).map(([field, col]) => [field, row.cells?.[col] || null]));
+    const sourceCells = Object.fromEntries(Object.entries(header.columns).map(([field, col]) => [field, field === "description" ? (row.cells?.[resolvedDescription.column] || null) : (row.cells?.[col] || null)]));
     items.push({
       sequence: sequenceOffset + items.length + 1, itemNumber: mapped.itemNumber || null, parentItemNumber: null, section: sectionStack[0] || mapped.section || null, subsection: sectionStack.slice(1).join(" / ") || null, hierarchyDepth: depth || sectionStack.filter(Boolean).length, sectionPath: sectionStack.filter(Boolean),
       system, category: null, subcategory: null, description: description || null, normalizedDescription: description ? description.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim() : null,
