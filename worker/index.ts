@@ -41,6 +41,10 @@ import { handleProjectPricingLearningApi } from "./project-pricing-learning-api.
 import { handleEstimatorReadinessApi } from "./estimator-readiness-api.mjs";
 import { handleEstimatorUnderstandingApi } from "./estimator-understanding-api.mjs";
 import { handleEstimatorUnderstandingReviewApi } from "./estimator-understanding-review-api.mjs";
+import { handlePipelineOrchestrationApi } from "./pipeline-orchestration.mjs";
+import { handleBoqLineDecisionApi } from "./boq-line-decision-api.mjs";
+import { handleBoqLineBomApi } from "./boq-line-bom-api.mjs";
+import { handleBoqLineCostApi } from "./boq-line-cost-api.mjs";
 import { handleBoqAiDiagnosticApi } from "./boq-ai-diagnostic-api.mjs";
 import { securityHeaders } from "../app/domain/production-readiness.mjs";
 
@@ -130,8 +134,20 @@ const worker = {
     const estimatorUnderstandingResponse = await handleEstimatorUnderstandingApi(request, env);
     if (estimatorUnderstandingResponse) return secured(estimatorUnderstandingResponse);
 
-    const estimatorUnderstandingReviewResponse = await handleEstimatorUnderstandingReviewApi(request, env);
+    const estimatorUnderstandingReviewResponse = await handleEstimatorUnderstandingReviewApi(request, env, ctx);
     if (estimatorUnderstandingReviewResponse) return secured(estimatorUnderstandingReviewResponse);
+
+    const pipelineOrchestrationResponse = await handlePipelineOrchestrationApi(request, env);
+    if (pipelineOrchestrationResponse) return secured(pipelineOrchestrationResponse);
+
+    const boqLineDecisionResponse = await handleBoqLineDecisionApi(request, env);
+    if (boqLineDecisionResponse) return secured(boqLineDecisionResponse);
+
+    const boqLineBomResponse = await handleBoqLineBomApi(request, env);
+    if (boqLineBomResponse) return secured(boqLineBomResponse);
+
+    const boqLineCostResponse = await handleBoqLineCostApi(request, env);
+    if (boqLineCostResponse) return secured(boqLineCostResponse);
 
     const dashboardApiResponse = await handleDashboardApi(request, env);
     if (dashboardApiResponse) return secured(dashboardApiResponse);

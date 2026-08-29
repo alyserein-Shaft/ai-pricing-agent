@@ -19,6 +19,7 @@ export type MatchCandidateView = {
   recommendation_tier: string; confidence_state: string; confidence_score: number;
   matchingBasis: string[]; commercial_availability: string; explanation: string;
   mandatoryFailures: unknown[]; score: number;
+  familyMatchTier?: number | null; isFallbackCandidate?: boolean; rankingReason?: string | null;
 };
 export type SafetyDecisionView = {
   id: string; version_number: number; safety_state: string; compliance_state: string;

@@ -157,3 +157,34 @@ export function systemTaxonomyMetadata(system) {
   if (!pack) return null;
   return { system, version: pack.version, taxonomy: pack.taxonomy, attributeProfiles: pack.attributeProfiles };
 }
+
+// Phase 5 workflow-continuity fix -- the single place a project's actual
+// system composition is computed from real, classified BOQ evidence, so a
+// project's identity is never frozen at whatever a user guessed at creation
+// time. Callers supply raw {system, itemCount} rows already scoped to the
+// project's current BOQ evidence (worker/dashboard-api.mjs); this only
+// normalizes each raw label through the registry (so "Fire Detection &
+// Alarm" and "Fire Alarm" merge into one registered system the same way
+// resolveSystemNameFromText already treats them elsewhere) and aggregates.
+// An unregistered/free-text system name is kept as-is (trimmed) rather than
+// dropped -- this must support mixed and pre-taxonomy systems, not just
+// registered packs. Returns isDerived:false with an empty systems list when
+// there is no BOQ evidence yet, so a caller can fall back to the creation-time
+// guess only in that one genuine case.
+export function deriveSystemComposition(rawRows = []) {
+  const totalsByName = new Map();
+  for (const row of rawRows) {
+    const label = String(row?.system ?? "").trim();
+    if (!label) continue;
+    const normalized = resolveSystemNameFromText(label) || label;
+    const entry = totalsByName.get(normalized) || { system: normalized, itemCount: 0 };
+    entry.itemCount += Number(row?.itemCount || 0);
+    totalsByName.set(normalized, entry);
+  }
+  const totalItems = [...totalsByName.values()].reduce((sum, entry) => sum + entry.itemCount, 0);
+  if (!totalItems) return { systems: [], primarySystem: null, totalItems: 0, isDerived: false };
+  const systems = [...totalsByName.values()]
+    .sort((a, b) => b.itemCount - a.itemCount || a.system.localeCompare(b.system))
+    .map((entry) => ({ ...entry, share: Math.round((entry.itemCount / totalItems) * 100) }));
+  return { systems, primarySystem: systems[0].system, totalItems, isDerived: true };
+}

@@ -2,6 +2,7 @@ import { requireMigratedTables } from "./schema-requirements.mjs";
 import { DASHBOARD_MODEL_VERSION, METRIC_REGISTRY, deriveProjectDashboard } from "../app/domain/dashboard-workflow-engine.mjs";
 import { authenticateLibraryActor } from "./library-auth.mjs";
 import { currentBoqEvidenceCounts, currentBoqEvidenceFrom, currentBoqItemPredicate } from "./current-evidence-scope.mjs";
+import { deriveSystemComposition } from "../app/domain/system-knowledge-registry.mjs";
 import {
   normalizeNpQProfile,
   npqFingerprint,
@@ -213,11 +214,31 @@ const pricingTotals = async (db, projectId) => {
     throw error;
   }
 };
+// Phase 5 workflow-continuity fix -- a project's system_domain was previously
+// set once at creation from a free-text guess (see the onboarding handlers
+// below) and never revisited, so a genuinely multi-system project (e.g.
+// Central Kitchen -- Makkah, whose largest system by BOQ row count is Fire
+// Alarm) could permanently display an unrelated creation-time label. This
+// reads the project's OWN current, classified BOQ evidence (the same
+// current-evidence scope every other engine already treats as authoritative)
+// and derives real system composition through the shared registry
+// normalizer, so "detected systems" always reflects what was actually
+// extracted, not what a form field guessed months earlier.
+const projectSystemComposition = async (db, projectId) => {
+  try {
+    const rows = await db.prepare(`SELECT b.system_value system, COUNT(*) itemCount FROM ${currentBoqEvidenceFrom("b")} WHERE b.project_id=? AND ${currentBoqItemPredicate("b")} AND b.system_value IS NOT NULL AND b.system_value<>'' GROUP BY b.system_value`).bind(projectId).all();
+    return deriveSystemComposition(rows.results || []);
+  } catch (error) {
+    if (String(error).includes("no such table")) return { systems: [], primarySystem: null, totalItems: 0, isDerived: false };
+    throw error;
+  }
+};
+
 const sourceVersion = (project, facts) => `${project.updated_at || "0"}:${Object.values(facts).join(":")}`;
 // The actor parameters are retained for forward-compatible snapshot attribution.
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const persistSnapshot = async (db, dashboard, userId, role) => { const version = sourceVersion(dashboard.project, dashboard.facts), stamp = now(); const statements = [db.prepare("INSERT OR IGNORE INTO project_progress_snapshots (id, project_id, model_version, progress, derived_status, ready_for_quotation, facts, source_version, calculated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(id("progress"), dashboard.project.id, DASHBOARD_MODEL_VERSION, dashboard.workflow.progress, dashboard.project.status, dashboard.workflow.ready ? 1 : 0, JSON.stringify(dashboard.facts), version, stamp), ...dashboard.workflow.stages.map((s) => db.prepare("INSERT OR IGNORE INTO workflow_stage_states (id, project_id, stage_id, model_version, status, progress, blocking_issue_count, warning_count, owner_role, next_action, drill_down_route, source_version, calculated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(id("stage"), dashboard.project.id, s.id, DASHBOARD_MODEL_VERSION, s.status, s.progress, s.blockingIssues, s.warningCount, s.owner, s.nextAction, s.route, version, stamp)), ...dashboard.risks.map((r) => db.prepare("INSERT OR IGNORE INTO project_risks (id, project_id, risk_type, severity, trigger, impact, affected_module, recommended_action, owner, due_date, source, source_version, calculated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(id("risk"), dashboard.project.id, r.type, r.severity, r.trigger, r.impact, r.module, r.recommendedAction, r.owner, r.dueDate, r.source, version, stamp))]; await db.batch(statements); };
-const projectDashboard = async (db, project, userId) => { const facts = await collectProjectFacts(db, project.id), totals = await pricingTotals(db, project.id), normalized = { id: project.id, name: project.name, client: project.client, consultant: project.consultant, contractor: project.contractor, location: project.location, tenderNumber: project.tender_number, package: project.package_name, dueDate: project.due_date, currency: project.currency || "SAR", owner: project.owner_user_id, effectiveRole: project.role || null, organizationId: project.organization_id || null, systemDomain: project.system_domain || "Unspecified", initialStatus: project.initial_status || "Draft", manualStatus: project.manual_status, archivedAt: project.archived_at, updatedAt: project.updated_at, operationalClassification: project.operational_classification || "Operational", isTestFixture: Number(project.is_test_fixture || 0) === 1 }; const dashboard = deriveProjectDashboard({ facts, project: normalized, role: project.role || "No Project Permission", totals }); dashboard.project.systemDomain = normalized.systemDomain; dashboard.project.initialStatus = normalized.initialStatus; dashboard.project.operationalClassification = normalized.operationalClassification; dashboard.project.isTestFixture = normalized.isTestFixture; await persistSnapshot(db, dashboard, userId, project.role || "No Project Permission"); return dashboard; };
+const projectDashboard = async (db, project, userId) => { const facts = await collectProjectFacts(db, project.id), totals = await pricingTotals(db, project.id), composition = await projectSystemComposition(db, project.id), initialSystemGuess = project.system_domain || "Unspecified", normalized = { id: project.id, name: project.name, client: project.client, consultant: project.consultant, contractor: project.contractor, location: project.location, tenderNumber: project.tender_number, package: project.package_name, dueDate: project.due_date, currency: project.currency || "SAR", owner: project.owner_user_id, effectiveRole: project.role || null, organizationId: project.organization_id || null, systemDomain: composition.isDerived ? composition.primarySystem : initialSystemGuess, initialStatus: project.initial_status || "Draft", manualStatus: project.manual_status, archivedAt: project.archived_at, updatedAt: project.updated_at, operationalClassification: project.operational_classification || "Operational", isTestFixture: Number(project.is_test_fixture || 0) === 1 }; const dashboard = deriveProjectDashboard({ facts, project: normalized, role: project.role || "No Project Permission", totals }); dashboard.project.systemDomain = normalized.systemDomain; dashboard.project.systemComposition = { systems: composition.systems, totalItems: composition.totalItems, isDerived: composition.isDerived, initialEstimate: initialSystemGuess, source: composition.isDerived ? "Derived from current BOQ evidence" : "Initial estimate (no classified BOQ evidence yet)" }; dashboard.project.initialStatus = normalized.initialStatus; dashboard.project.operationalClassification = normalized.operationalClassification; dashboard.project.isTestFixture = normalized.isTestFixture; await persistSnapshot(db, dashboard, userId, project.role || "No Project Permission"); return dashboard; };
 const hydrateProjects = async (db, rows, userId) => { const dashboards = []; for (const row of rows) dashboards.push(await projectDashboard(db, row, userId)); return dashboards; };
 const audit = (db, projectId, action, previous, next, reason, user, role, request) => db.prepare("INSERT INTO dashboard_audit_log (id, project_id, action, previous_value, new_value, reason, actor_user_id, actor_role, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(id("dashboardaudit"), projectId, action, JSON.stringify(previous), JSON.stringify(next), reason, user.id, role, request.headers.get("x-request-id") || id("request"));
 

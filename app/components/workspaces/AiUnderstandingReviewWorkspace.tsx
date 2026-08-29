@@ -27,6 +27,7 @@ type ReviewItem = {
   technicalMatchReadiness: { state: string; ready: boolean; label: string; reason?: string };
   provenanceSummary?: Record<string, number> | null;
   governedTaxonomy: { version: string | null; candidateAvailable: boolean; acceptedCandidate: boolean; category: string | null; productFamily: string | null };
+  familyClassification?: { system: string | null; category: string | null; productFamily: string | null; origin: string; confidence: number | null; decisionBasis: string; governedTaxonomyAccepted: boolean | null; evidence: Record<string, unknown> } | null;
   discovery: { eligible: boolean; label: string };
   proposalState: string; allowedActions: string[]; denialReasons: Record<string, string>; approvalDenialMessage: string | null; stateReason: string | null;
 };
@@ -56,6 +57,7 @@ export function AiUnderstandingReviewWorkspace({ projectId }: { projectId: strin
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [selectionChanged, setSelectionChanged] = useState(false);
+  const [cascadeNotice, setCascadeNotice] = useState("");
   const listRequest = useRef(0);
   const detailRequest = useRef(0);
 
@@ -146,6 +148,7 @@ export function AiUnderstandingReviewWorkspace({ projectId }: { projectId: strin
       const response = await fetch(`/api/projects/${encodeURIComponent(projectId)}/estimator-understanding-review/items/${encodeURIComponent(mutationTarget.reviewKey)}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: operation, expectedVersion: mutationTarget.expectedVersion, selectionAuthority: mutationTarget.selectionAuthority, requestId: `review:${crypto.randomUUID()}`, reason, ...(canonicalInterpretation ? { canonicalInterpretation } : {}) }) });
       const value = await response.json();
       if (!response.ok) throw new Error(value?.error?.message || "Review decision could not be saved.");
+      setCascadeNotice(value?.cascade?.triggered ? "Approved — requirement and matching recalculation started automatically. Refresh Product Selection shortly to see updated results." : "");
       await load();
       setEditing(false);
     } catch (caught) { setError(caught instanceof Error ? caught.message : "Review decision could not be saved."); }
@@ -167,7 +170,7 @@ export function AiUnderstandingReviewWorkspace({ projectId }: { projectId: strin
       <label>Evidence filter<select value={classification} onChange={(event) => { setClassification(event.target.value); syncUrl({ classification: event.target.value }); }}>{CLASSIFICATION_FILTERS.map((value) => <option key={value}>{value}</option>)}</select></label>
       <label>Search<input value={search} onChange={(event) => { setSearch(event.target.value); syncUrl({ search: event.target.value }, true); }} placeholder="Item reference or description"/></label>
     </div>
-    {error && <ErrorState message={error}/>} {loading && <LoadingState label="Loading current authoritative BOQ understanding…"/>}
+    {error && <ErrorState message={error}/>} {cascadeNotice && <div className="cascade-notice" role="status">{cascadeNotice}</div>} {loading && <LoadingState label="Loading current authoritative BOQ understanding…"/>}
     {!loading && payload && <div className="understanding-review-layout">
       <section className="understanding-review-queue"><header><strong>{payload.totalFiltered} current items</strong><small>Compact review queue</small></header>
         {payload.items.map((item) => <button key={item.reviewKey} className={selectedKey === item.reviewKey ? "selected" : ""} onClick={() => select(item)}>
@@ -182,7 +185,9 @@ export function AiUnderstandingReviewWorkspace({ projectId }: { projectId: strin
         <section className="understanding-evidence"><strong>Original authoritative BOQ evidence</strong><p>{detail.description}</p><small>Extraction review: {detail.extractionReview.status} · AI understanding: {detail.ai?.qualityStatus || "Not analyzed"}</small></section>
         <section><strong>AI proposed classification</strong><div className="understanding-fact-grid">{["system", "category", "equipmentType", "productFamily", "subcategory"].map((key) => { const value = detail.aiProposal?.[key]; return <article key={key}><small>{label(key)}</small><strong>{value?.value || "Missing"}</strong><span className={`origin-${String(value?.origin || "MISSING").toLowerCase()}`}>{value?.origin || "MISSING"} · {value?.confidence || 0}%</span></article>; })}</div><small>The proposal is review evidence only and has not been promoted to engineer authority.</small></section>
         <section><strong>Engineer-reviewed canonical classification</strong>{editing ? <><small>Unsaved review draft — no review version is created until submission.</small><div className="understanding-fact-grid">{["system", "category", "equipmentType", "productFamily", "subcategory"].map((key) => <article key={key}><small>{label(key)}</small><input value={draft[key] || ""} onChange={(event) => setDraft({ ...draft, [key]: event.target.value })}/>{(draft[key] || "") !== String(detail.aiProposal?.[key]?.value || "") && <span>Changed from AI proposal</span>}</article>)}</div></> : detail.canonicalReview?.interpretation ? <><small>{detail.canonicalReview.status === "APPROVED" ? "Approved canonical version" : "Canonical review version"} · v{detail.canonicalReview.version}</small><div className="understanding-fact-grid">{["system", "category", "equipmentType", "productFamily", "subcategory"].map((key) => { const value = detail.canonicalReview?.interpretation?.[key]; return <article key={key}><small>{label(key)}</small><strong>{value?.value || "Missing"}</strong><span className={`origin-${String(value?.origin || "MISSING").toLowerCase()}`}>{value?.origin || "MISSING"} · {value?.confidence || 0}%</span>{detail.canonicalReview?.changedFields.includes(key) && <span>Changed from AI proposal</span>}</article>; })}</div></> : <p>No engineer-reviewed canonical version yet.</p>}</section>
-        <section><strong>Governed taxonomy constraint</strong><p>{detail.governedTaxonomy.acceptedCandidate ? `${detail.governedTaxonomy.category} / ${detail.governedTaxonomy.productFamily} was accepted through the governed candidate contract.` : detail.governedTaxonomy.candidateAvailable ? "A governed candidate existed but was not validly accepted." : "No governed Fire Alarm candidate applies."}</p><small>{detail.governedTaxonomy.version || "No taxonomy version"}</small></section>
+        <section><strong>Governed taxonomy constraint</strong><p>{detail.governedTaxonomy.acceptedCandidate ? `${detail.governedTaxonomy.category} / ${detail.governedTaxonomy.productFamily} was accepted through the governed candidate contract.` : detail.governedTaxonomy.candidateAvailable ? "A governed candidate existed but was not validly accepted." : "No governed Fire Alarm candidate applies."}</p><small>{detail.governedTaxonomy.version || "No taxonomy version"}</small>
+          {detail.familyClassification && <div className="family-classification-note"><strong>Why this family: </strong>{detail.familyClassification.productFamily || "Not yet established"} — <b>{detail.familyClassification.decisionBasis}</b> ({detail.familyClassification.origin}{detail.familyClassification.confidence != null ? ` · ${detail.familyClassification.confidence}%` : ""}). {detail.familyClassification.evidence?.sheet || detail.familyClassification.evidence?.page ? <>Evidence: {String(detail.familyClassification.evidence.sheet || `page ${detail.familyClassification.evidence.page}`)}{detail.familyClassification.evidence?.row ? `, row ${detail.familyClassification.evidence.row}` : ""}.</> : null}</div>}
+        </section>
         <section><strong>AI proposed technical attributes</strong><div className="understanding-attributes">{Object.entries(detail.aiProposal?.attributes || {}).map(([name, value]) => fact(value) && <article key={name}><b>{label(name)}</b><span>{String(value.value ?? "Missing")}</span><small>{value.origin} · {value.confidence}%</small></article>)}</div></section>
         <section className="understanding-missing">
           <div><strong>Classification blockers</strong>{detail.classificationBlockers.length ? detail.classificationBlockers.map((entry) => <span key={entry.field}>{label(entry.field)} · {label(entry.state)}</span>) : <span>Classification complete</span>}</div>

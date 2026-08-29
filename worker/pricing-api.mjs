@@ -218,7 +218,7 @@ export const loadPricingInput = async (
   };
 };
 
-const persistRun = async (
+export const persistRun = async (
   db,
   {
     projectId,

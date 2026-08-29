@@ -358,6 +358,33 @@ const evaluateAccessories = (required, product) => required.map((entry) => { con
 const commercialState = (prices, productId, projectId) => { const applicable = prices.filter((price) => price.productId === productId && (!price.projectId || price.projectId === projectId)); const current = applicable.filter((price) => price.approvalStatus === "Approved" && price.validUntil && new Date(price.validUntil) >= new Date()); if (current.some((price) => price.projectId === projectId)) return "Project Price Available"; if (current.length) return "Valid Current Price Available"; if (applicable.some((price) => price.validUntil && new Date(price.validUntil) < new Date())) return "Expired Price Only"; if (applicable.length) return "Historical Price Only"; return "Supplier RFQ Required"; };
 const explanation = (candidate) => { const passed = candidate.comparisons.filter((entry) => entry.pass).map((entry) => entry.requirement?.normalizedRequirement || entry.required?.name).filter(Boolean); const failed = candidate.comparisons.filter((entry) => !entry.pass).map((entry) => entry.requirement?.normalizedRequirement || entry.required?.name).filter(Boolean); return `${candidate.product.manufacturer || "Unknown manufacturer"} ${candidate.product.partNumber || candidate.product.description} was found through ${candidate.matchingBasis.join(", ")}. ${passed.length ? `${passed.length} evaluated technical criterion${passed.length === 1 ? " passed" : "s passed"}.` : "No technical criterion has verified evidence."} ${failed.length ? `${failed.length} criterion${failed.length === 1 ? " requires" : " require"} review or failed.` : "No evaluated mandatory failure was found."} Commercial state: ${candidate.commercialAvailability}.`; };
 
+// Phase 5 workflow-continuity fix -- familyMatchTier already governed the
+// final ranking sort (see runProductMatching's Fire Alarm E2E fix comment
+// below) but was never turned into anything an engineer could actually read:
+// it lived only in-memory for one matching run and was discarded before
+// persistence. This is the one place a plain-language "why this candidate is
+// ranked here" is built from the SAME already-computed, already-governed
+// fields runProductMatching sorts by (familyMatchTier, mandatoryFailures,
+// evidenceStrength, matchingBasis) -- no new judgment, only an explanation of
+// judgment the engine already made. A tier-1/tier-2 candidate is always
+// worded as a fallback (never as equally valid), and a mandatory failure is
+// always worded as rejected-within-tier (never as compliant), matching the
+// frozen v1 principles exactly.
+const FAMILY_TIER_LABEL = { 0: "Same governed family", 1: "Unclassified fallback", 2: "Different governed family (fallback)" };
+const buildRankingReason = (candidate, boqItemFamily) => {
+  const tierLabel = FAMILY_TIER_LABEL[candidate.familyMatchTier] ?? "Unranked";
+  const familyPart = candidate.familyMatchTier === 0
+    ? (boqItemFamily ? `Matches the item's own governed family (${boqItemFamily}), or a registered synonym family.` : "No confident governed family applies to this item, so family tiering is a no-op here.")
+    : candidate.familyMatchTier === 1
+      ? "This product carries no governed family classification of its own, so it is shown only as a fallback candidate, ranked below every classified same-family candidate."
+      : `This product belongs to a different governed family than the item's own (${boqItemFamily || "unclassified"}); it is shown only as a fallback candidate because nothing from the correct family outranks it.`;
+  const mandatoryPart = candidate.mandatoryFailures.length
+    ? `${candidate.mandatoryFailures.length} mandatory requirement${candidate.mandatoryFailures.length === 1 ? "" : "s"} failed, so it is a rejected alternative within its tier, never marked compliant.`
+    : "No mandatory requirement failed.";
+  const evidencePart = candidate.evidenceStrength > 0 ? `Its own recorded attributes align with confirmed requirement evidence (evidence strength ${candidate.evidenceStrength}).` : "No confirmed requirement evidence yet distinguishes it from other candidates in the same tier.";
+  return `${tierLabel}. ${familyPart} ${mandatoryPart} ${evidencePart} Retrieved via ${candidate.matchingBasis?.join(", ") || "discovery"}.`;
+};
+
 // Sprint 1.0 -- approved requirement evidence available to condition
 // evaluation: the BOQ item's own approved understanding attributes (governed,
 // per-item; e.g. notification_feature from a deterministic BOQ description
@@ -449,7 +476,7 @@ export const evaluateCandidate = ({ profile, generated, prices = [], projectId =
   // matter, and before either can be overridden by peripheral score noise.
   const evidenceStrength = components.technicalAttributes + components.standards + components.compatibility + components.accessories;
   const familyMatchTier = familyTier(profile.boqItem?.system, profile.boqItem?.productFamily, product);
-  const candidate = { product, searchStage: generated.stage, searchScore: Number(generated.searchScore || 0), evidenceStrength, familyMatchTier, matchingBasis: generated.basis, components, score, technicalStatus, recommendationTier: tier, confidence, confidenceScore, comparisons, standards, manufacturer, manufacturerConsistency, compatibility, accessories, accessoryCandidates: resolveAccessoryCandidates(product, profile), lifecycle, commercialAvailability: commercialState(prices, product.id, projectId), mandatoryFailures, approvalReady: false, reviewStatus: "Needs Review", provenance: { productSource: product.source || null, requirementProfileVersion: profile.versionNumber, engineVersion: MATCH_ENGINE_VERSION, rulesetVersion: MATCH_RULESET_VERSION, searchVersion: MATCH_SEARCH_VERSION, modelVersion: MATCH_MODEL_VERSION } }; candidate.explanation = explanation(candidate); return candidate;
+  const candidate = { product, searchStage: generated.stage, searchScore: Number(generated.searchScore || 0), evidenceStrength, familyMatchTier, isFallbackCandidate: familyMatchTier > 0, matchingBasis: generated.basis, components, score, technicalStatus, recommendationTier: tier, confidence, confidenceScore, comparisons, standards, manufacturer, manufacturerConsistency, compatibility, accessories, accessoryCandidates: resolveAccessoryCandidates(product, profile), lifecycle, commercialAvailability: commercialState(prices, product.id, projectId), mandatoryFailures, approvalReady: false, reviewStatus: "Needs Review", provenance: { productSource: product.source || null, requirementProfileVersion: profile.versionNumber, engineVersion: MATCH_ENGINE_VERSION, rulesetVersion: MATCH_RULESET_VERSION, searchVersion: MATCH_SEARCH_VERSION, modelVersion: MATCH_MODEL_VERSION } }; candidate.explanation = explanation(candidate); candidate.rankingReason = buildRankingReason(candidate, profile.boqItem?.productFamily); return candidate;
 };
 
 export const runProductMatching = ({ profile, products, prices = [], projectId = null, previousVersion = 0, weights }) => {

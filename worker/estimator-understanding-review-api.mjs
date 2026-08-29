@@ -5,6 +5,7 @@ import { sanitizePilotSourceLocation } from "../app/domain/boq-understanding-pil
 import { resolveEffectiveUnderstandingInterpretation } from "./effective-understanding-interpretation.mjs";
 import { confirmedSpecifications } from "./estimator-understanding-api.mjs";
 import { hasGovernedTaxonomy } from "../app/domain/system-knowledge-registry.mjs";
+import { cascadeUnderstandingApproval } from "./pipeline-orchestration.mjs";
 import {
   buildUnderstandingReviewActionPolicy, buildUnderstandingReviewLayers, evaluateUnderstandingAuthority, sanitizeReviewedInterpretation,
   summarizeUnderstandingReviewItems, understandingReviewRequestFingerprint,
@@ -86,6 +87,27 @@ export const safeUnderstandingReviewItem = (row, { actorAuthorized = true } = {}
   const proposalClassification = row.effective?.classification || layers.proposalClassification;
   const proposalState = row.effective?.state === "AVAILABLE" ? "AVAILABLE" : reviewStatus === "FAILED" ? "FAILED" : "UNAVAILABLE_OR_STALE";
   const authority = evaluateUnderstandingAuthority({ interpretation: row.effective?.proposal, reviewStatus, taxonomyValid: taxonomyValidFor(row) });
+  // Phase 5 workflow-continuity fix -- the individual pieces this needs
+  // (per-field origin/confidence, governed taxonomy acceptance, engineer
+  // review status, sanitized source evidence) already existed on this row;
+  // nothing here is a new judgment. This only assembles them into one
+  // compact, explicitly-labeled explanation of the productFamily decision
+  // specifically, so a screen never has to reconstruct "was this deterministic,
+  // inferred, or engineer-confirmed" from several separate fields itself. No
+  // hidden model reasoning is exposed -- only governed evidence already on
+  // the record.
+  const familyFact = layers.aiProposal?.productFamily || null;
+  const familyOrigin = familyFact?.origin || "MISSING";
+  const familyClassification = {
+    system: proposalClassification?.system || null,
+    category: proposalClassification?.category || null,
+    productFamily: proposalClassification?.productFamily || null,
+    origin: familyOrigin,
+    confidence: familyFact?.confidence ?? null,
+    decisionBasis: reviewStatus === "APPROVED" ? "Engineer Confirmed" : familyOrigin === "EXTRACTED" ? "Deterministic Evidence" : familyOrigin === "INFERRED" ? "AI Inference" : "Not Yet Established",
+    governedTaxonomyAccepted: row.effective?.taxonomy?.acceptedCandidate ?? null,
+    evidence: source,
+  };
   const actionPolicy = buildUnderstandingReviewActionPolicy({
     reviewStatus,
     proposalState,
@@ -114,7 +136,7 @@ export const safeUnderstandingReviewItem = (row, { actorAuthorized = true } = {}
     ai: row.interpretationId ? { status: row.interpretationStatus, confidence: layers.aiProposal?.confidence || "LOW", qualityStatus: quality?.finalStatus || row.interpretationStatus, model: row.model, interpretedAt: row.interpretedAt }
       : latestAttempt ? { status: latestAttempt.status, confidence: "Unavailable", qualityStatus: latestAttempt.status, model: latestAttempt.model, interpretedAt: latestAttempt.createdAt } : null,
     review: { status: reviewStatus, version: Number(row.reviewVersion || 0), hasVersion: Boolean(row.reviewVersionId), matchesEffectiveInterpretation: reviewMatchesEffective, reason: row.reviewReason || null, reviewedAt: row.reviewedAt || null },
-    aiProposal: layers.aiProposal, canonicalReview: layers.canonicalReview, classification: proposalClassification,
+    aiProposal: layers.aiProposal, canonicalReview: layers.canonicalReview, classification: proposalClassification, familyClassification,
     reviewReasons: quality?.reviewReasons || [],
     classificationBlockers: authority.classificationBlockers,
     matchingBlockers: authority.matchingBlockers,
@@ -233,7 +255,17 @@ export const mutateUnderstandingReview = async (db, context, projectId, row, com
   };
 };
 
-export async function handleEstimatorUnderstandingReviewApi(request, env) {
+// Phase 5 workflow-continuity fix -- an approved or edited-and-approved
+// understanding fact must not leave requirement-profile/matching recalculation
+// as a manual step an engineer has to know about and trigger separately. This
+// is the ONLY place that cascade is fired -- other actions (reject, return to
+// review) intentionally do not trigger it: they do not produce a newly
+// approved fact for downstream engines to consume, so there is nothing new to
+// recompute (an engineer or administrator can always force it via the
+// explicit Resync action in pipeline-orchestration.mjs).
+const CASCADE_TRIGGERING_ACTIONS = new Set(["APPROVE_INTERPRETATION", "EDIT_AND_APPROVE"]);
+
+export async function handleEstimatorUnderstandingReviewApi(request, env, ctx) {
   const url = new URL(request.url);
   const listMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/estimator-understanding-review$/);
   const itemMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/estimator-understanding-review\/items\/([^/]+)$/);
@@ -256,5 +288,10 @@ export async function handleEstimatorUnderstandingReviewApi(request, env) {
   const currentRow = await resolveCurrent(env.DB, projectId, decodeURIComponent(itemMatch[2]));
   if (!currentRow) return json({ error: { code: "CURRENT_BOQ_ITEM_NOT_FOUND", message: "Current BOQ item not found." } }, 404);
   const result = await mutateUnderstandingReview(env.DB, resolved.context, projectId, currentRow, validated.value);
-  return result.error ? json({ error: { code: result.error, message: "The understanding review could not be recorded." }, missing: result.missing || [] }, result.status) : json(result);
+  if (result.error) return json({ error: { code: result.error, message: "The understanding review could not be recorded." }, missing: result.missing || [] }, result.status);
+  const shouldCascade = !result.idempotent && CASCADE_TRIGGERING_ACTIONS.has(validated.value.action);
+  if (shouldCascade && ctx?.waitUntil) {
+    ctx.waitUntil(cascadeUnderstandingApproval(env, { projectId, itemId: currentRow.boqItemId, userId: resolved.context.userId, trigger: `Understanding ${validated.value.action}` }).catch(() => undefined));
+  }
+  return json({ ...result, cascade: { triggered: shouldCascade, status: shouldCascade ? "Queued" : "Not Applicable" } });
 }

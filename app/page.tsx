@@ -50,6 +50,7 @@ import { BoqReviewWorkspace } from "./components/workspaces/BoqReviewWorkspace";
 import { TechnicalRequirementsWorkspace } from "./components/workspaces/TechnicalRequirementsWorkspace";
 import { AiUnderstandingReviewWorkspace } from "./components/workspaces/AiUnderstandingReviewWorkspace";
 import { MatchingCandidateReview, MatchingWorkspace } from "./components/workspaces/MatchingWorkspace";
+import { EngineerDecisionWorkspace } from "./components/workspaces/EngineerDecisionWorkspace";
 import { PricingWorkspace } from "./components/workspaces/PricingWorkspace";
 import { SupplierPriceIntakeWorkspace } from "./components/workspaces/SupplierPriceIntakeWorkspace";
 import { CommercialReviewWorkspace } from "./components/workspaces/CommercialReviewWorkspace";
@@ -105,6 +106,9 @@ type PersistentMatchCandidate = {
   explanation: string;
   mandatoryFailures: unknown[];
   score: number;
+  familyMatchTier?: number | null;
+  isFallbackCandidate?: boolean;
+  rankingReason?: string | null;
 };
 type PersistentSafetyDecision = {
   id: string;
@@ -2720,6 +2724,7 @@ export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [matchingItemId, setMatchingItemId] = useState<number | null>(null);
   const [selectedMatchingItemId, setSelectedMatchingItemId] = useState<string | null>(null);
+  const [decisionItemId, setDecisionItemId] = useState<string | null>(null);
   const [persistentMatchCandidates, setPersistentMatchCandidates] = useState<
     PersistentMatchCandidate[]
   >([]);
@@ -13627,6 +13632,7 @@ export default function Home() {
           setSelectedMatchingItemId(itemId);
           window.history.pushState(null, "", buildProjectLocation(projectId, "Technical Matching", itemId));
         }}
+        onOpenDecision={(itemId) => setDecisionItemId(itemId)}
         onOpenLibrary={() => navigate("Product Library")}
         onOpenPrerequisite={() => openDashboardRoute(projectId, preSalesWorkflow?.nextAction?.route || "BOQ")}
         onOpenUnderstanding={() => navigate("AI Understanding Review")}
@@ -22238,6 +22244,13 @@ export default function Home() {
           onOpenSafety={openSafetyDecision}
           onAcknowledge={acknowledgeSafetyWarnings}
           onApprove={approveTechnicalSafety}
+        />
+      )}
+
+      {decisionItemId && (
+        <EngineerDecisionWorkspace
+          boqItemId={decisionItemId}
+          onClose={() => setDecisionItemId(null)}
         />
       )}
 
