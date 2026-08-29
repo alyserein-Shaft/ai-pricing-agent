@@ -1,7 +1,6 @@
 export const EXPORT_MODES = ["Draft Cost Sheet", "Technical Review Cost Sheet", "Commercial Review Cost Sheet", "Approved Cost Sheet", "Client-Safe Export"];
 export const EXPORT_ENGINE_VERSION = "excel-export-1.0.0";
 export const TEMPLATE_VERSION = "construction-cost-sheet-1.0";
-export const INTERNAL_ROLES = ["Estimator", "Senior Technical Reviewer", "Technical Manager", "Commercial Reviewer", "Commercial Manager", "Management", "Admin", "Project Manager"];
 
 export const safeExcelText = (value) => {
   if (value == null) return "";
@@ -47,10 +46,9 @@ export const buildDetailedRow = ({ boq, candidate = {}, product = {}, price = {}
 };
 
 export const warningForRow = (row) => [row.quantity == null ? "Missing Quantity" : null, row.netUnitMaterialCost == null ? "Missing Price" : null, row.priceValidity && new Date(row.priceValidity) < new Date() ? "Expired Price" : null, row.technicalStatus === "Discovery Only" ? "Discovery Only" : null, row.technicalApprovalStatus !== "Approved" ? "Missing Technical Approval" : null, row.commercialApprovalStatus !== "Approved" ? "Missing Commercial Approval" : null, row.blockingConditions ? "Blocking Condition" : null, row.margin != null && row.margin < 0 ? "Negative Margin" : null].filter(Boolean);
-export const validateExportReadiness = ({ mode, role, rows = [], reviewReadiness, templateStatus = "Approved" }) => {
+export const validateExportReadiness = ({ mode, rows = [], reviewReadiness, templateStatus = "Approved" }) => {
   const errors = [], warnings = rows.flatMap((row, index) => warningForRow(row).map((warning) => ({ line: index + 1, warning })));
   if (!EXPORT_MODES.includes(mode)) errors.push("INVALID_EXPORT_MODE");
-  if (mode !== "Client-Safe Export" && !INTERNAL_ROLES.includes(role)) errors.push("INTERNAL_EXPORT_PERMISSION_REQUIRED");
   if (!rows.length) errors.push("BOQ_AND_PRICING_REQUIRED");
   if (mode === "Approved Cost Sheet") { if (reviewReadiness !== "Ready for Quotation") errors.push("APPROVED_EXPORT_REVIEW_BLOCKED"); if (warnings.length) errors.push("APPROVED_EXPORT_WARNINGS_BLOCKED"); if (templateStatus !== "Approved") errors.push("EXPORT_TEMPLATE_NOT_APPROVED"); }
   return { permitted: errors.length === 0, errors, warnings, status: warnings.length ? "Completed with Warnings" : "Completed" };

@@ -6,7 +6,14 @@ import {
   validateManualPriceInput,
 } from "../app/domain/pricing-engine.mjs";
 import { commercialLineTotals } from "../app/domain/commercial-summary.mjs";
+import {
+  buildCommercialPricingResult,
+  assertCommercialCostFreshness,
+} from "../app/domain/commercial-pricing-authority.mjs";
 import { resolveApplicationContext } from "./application-context.mjs";
+import { loadPricingInput, persistRun } from "./pricing-runtime.mjs";
+import { buildLineCostModel } from "./boq-line-cost-api.mjs";
+export { loadPricingInput, persistRun } from "./pricing-runtime.mjs";
 import { currentBoqEvidenceFrom, currentBoqItemPredicate } from "./current-evidence-scope.mjs";
 
 const json = (value, status = 200) =>
@@ -36,25 +43,8 @@ const hash = async (value) =>
     .join("");
 const moneyMinor = (value) =>
   value == null ? null : Math.round(Number(value) * 100);
-const roleFor = async (db, projectId, userId) => {
-  const project = await db
-    .prepare("SELECT owner_user_id FROM projects WHERE id=?")
-    .bind(projectId)
-    .first();
-  if (!project) return null;
-  if (project.owner_user_id === userId) return "Admin";
-  const member = await db
-    .prepare(
-      "SELECT role FROM project_members WHERE project_id=? AND user_id=? AND status='Active' AND revoked_at IS NULL",
-    )
-    .bind(projectId, userId)
-    .first();
-  return member?.role || null;
-};
-const requireRole = async (db, projectId, userId, roles) => {
-  const role = await roleFor(db, projectId, userId);
-  return role && roles.includes(role) ? role : null;
-};
+
+const actorRole = "Project User";
 const ownedProject = (db, projectId, userId) =>
   db
     .prepare(
@@ -77,336 +67,6 @@ const lineOutput = (row) =>
         locked_versions: parse(row.locked_versions, {}),
       }
     : null;
-
-export const loadPricingInput = async (
-  db,
-  { projectId, boqItemId, candidateId, scenario, body },
-) => {
-  const item = await db
-    .prepare(`SELECT b.* FROM ${currentBoqEvidenceFrom("b")} WHERE b.id=? AND b.project_id=? AND ${currentBoqItemPredicate("b")}`)
-    .bind(boqItemId, projectId)
-    .first();
-  if (!item)
-    throw Object.assign(new Error("BOQ item not found."), {
-      code: "BOQ_ITEM_NOT_FOUND",
-    });
-  const candidate = await db
-    .prepare(
-      "SELECT c.*, r.id match_run_id, r.version_number match_version, p.id product_id, p.part_number, p.lifecycle_status, m.name manufacturer FROM product_match_candidates c JOIN product_match_runs r ON r.id=c.match_run_id JOIN canonical_library_products p ON p.requested_product_id=c.product_id JOIN product_manufacturers m ON m.id=p.manufacturer_id WHERE c.id=? AND r.project_id=? AND r.boq_item_id=? AND r.superseded_at IS NULL AND r.version_number=(SELECT MAX(r2.version_number) FROM product_match_runs r2 WHERE r2.boq_item_id=r.boq_item_id AND r2.superseded_at IS NULL)",
-    )
-    .bind(candidateId, projectId, boqItemId)
-    .first();
-  if (!candidate)
-    throw Object.assign(new Error("Selected product candidate not found."), {
-      code: "CANDIDATE_NOT_FOUND",
-    });
-  const safety = await db
-    .prepare(
-      "SELECT * FROM safety_decisions WHERE candidate_id=? AND superseded_at IS NULL ORDER BY version_number DESC LIMIT 1",
-    )
-    .bind(candidateId)
-    .first();
-  if (!safety)
-    throw Object.assign(
-      new Error("Evaluate the current safety decision before pricing."),
-      { code: "SAFETY_DECISION_REQUIRED" },
-    );
-  const technical = await db
-    .prepare(
-      "SELECT * FROM safety_approval_requests WHERE safety_decision_id=? AND approval_type='Technical' ORDER BY decided_at DESC, id DESC LIMIT 1",
-    )
-    .bind(safety.id)
-    .first();
-  const records = await db
-    .prepare(
-      "SELECT r.*, s.name supplier_name FROM price_records r LEFT JOIN suppliers s ON s.id=r.supplier_id WHERE r.product_id=? AND (r.project_id IS NULL OR r.project_id=?)",
-    )
-    .bind(candidate.product_id, projectId)
-    .all();
-  const rate = await db
-    .prepare(
-      "SELECT * FROM pricing_exchange_rates WHERE project_id=? AND approval_status='Approved' AND superseded_at IS NULL ORDER BY version_number DESC LIMIT 1",
-    )
-    .bind(projectId)
-    .first();
-  const settings = {
-    ...parse(scenario.settings, {}),
-    ...(body.settings || {}),
-  };
-  return {
-    projectId,
-    productId: candidate.product_id,
-    candidateId,
-    selectedPriceSourceId: body.selectedPriceSourceId || null,
-    manufacturer: candidate.manufacturer,
-    quantity: item.numeric_quantity,
-    unit: item.normalized_unit,
-    lumpSumMode: settings.lumpSumMode,
-    region: settings.region,
-    projectCurrency: scenario.project_currency,
-    calculatedAt: now(),
-    technicalApproval:
-      technical?.status === "Approved"
-        ? { status: technical.status, candidateId }
-        : null,
-    safetyDecision: safety
-      ? {
-          id: safety.id,
-          version: safety.version_number,
-          priceEligibility:
-            technical?.status === "Approved" &&
-            (records.results || []).some(
-              (entry) =>
-                entry.approval_status === "Approved" &&
-                entry.downstream_use === "Costing" &&
-                entry.valid_until &&
-                new Date(entry.valid_until) >= new Date() &&
-                entry.currency &&
-                entry.source_id
-            )
-              ? "Eligible for Price Approval"
-              : "Price Approval Disabled",
-        }
-      : null,
-    priceSources: (records.results || []).map((entry) => ({
-      id: entry.id,
-      productId: entry.product_id,
-      projectId: entry.project_id,
-      amount: entry.amount_minor / 100,
-      currency: entry.currency,
-      priceType: entry.price_type,
-      approvalStatus: entry.approval_status,
-      downstreamUse: entry.downstream_use,
-      effectiveFrom: entry.effective_from,
-      validUntil: entry.valid_until,
-      minimumQuantity: entry.minimum_quantity,
-      reference: parse(entry.source_location, {}).reference || entry.id,
-      supplier: entry.supplier_name,
-      reliability: parse(entry.terms, {}).reliability,
-    })),
-    sourcePrecedence: settings.sourcePrecedence,
-    exchangeRate: rate
-      ? {
-          from: rate.from_currency,
-          to: rate.to_currency,
-          rate: Number(rate.rate),
-          source: rate.source,
-          version: rate.version_number,
-          approvalStatus: rate.approval_status,
-          validUntil: rate.valid_until,
-        }
-      : null,
-    discounts: body.discounts || settings.discounts || [],
-    costComponents: body.costComponents || settings.costComponents || [],
-    sellingRule: body.sellingRule ||
-      settings.sellingRule || { method: "Markup", rate: 0, minimumMargin: 0 },
-    customerDiscount: body.customerDiscount ||
-      settings.customerDiscount || { percentage: 0 },
-    vatRule: body.vatRule || settings.vatRule || { rate: 0 },
-    precision: Number(settings.precision ?? 2),
-    versions: {
-      boqItem: item.updated_at,
-      matchRun: candidate.match_version,
-      safetyDecision: safety?.version_number || null,
-      priceRecords: (records.results || []).map((entry) => [
-        entry.id,
-        entry.reviewed_at || entry.created_at,
-      ]),
-      exchangeRate: rate?.version_number || null,
-      scenario: scenario.version_number,
-    },
-  };
-};
-
-export const persistRun = async (
-  db,
-  {
-    projectId,
-    scenario,
-    boqItemId,
-    candidateId,
-    input,
-    result,
-    userId,
-    role,
-    reason,
-  },
-) => {
-  const previous = await db
-      .prepare(
-        "SELECT * FROM pricing_runs WHERE scenario_id=? ORDER BY version_number DESC LIMIT 1",
-      )
-      .bind(scenario.id)
-      .first(),
-    version = Number(previous?.version_number || 0) + 1,
-    runId = id("pricingrun"),
-    lineId = id("pricingline"),
-    fingerprint = await hash({
-      input,
-      engine: PRICING_ENGINE_VERSION,
-      ruleset: PRICING_RULESET_VERSION,
-    });
-  const existing = await db
-    .prepare(
-      "SELECT r.id run_id, r.version_number, l.id line_id, l.status, l.output FROM pricing_runs r JOIN pricing_lines l ON l.pricing_run_id=r.id WHERE r.scenario_id=? AND l.boq_item_id=? AND r.input_fingerprint=? ORDER BY r.version_number DESC LIMIT 1",
-    )
-    .bind(scenario.id, boqItemId, fingerprint)
-    .first();
-  if (existing)
-    return {
-      runId: existing.run_id,
-      lineId: existing.line_id,
-      version: existing.version_number,
-      status: existing.status,
-      result: parse(existing.output, result),
-      idempotent: true,
-    };
-  const statements = [
-    db
-      .prepare(
-        "INSERT INTO pricing_runs (id, project_id, scenario_id, version_number, status, input_fingerprint, engine_version, ruleset_version, reason, locked_versions, summary, created_by, completed_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      )
-      .bind(
-        runId,
-        projectId,
-        scenario.id,
-        version,
-        result.status,
-        fingerprint,
-        PRICING_ENGINE_VERSION,
-        PRICING_RULESET_VERSION,
-        reason,
-        JSON.stringify(input.versions),
-        JSON.stringify(
-          result.approvalReady
-            ? aggregateProjectPricing([result])
-            : { itemCount: 1, pricedItemCount: 0 },
-        ),
-        userId,
-        now(),
-      ),
-  ];
-  statements.push(
-    db
-      .prepare(
-        "INSERT INTO pricing_lines (id, pricing_run_id, project_id, boq_item_id, candidate_id, product_id, safety_decision_id, selected_price_record_id, version_number, status, quantity, unit, source_currency, project_currency, original_list_price_minor, net_material_unit_minor, material_total_minor, direct_cost_minor, total_cost_minor, gross_selling_minor, customer_discount_minor, net_selling_minor, vat_minor, final_value_minor, margin_basis_points, markup_basis_points, output, explanation, approval_ready) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      )
-      .bind(
-        lineId,
-        runId,
-        projectId,
-        boqItemId,
-        candidateId,
-        input.productId,
-        input.safetyDecision?.id || "",
-        result.selectedSource?.id || null,
-        version,
-        result.status,
-        String(input.quantity ?? ""),
-        input.unit || "",
-        result.selectedSource?.currency || null,
-        input.projectCurrency,
-        moneyMinor(result.originalListPrice),
-        moneyMinor(result.netMaterialUnitCost),
-        moneyMinor(result.materialTotal),
-        moneyMinor(result.directCost),
-        moneyMinor(result.totalCost),
-        moneyMinor(result.grossSelling),
-        moneyMinor(result.customerDiscount),
-        moneyMinor(result.netSelling),
-        moneyMinor(result.vat),
-        moneyMinor(result.finalValue),
-        result.margin == null ? null : Math.round(result.margin * 100),
-        result.markup == null ? null : Math.round(result.markup * 100),
-        JSON.stringify(result),
-        result.explanation ||
-          `Pricing blocked: ${(result.blockers || []).join(", ")}`,
-        result.approvalReady ? 1 : 0,
-      ),
-  );
-  for (const component of result.components || [])
-    statements.push(
-      db
-        .prepare(
-          "INSERT INTO pricing_cost_components (id, pricing_line_id, component_type, description, method, formula, rate, quantity, amount_minor, source, scope, assumptions, approval_status, rule_version, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        )
-        .bind(
-          id("costcomponent"),
-          lineId,
-          component.type || "Other",
-          component.description || component.type || "Cost component",
-          component.method,
-          component.formula,
-          String(component.rate ?? ""),
-          String(component.quantity ?? ""),
-          moneyMinor(component.calculatedAmount),
-          JSON.stringify(component.source || {}),
-          component.scope || "Line",
-          JSON.stringify(component.assumptions || []),
-          component.approvalStatus || "Needs Review",
-          PRICING_RULESET_VERSION,
-          userId,
-        ),
-    );
-  for (const discount of result.discounts || [])
-    statements.push(
-      db
-        .prepare(
-          "INSERT INTO pricing_discount_applications (id, pricing_line_id, discount_type, mode, order_number, percentage_basis_points, calculation_base_minor, amount_minor, balance_minor, source, scope, valid_until, approved_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-        )
-        .bind(
-          id("discount"),
-          lineId,
-          discount.type || "Commercial Discount",
-          discount.mode,
-          Number(discount.order),
-          Math.round(Number(discount.percentage) * 100),
-          moneyMinor(discount.calculationBase),
-          moneyMinor(discount.amount),
-          moneyMinor(discount.balance),
-          JSON.stringify(discount.source || { sourceId: discount.sourceId }),
-          discount.scope || "Material",
-          discount.validUntil,
-          discount.approvedBy || userId,
-        ),
-    );
-  statements.push(
-    db
-      .prepare(
-        "INSERT INTO pricing_audit_events (id, project_id, pricing_run_id, pricing_line_id, action, previous_value, new_value, reason, actor_user_id, actor_role, request_id) VALUES (?, ?, ?, ?, 'Pricing Calculated', ?, ?, ?, ?, ?, ?)",
-      )
-      .bind(
-        id("pricingaudit"),
-        projectId,
-        runId,
-        lineId,
-        JSON.stringify(
-          previous
-            ? { runId: previous.id, version: previous.version_number }
-            : null,
-        ),
-        JSON.stringify({
-          version,
-          status: result.status,
-          totalCost: result.totalCost,
-          finalValue: result.finalValue,
-        }),
-        reason,
-        userId,
-        role,
-        id("request"),
-      ),
-  );
-  await db.batch(statements);
-  return {
-    runId,
-    lineId,
-    version,
-    status: result.status,
-    result,
-    idempotent: false,
-  };
-};
 
 export const handlePricingApi = async (request, env) => {
   const url = new URL(request.url);
@@ -434,24 +94,6 @@ export const handlePricingApi = async (request, env) => {
       return json(
         { error: { code: "PROJECT_NOT_FOUND", message: "Project not found." } },
         404,
-      );
-
-    const role = await requireRole(env.DB, projectId, userId, [
-      "Admin",
-      "Project Manager",
-      "Commercial Approver",
-      "Management",
-    ]);
-    if (!role)
-      return json(
-        {
-          error: {
-            code: "PRICING_SCENARIO_SELECTION_PERMISSION_REQUIRED",
-            message:
-              "Project Manager or commercial approval permission is required to select the quotation pricing scenario.",
-          },
-        },
-        403,
       );
 
     const body = await request.json();
@@ -551,7 +193,7 @@ export const handlePricingApi = async (request, env) => {
           }),
           reason,
           userId,
-          role,
+          actorRole,
           request.headers.get("x-request-id") || id("request"),
         ),
     ]);
@@ -727,21 +369,6 @@ WHERE r.project_id=?
       return json({ exchangeRates: rows.results || [] });
     }
     if (operation === "exchange-rates" && request.method === "POST") {
-      const role = await requireRole(env.DB, projectId, userId, [
-        "Commercial Manager",
-        "Admin",
-      ]);
-      if (!role)
-        return json(
-          {
-            error: {
-              code: "EXCHANGE_RATE_APPROVAL_ROLE_REQUIRED",
-              message:
-                "Commercial Manager approval is required for exchange rates.",
-            },
-          },
-          403,
-        );
       const body = await request.json(),
         required = [
           "fromCurrency",
@@ -815,7 +442,7 @@ WHERE r.project_id=?
             body.reason || "Approved current project exchange-rate evidence",
           ),
           userId,
-          role,
+          actorRole,
           id("request"),
         ),
       ]);
@@ -894,21 +521,6 @@ WHERE r.project_id=?
       });
     }
     if (!scenarioRoute[2] && request.method === "POST") {
-      const role = await requireRole(env.DB, projectId, userId, [
-        "Estimator",
-        "Commercial Manager",
-        "Admin",
-      ]);
-      if (!role)
-        return json(
-          {
-            error: {
-              code: "PRICING_ROLE_REQUIRED",
-              message: "Your project role cannot create pricing scenarios.",
-            },
-          },
-          403,
-        );
       const body = await request.json(),
         name = String(body.name || "").trim();
       if (!name || !body.projectCurrency)
@@ -1016,21 +628,6 @@ WHERE r.project_id=?
       ["calculate", "recalculate"].includes(operation) &&
       request.method === "POST"
     ) {
-      const role = await requireRole(env.DB, item.project_id, userId, [
-        "Estimator",
-        "Commercial Manager",
-        "Admin",
-      ]);
-      if (!role)
-        return json(
-          {
-            error: {
-              code: "PRICING_ROLE_REQUIRED",
-              message: "Your project role cannot calculate pricing.",
-            },
-          },
-          403,
-        );
       const body = await request.json(),
         scenario = await env.DB.prepare(
           "SELECT * FROM pricing_scenarios WHERE id=? AND project_id=? AND deleted_at IS NULL AND superseded_at IS NULL",
@@ -1048,30 +645,64 @@ WHERE r.project_id=?
           404,
         );
       try {
+        // Commercial Pricing never trusts a client-supplied total cost.
+        // Rebuild the current Full BOM Cost from authoritative project
+        // evidence and fail closed until that cost is genuinely ready.
+        const costModel = await buildLineCostModel(env, {
+          itemId: boqItemId,
+          userId,
+        });
+
         const input = await loadPricingInput(env.DB, {
-            projectId: item.project_id,
-            boqItemId,
-            candidateId: String(body.candidateId || ""),
-            scenario,
-            body,
-          }),
-          result = calculatePricingLine(input),
-          persisted = await persistRun(env.DB, {
-            projectId: item.project_id,
-            scenario,
-            boqItemId,
-            candidateId: input.candidateId,
-            input,
-            result,
-            userId,
-            role,
-            reason: String(
-              body.reason ||
-                (operation === "recalculate"
-                  ? "Pricing recalculation"
-                  : "Initial pricing calculation"),
-            ),
+          projectId: item.project_id,
+          boqItemId,
+          candidateId: String(body.candidateId || ""),
+          scenario,
+          body,
+        });
+
+        // Primary-product pricing remains evidence/provenance only here.
+        // Real commercial selling price is calculated from Full BOM Cost
+        // by the tested commercial authority domain rule below.
+        const evidenceResult = calculatePricingLine({
+          ...input,
+          sellingRule: { method: "Markup", rate: 0, minimumMargin: 0 },
+          customerDiscount: { percentage: 0 },
+          vatRule: { rate: 0 },
+        });
+
+        const { result, authoritativeCost } =
+          buildCommercialPricingResult({
+            costModel,
+            pricingInput: input,
+            evidenceResult,
           });
+
+        // Lock the exact authoritative cost snapshot into the pricing
+        // fingerprint so a changed BOM/cost cannot silently reuse an old
+        // commercial result.
+        const persistedInput = {
+          ...input,
+          authoritativeCost,
+        };
+
+        const persisted = await persistRun(env.DB, {
+          projectId: item.project_id,
+          scenario,
+          boqItemId,
+          candidateId: input.candidateId,
+          input: persistedInput,
+          result,
+          userId,
+          actorRole,
+          reason: String(
+            body.reason ||
+              (operation === "recalculate"
+                ? "Pricing recalculation"
+                : "Initial pricing calculation"),
+          ),
+        });
+
         return json(persisted, 201);
       } catch (error) {
         return json(
@@ -1156,8 +787,7 @@ WHERE r.project_id=?
       return json({ sources: rows.results || [] });
     }
     if (operation === "manual-price" && request.method === "POST") {
-      const role = await roleFor(env.DB, item.project_id, userId),
-        body = await request.json(),
+      const body = await request.json(),
         technical = await env.DB.prepare(
           "SELECT a.status, d.candidate_id, c.product_id FROM safety_approval_requests a JOIN safety_decisions d ON d.id=a.safety_decision_id AND d.superseded_at IS NULL JOIN product_match_candidates c ON c.id=d.candidate_id JOIN product_match_runs r ON r.id=c.match_run_id WHERE d.candidate_id=? AND r.project_id=? AND r.boq_item_id=? AND r.superseded_at IS NULL AND r.version_number=(SELECT MAX(r2.version_number) FROM product_match_runs r2 WHERE r2.boq_item_id=r.boq_item_id AND r2.superseded_at IS NULL) AND a.approval_type='Technical' ORDER BY a.decided_at DESC, a.id DESC LIMIT 1",
         )
@@ -1165,7 +795,7 @@ WHERE r.project_id=?
           .first(),
         validation = validateManualPriceInput({
           input: { ...body, projectId: item.project_id, boqItemId },
-          user: { id: userId, role },
+          user: { id: userId },
           technicalApproval: technical
             ? { status: technical.status, candidateId: technical.candidate_id }
             : null,
@@ -1259,7 +889,7 @@ WHERE r.project_id=?
           }),
           String(body.reason),
           userId,
-          role,
+          actorRole,
           id("request"),
         ),
       ]);
@@ -1468,20 +1098,6 @@ WHERE r.project_id=?
           409,
         );
 
-      const role = await requireRole(env.DB, run.project_id, userId, [
-        "Commercial Manager",
-        "Admin",
-      ]);
-      if (!role)
-        return json(
-          {
-            error: {
-              code: "COMMERCIAL_APPROVAL_ROLE_REQUIRED",
-              message: "Commercial Manager approval is required.",
-            },
-          },
-          403,
-        );
       const body = await request.json(),
         reason = String(body.reason || "").trim();
       if (Number(body.entityVersion) !== Number(run.version_number))
@@ -1499,6 +1115,60 @@ WHERE r.project_id=?
       )
         .bind(run.id)
         .all();
+
+      if (operation === "approve") {
+        const runLines = lines.results || [];
+        const lockedVersions = parse(run.locked_versions, {});
+        const lockedCost = lockedVersions.authoritativeCost || null;
+
+        if (!lockedCost)
+          return json(
+            {
+              error: {
+                code: "STALE_PRICING_COST",
+                message:
+                  "This pricing run does not contain an authoritative Full BOM Cost lock. Recalculate pricing before approval.",
+              },
+            },
+            409,
+          );
+
+        if (runLines.length !== 1)
+          return json(
+            {
+              error: {
+                code: "PRICING_COST_LOCK_SCOPE_INVALID",
+                message:
+                  "The current pricing run/cost-lock scope is ambiguous. Recalculate pricing before approval.",
+              },
+            },
+            409,
+          );
+
+        const currentCostModel = await buildLineCostModel(env, {
+          itemId: runLines[0].boq_item_id,
+          userId,
+        });
+
+        try {
+          assertCommercialCostFreshness({
+            lockedCost,
+            currentCostModel,
+          });
+        } catch (error) {
+          return json(
+            {
+              error: {
+                code: error.code || "STALE_PRICING_COST",
+                message: error.message,
+                suggestedAction:
+                  "Recalculate pricing from the current BOM and Cost Build-Up before approval.",
+              },
+            },
+            409,
+          );
+        }
+      }
       if (
         operation === "approve" &&
         (lines.results || []).some(
@@ -1541,7 +1211,7 @@ WHERE r.project_id=?
           JSON.stringify(body.evidence || {}),
           userId,
           userId,
-          role,
+          actorRole,
           reason,
           now(),
         ),
@@ -1555,7 +1225,7 @@ WHERE r.project_id=?
           JSON.stringify({ approvalId, version: run.version_number }),
           reason,
           userId,
-          role,
+          actorRole,
           id("request"),
         ),
       ]);

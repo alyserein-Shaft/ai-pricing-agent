@@ -73,6 +73,96 @@ export const sellingPrice = ({ totalCost, method, rate, fixedPrice, minimumMargi
   if ((margin < minimumMargin || margin < 0) && !authorizedException) throw Object.assign(new Error("Selling price breaches the approved minimum margin."), { code: "MINIMUM_MARGIN_BREACH", margin, minimumMargin }); return { gross, profit, margin, markup, state };
 };
 
+export const calculateCommercialPricing = ({
+  totalCost,
+  sellingRule,
+  customerDiscount = { percentage: 0 },
+  vatRule = { rate: 0 },
+  precision = 2,
+}) => {
+  const cost = number(totalCost, "INVALID_TOTAL_COST");
+  if (cost < 0)
+    throw Object.assign(new Error("Total cost cannot be negative."), {
+      code: "INVALID_TOTAL_COST",
+    });
+
+  const sale = sellingPrice({
+    totalCost: cost,
+    ...(sellingRule || {}),
+    precision,
+  });
+
+  const discountPercentage = Number(customerDiscount?.percentage || 0);
+  if (
+    !Number.isFinite(discountPercentage) ||
+    discountPercentage < 0 ||
+    discountPercentage > 100
+  )
+    throw Object.assign(
+      new Error("Customer discount must be between 0 and 100%."),
+      { code: "INVALID_CUSTOMER_DISCOUNT" },
+    );
+
+  const customerDiscountAmount = round(
+    sale.gross * discountPercentage / 100,
+    precision,
+  );
+  const netSelling = round(
+    sale.gross - customerDiscountAmount,
+    precision,
+  );
+
+  const resultingMargin = netSelling
+    ? round((netSelling - cost) / netSelling * 100, 4)
+    : -100;
+
+  if (
+    resultingMargin < Number(sellingRule?.minimumMargin || 0) &&
+    !customerDiscount?.authorizedException
+  )
+    return {
+      status: "Pricing Blocked",
+      blockers: ["CUSTOMER_DISCOUNT_MINIMUM_BREACH"],
+      approvalReady: false,
+      totalCost: cost,
+      grossSelling: sale.gross,
+      customerDiscount: customerDiscountAmount,
+      netSelling,
+      margin: resultingMargin,
+      markup: cost
+        ? round((netSelling - cost) / cost * 100, 4)
+        : 0,
+    };
+
+  const vatRate = Number(
+    vatRule?.applicable === false ? 0 : vatRule?.rate || 0,
+  );
+  if (!Number.isFinite(vatRate) || vatRate < 0 || vatRate > 100)
+    throw Object.assign(new Error("VAT rate is invalid."), {
+      code: "INVALID_VAT",
+    });
+
+  const vat = round(netSelling * vatRate / 100, precision);
+  const finalValue = round(netSelling + vat, precision);
+
+  return {
+    status: "Draft Price",
+    approvalReady: true,
+    totalCost: cost,
+    grossSelling: sale.gross,
+    customerDiscount: customerDiscountAmount,
+    netSelling,
+    vatRate,
+    vat,
+    finalValue,
+    grossProfit: round(netSelling - cost, precision),
+    margin: resultingMargin,
+    markup: cost
+      ? round((netSelling - cost) / cost * 100, 4)
+      : 0,
+  };
+};
+
 export const calculatePricingLine = (input) => {
   const blockers = []; if (!input.technicalApproval || input.technicalApproval.status !== "Approved" || input.technicalApproval.candidateId !== input.candidateId) blockers.push("TECHNICAL_APPROVAL_REQUIRED"); if (!input.safetyDecision || !/^Eligible/.test(input.safetyDecision.priceEligibility || "")) blockers.push("SAFETY_PRICE_ELIGIBILITY_REQUIRED"); if (!present(input.unit)) blockers.push("UNIT_REQUIRED");
   let multiplier; try { multiplier = quantityMultiplier({ quantity: input.quantity, unit: input.unit, lumpSumMode: input.lumpSumMode }); } catch (error) { blockers.push(error.code); }
@@ -113,9 +203,44 @@ export const calculatePricingLine = (input) => {
     };
   const conversion = convertCurrency({ amount: source.amount, sourceCurrency: source.currency, projectCurrency: input.projectCurrency, exchangeRate: input.exchangeRate, precision: input.precision }); const discounted = applyDiscounts({ amount: conversion.convertedAmount, discounts: input.discounts || [], context: { componentType: "Material", projectId: input.projectId, manufacturer: input.manufacturer, sourceId: source.id, at: input.calculatedAt, precision: input.precision || 2 } }); const materialTotal = round(discounted.net * multiplier, input.precision);
   const components = (input.costComponents || []).map((component) => calculateCostComponent({ component, bases: { quantity: multiplier, material: materialTotal, directCost: materialTotal }, precision: input.precision })); const directCost = round(materialTotal + components.filter((entry) => !["Overhead", "Risk", "Contingency"].includes(entry.type)).reduce((sum, entry) => sum + entry.calculatedAmount, 0), input.precision); const indirect = components.filter((entry) => ["Overhead", "Risk", "Contingency"].includes(entry.type)).reduce((sum, entry) => sum + entry.calculatedAmount, 0); const totalCost = round(directCost + indirect, input.precision);
-  const sale = sellingPrice({ totalCost, ...input.sellingRule, precision: input.precision }); const customerDiscount = round(sale.gross * Number(input.customerDiscount?.percentage || 0) / 100, input.precision), netSelling = round(sale.gross - customerDiscount, input.precision); const resultingMargin = netSelling ? round((netSelling - totalCost) / netSelling * 100, 4) : -100; if (resultingMargin < Number(input.sellingRule.minimumMargin || 0) && !input.customerDiscount?.authorizedException) return { status: "Pricing Blocked", blockers: ["CUSTOMER_DISCOUNT_MINIMUM_BREACH"], approvalReady: false, totalCost, grossSelling: sale.gross };
-  const vatRate = Number(input.vatRule?.applicable === false ? 0 : input.vatRule?.rate || 0); if (vatRate < 0 || vatRate > 100) throw Object.assign(new Error("VAT rate is invalid."), { code: "INVALID_VAT" }); const vat = round(netSelling * vatRate / 100, input.precision), finalValue = round(netSelling + vat, input.precision);
-  return { engineVersion: PRICING_ENGINE_VERSION, rulesetVersion: PRICING_RULESET_VERSION, status: source.validity === "Expiring Soon" ? "Needs Review" : "Draft Price", approvalReady: true, selectedSource: source, sourceAlternatives: ranked.filter((entry) => entry.id !== source.id), originalListPrice: source.amount, conversion, discounts: discounted.chain, netMaterialUnitCost: discounted.net, quantity: multiplier, materialTotal, components, directCost, totalCost, grossSelling: sale.gross, customerDiscount, netSelling, vatRate, vat, finalValue, grossProfit: round(netSelling - totalCost, input.precision), margin: resultingMargin, markup: totalCost ? round((netSelling - totalCost) / totalCost * 100, 4) : 0, explanation: `${source.priceType} ${source.reference || source.id} supplied ${source.amount} ${source.currency}. ${discounted.chain.length} controlled discount${discounted.chain.length === 1 ? " was" : "s were"} applied to material only. Total cost is ${totalCost} ${input.projectCurrency}; net selling is ${netSelling}, VAT is ${vat}, and final value is ${finalValue}.` };
+  const commercial = calculateCommercialPricing({
+    totalCost,
+    sellingRule: input.sellingRule,
+    customerDiscount: input.customerDiscount,
+    vatRule: input.vatRule,
+    precision: input.precision,
+  });
+
+  if (!commercial.approvalReady)
+    return commercial;
+
+  return {
+    engineVersion: PRICING_ENGINE_VERSION,
+    rulesetVersion: PRICING_RULESET_VERSION,
+    status: source.validity === "Expiring Soon" ? "Needs Review" : "Draft Price",
+    approvalReady: true,
+    selectedSource: source,
+    sourceAlternatives: ranked.filter((entry) => entry.id !== source.id),
+    originalListPrice: source.amount,
+    conversion,
+    discounts: discounted.chain,
+    netMaterialUnitCost: discounted.net,
+    quantity: multiplier,
+    materialTotal,
+    components,
+    directCost,
+    totalCost,
+    grossSelling: commercial.grossSelling,
+    customerDiscount: commercial.customerDiscount,
+    netSelling: commercial.netSelling,
+    vatRate: commercial.vatRate,
+    vat: commercial.vat,
+    finalValue: commercial.finalValue,
+    grossProfit: commercial.grossProfit,
+    margin: commercial.margin,
+    markup: commercial.markup,
+    explanation: `${source.priceType} ${source.reference || source.id} supplied ${source.amount} ${source.currency}. ${discounted.chain.length} controlled discount${discounted.chain.length === 1 ? " was" : "s were"} applied to material only. Total cost is ${totalCost} ${input.projectCurrency}; net selling is ${commercial.netSelling}, VAT is ${commercial.vat}, and final value is ${commercial.finalValue}.`,
+  };
 };
 
 export const allocateSharedCost = ({ amount, items, method }) => {
@@ -124,4 +249,4 @@ export const allocateSharedCost = ({ amount, items, method }) => {
 
 export const aggregateProjectPricing = (lines) => { const approved = lines.filter((line) => line.approvalReady); const sum = (field) => round(approved.reduce((total, line) => total + Number(line[field] || 0), 0), 2); const totalCost = sum("totalCost"), netSelling = sum("netSelling"); return { itemCount: lines.length, pricedItemCount: approved.length, material: sum("materialTotal"), totalCost, grossSelling: sum("grossSelling"), customerDiscount: sum("customerDiscount"), netSelling, vat: sum("vat"), finalValue: sum("finalValue"), grossProfit: round(netSelling - totalCost, 2), grossMargin: netSelling ? round((netSelling - totalCost) / netSelling * 100, 4) : 0 }; };
 
-export const validateManualPriceInput = ({ input, user, technicalApproval }) => { const missing = ["projectId", "boqItemId", "candidateId", "productId", "price", "currency", "source", "validUntil", "reason", "scope"].filter((field) => !present(input?.[field])); const permittedRole = ["Procurement", "Commercial Manager", "Admin"].includes(user?.role); const technical = technicalApproval?.status === "Approved" && technicalApproval?.candidateId === input?.candidateId; return { permitted: !missing.length && Number(input?.price) > 0 && validDate(input?.validUntil, new Date().toISOString()) && permittedRole && technical, missing, permittedRole, technicalApproved: technical, classification: present(input?.source) ? "Manual Verified Price" : "Manual Unverified Price", auditRequired: true }; };
+export const validateManualPriceInput = ({ input, user, technicalApproval }) => { const missing = ["projectId", "boqItemId", "candidateId", "productId", "price", "currency", "source", "validUntil", "reason", "scope"].filter((field) => !present(input?.[field])); const authenticated = Boolean(user?.id); const technical = technicalApproval?.status === "Approved" && technicalApproval?.candidateId === input?.candidateId; return { permitted: !missing.length && Number(input?.price) > 0 && validDate(input?.validUntil, new Date().toISOString()) && authenticated && technical, missing, authenticated, technicalApproved: technical, classification: present(input?.source) ? "Manual Verified Price" : "Manual Unverified Price", auditRequired: true }; };

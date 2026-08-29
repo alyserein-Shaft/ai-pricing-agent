@@ -14,8 +14,10 @@ test("Task 11 routes safety evaluation before the framework and matching handler
 
 test("Task 11 API persists immutable decisions and enforces controlled approvals", async () => {
   const api = await readFile(new URL("worker/confidence-safety-api.mjs", root), "utf8");
-  for (const required of ["INSERT INTO safety_decisions", "INSERT INTO safety_blocks", "INSERT INTO safety_warnings", "STALE_SAFETY_VERSION", "APPROVAL_ROLE_REQUIRED", "APPROVAL_BLOCKED", "WARNING_ACKNOWLEDGMENT_REQUIRED", "OVERRIDE_NOT_PERMITTED", "safety_decision_comparisons"]) assert.match(api, new RegExp(required));
+  for (const required of ["INSERT INTO safety_decisions", "INSERT INTO safety_blocks", "INSERT INTO safety_warnings", "STALE_SAFETY_VERSION", "APPROVAL_BLOCKED", "WARNING_ACKNOWLEDGMENT_REQUIRED", "OVERRIDE_NOT_PERMITTED", "safety_decision_comparisons"]) assert.match(api, new RegExp(required));
   assert.match(api, /superseded_at/);
   assert.match(api, /owner_user_id/);
+  assert.match(api, /actorRole = "Project User"/);
+  assert.doesNotMatch(api, /APPROVAL_ROLE_REQUIRED|OVERRIDE_DECISION_ROLE_REQUIRED/);
   assert.doesNotMatch(api, /localStorage|sessionStorage/);
 });

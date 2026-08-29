@@ -11,7 +11,7 @@ test("manual price cannot bypass technical approval", () => {
       source: "Supplier quotation Q-1", validUntil: "2099-01-01",
       scope: "Project", reason: "Current supplier evidence",
     },
-    user: { id: "u1", role: "Commercial Manager" },
+    user: { id: "u1" },
     technicalApproval: null,
   });
   assert.equal(result.permitted, false);

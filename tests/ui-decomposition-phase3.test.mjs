@@ -23,7 +23,7 @@ test("expired and historical sources cannot appear as approved costing sources",
 });
 
 test("manual pricing requires a reason and server-governed evidence", () => {
-  const result = validateManualPriceInput({ input: { projectId: "p1", boqItemId: "b1", candidateId: "c1", price: 10, currency: "SAR" }, user: { id: "u1", role: "Estimator" }, technicalApproval: { status: "Approved", candidateId: "c1" } });
+  const result = validateManualPriceInput({ input: { projectId: "p1", boqItemId: "b1", candidateId: "c1", price: 10, currency: "SAR" }, user: { id: "u1" }, technicalApproval: { status: "Approved", candidateId: "c1" } });
   assert.equal(result.permitted, false); assert.ok(result.missing.length > 0);
 });
 

@@ -13,7 +13,7 @@
 // nothing resembling real commercial logic is exercised, and this module's
 // own response never includes those fields regardless.
 import { applicationActor, resolveApplicationContext } from "./application-context.mjs";
-import { loadPricingInput, persistRun } from "./pricing-api.mjs";
+import { loadPricingInput, persistRun } from "./pricing-runtime.mjs";
 import { calculatePricingLine } from "../app/domain/pricing-engine.mjs";
 import { buildLineBomModel } from "./boq-line-bom-api.mjs";
 import {
@@ -457,7 +457,7 @@ export async function handleBoqLineCostApi(request, env) {
       body: { sellingRule: { method: "Markup", rate: 0, minimumMargin: 0 }, customerDiscount: { percentage: 0 }, vatRule: { rate: 0 }, ...extra },
     });
     const result = calculatePricingLine(input);
-    const persisted = await persistRun(env.DB, { projectId: item.project_id, scenario, boqItemId: itemId, candidateId: selection.candidateId, input, result, userId: user.id, role: "Estimator", reason });
+    const persisted = await persistRun(env.DB, { projectId: item.project_id, scenario, boqItemId: itemId, candidateId: selection.candidateId, input, result, userId: user.id, role: "Project User", reason });
     return persisted;
   };
 

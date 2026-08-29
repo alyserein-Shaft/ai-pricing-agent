@@ -305,7 +305,8 @@ test("review API and UI preserve current evidence, privacy and downstream bounda
     readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
   ]);
   assert.match(api, /currentBoqEvidenceFrom/); assert.match(api, /UNDERSTANDING_REVIEW_STALE/); assert.match(api, /UNDERSTANDING_REVIEW_SELECTION_STALE/); assert.match(api, /UNDERSTANDING_REVIEW_IDEMPOTENCY_CONFLICT/);
-  assert.match(api, /ENGINEER_ROLES/); assert.match(api, /UNDERSTANDING_REVIEW_FORBIDDEN/);
+  assert.match(api, /project_members/); assert.match(api, /resolved\.context\.fullAccess/);
+  assert.doesNotMatch(api, /ENGINEER_ROLES|UNDERSTANDING_REVIEW_FORBIDDEN/);
   assert.match(api, /db\.batch/); assert.doesNotMatch(api, /INSERT INTO (?:product_match|pricing|project_quotation|review_decisions)/i);
   assert.ok(api.indexOf("selectionAuthority !== understandingReviewSelectionAuthority") < api.indexOf("db.batch"), "selection authority must fail before writes");
   assert.doesNotMatch(ui, /raw_response|raw model output|account.?id|credentials|interpretationId|boqItemId/i);

@@ -20,15 +20,12 @@ export const calculateReviewPriority = ({ safetyState, severity, blocking, dueDa
   return { score, priority: score >= 65 ? "Critical" : score >= 40 ? "High" : score >= 18 ? "Medium" : "Low" };
 };
 
-export const validateDecision = ({ review, decision, role, currentVersion, safety, technicalApproved, pricingReady, dependencies = [], conditions = [] }) => {
+export const validateDecision = ({ review, decision, currentVersion, safety, technicalApproved, pricingReady, dependencies = [], conditions = [] }) => {
   const errors = [];
   if (!review) errors.push("REVIEW_NOT_FOUND");
   if (review && Number(currentVersion) !== Number(review.versionNumber)) errors.push("STALE_REVIEW_VERSION");
   if (!String(decision?.reason || "").trim() || String(decision?.reason || "").trim().length < 10) errors.push("DECISION_REASON_REQUIRED");
-  if (!role) errors.push("REVIEW_ROLE_REQUIRED");
   const type = String(decision?.type || "");
-  if (type.includes("Technical") && !["Senior Technical Reviewer", "Technical Manager", "Admin"].includes(role)) errors.push("TECHNICAL_APPROVAL_ROLE_REQUIRED");
-  if ((type.includes("Commercial") || type.includes("Margin") || type.includes("Cost") || type.includes("Price")) && !["Commercial Reviewer", "Commercial Manager", "Management", "Admin"].includes(role)) errors.push("COMMERCIAL_APPROVAL_ROLE_REQUIRED");
   if ((type.includes("Approve") || type === "Approved") && safety && safety.technicalEligibility !== "Eligible") errors.push("SAFETY_APPROVAL_BLOCKED");
   if ((type.includes("Commercial") || type.includes("Cost") || type.includes("Price")) && !technicalApproved) errors.push("TECHNICAL_APPROVAL_REQUIRED");
   if ((type.includes("Commercial") || type.includes("Cost")) && !pricingReady) errors.push("PRICING_APPROVAL_BLOCKED");

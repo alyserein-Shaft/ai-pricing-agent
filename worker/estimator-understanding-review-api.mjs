@@ -28,8 +28,7 @@ export const understandingReviewSelectionAuthority = (projectId, row) => digest(
   evidenceDocumentVersionId: row.evidenceDocumentVersionId || null,
   evidenceExtractionVersion: row.evidenceExtractionVersion || null,
 }));
-const ENGINEER_ROLES = new Set(["Admin", "Administrator", "Project Manager", "Technical Manager", "Technical Reviewer"]);
-const access = (db, projectId, context) => db.prepare(`SELECT p.id,COALESCE(m.role,CASE WHEN p.owner_user_id=? THEN 'Project Manager' END) role FROM projects p LEFT JOIN project_members m ON m.project_id=p.id AND m.user_id=? AND m.status='Active' AND m.revoked_at IS NULL WHERE p.id=? AND p.organization_id=? AND (p.owner_user_id=? OR m.id IS NOT NULL)`).bind(context.userId, context.userId, projectId, context.organizationId, context.userId).first();
+const access = (db, projectId, context) => db.prepare(`SELECT p.id FROM projects p LEFT JOIN project_members m ON m.project_id=p.id AND m.user_id=? AND m.status='Active' AND m.revoked_at IS NULL WHERE p.id=? AND p.organization_id=? AND (p.owner_user_id=? OR m.id IS NOT NULL)`).bind(context.userId, projectId, context.organizationId, context.userId).first();
 
 export const loadUnderstandingReviewRows = async (db, projectId) => {
   const result = await db.prepare(`SELECT b.id boqItemId,b.item_number itemReference,b.row_type rowType,b.description,b.numeric_quantity numericQuantity,b.original_quantity originalQuantity,b.normalized_unit normalizedUnit,b.original_unit originalUnit,b.system_value sourceSystem,b.category sourceCategory,b.subcategory sourceSubcategory,b.manufacturer,b.model sourceModel,b.part_number sourcePartNumber,b.current_values currentValues,b.source_location sourceLocation,b.review_status extractionReviewStatus,b.approved_for_downstream extractionApproved,b.evidence_document_version_id evidenceDocumentVersionId,b.evidence_extraction_version evidenceExtractionVersion,
@@ -276,7 +275,6 @@ export async function handleEstimatorUnderstandingReviewApi(request, env, ctx) {
   const projectId = decodeURIComponent((listMatch || itemMatch)[1]);
   const projectAuthority = await access(env.DB, projectId, resolved.context);
   if (!resolved.context.fullAccess || !projectAuthority) return json({ error: { code: "PROJECT_NOT_FOUND", message: "Project not found." } }, 404);
-  if (!ENGINEER_ROLES.has(projectAuthority.role)) return json({ error: { code: "UNDERSTANDING_REVIEW_FORBIDDEN", message: "An authorized engineer role is required." } }, 403);
   if (listMatch) return request.method === "GET" ? json(await listReview(env.DB, projectId, url)) : json({ error: { code: "BULK_UNDERSTANDING_REVIEW_PROHIBITED", message: "Review one current BOQ item at a time." } }, 405);
   const row = await resolveCurrent(env.DB, projectId, decodeURIComponent(itemMatch[2]));
   if (!row) return json({ error: { code: "CURRENT_BOQ_ITEM_NOT_FOUND", message: "Current BOQ item not found." } }, 404);

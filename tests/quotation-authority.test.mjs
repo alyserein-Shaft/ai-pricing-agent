@@ -80,7 +80,7 @@ const migratedQuotationDb = async () => {
 
 test("real migrated database permits exactly one approval authority", async () => {
   const db = await migratedQuotationDb();
-  const approve = (id) => db.exec(`BEGIN IMMEDIATE; INSERT INTO project_quotation_decisions(id,project_id,quotation_revision_id,action,previous_status,next_status,reason,actor_user_id,actor_role,quotation_fingerprint) VALUES ('${id}','p1','q1','Approve','Draft','Approved','reviewed evidence','u1','Commercial Approver','qf'); UPDATE project_quotation_revisions SET status='Approved',approved_at='now' WHERE id='q1' AND status='Draft'; COMMIT;`);
+  const approve = (id) => db.exec(`BEGIN IMMEDIATE; INSERT INTO project_quotation_decisions(id,project_id,quotation_revision_id,action,previous_status,next_status,reason,actor_user_id,actor_role,quotation_fingerprint) VALUES ('${id}','p1','q1','Approve','Draft','Approved','reviewed evidence','u1','Project User','qf'); UPDATE project_quotation_revisions SET status='Approved',approved_at='now' WHERE id='q1' AND status='Draft'; COMMIT;`);
   approve("d1");
   assert.throws(() => approve("d2"), /QUOTATION_APPROVAL_STALE|UNIQUE constraint/);
   try { db.exec("ROLLBACK"); } catch {}

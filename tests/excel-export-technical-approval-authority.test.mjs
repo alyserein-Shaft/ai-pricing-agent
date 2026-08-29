@@ -26,6 +26,12 @@ const fixture = () => {
   const raw = new DatabaseSync(":memory:");
 
   raw.exec(`
+    CREATE TABLE projects (
+      id TEXT PRIMARY KEY,
+      organization_id TEXT,
+      archived_at TEXT
+    );
+
     CREATE TABLE project_dashboard_profiles (
       project_id TEXT PRIMARY KEY,
       selected_pricing_scenario_id TEXT,
@@ -52,7 +58,9 @@ const fixture = () => {
     CREATE TABLE boq_extraction_versions (
       id TEXT PRIMARY KEY,
       document_id TEXT,
+      document_version_id TEXT,
       version_number INTEGER,
+      status TEXT,
       superseded_at TEXT
     );
 
@@ -60,6 +68,7 @@ const fixture = () => {
       id TEXT PRIMARY KEY,
       project_id TEXT,
       extraction_version_id TEXT,
+      source_document_id TEXT,
       row_type TEXT,
       sequence INTEGER,
       original_quantity TEXT,
@@ -72,7 +81,14 @@ const fixture = () => {
       id TEXT PRIMARY KEY,
       project_id TEXT,
       logical_name TEXT,
+      current_version_id TEXT,
+      deleted_at TEXT,
       archived_at TEXT
+    );
+
+    CREATE TABLE document_versions (
+      id TEXT PRIMARY KEY,
+      document_id TEXT
     );
 
     CREATE TABLE product_match_runs (
@@ -242,6 +258,12 @@ const fixture = () => {
       superseded_at TEXT
     );
 
+    INSERT INTO projects (
+      id, organization_id, archived_at
+    ) VALUES (
+      '${PROJECT_ID}', 'org-1', NULL
+    );
+
     INSERT INTO project_dashboard_profiles (
       project_id, selected_pricing_scenario_id, deleted_at
     ) VALUES (
@@ -255,22 +277,28 @@ const fixture = () => {
     );
 
     INSERT INTO documents (
-      id, project_id, logical_name, archived_at
+      id, project_id, logical_name, current_version_id, deleted_at, archived_at
     ) VALUES (
-      'doc-1', '${PROJECT_ID}', 'BOQ.xlsx', NULL
+      'doc-1', '${PROJECT_ID}', 'BOQ.xlsx', 'doc-version-1', NULL, NULL
+    );
+
+    INSERT INTO document_versions (
+      id, document_id
+    ) VALUES (
+      'doc-version-1', 'doc-1'
     );
 
     INSERT INTO boq_extraction_versions (
-      id, document_id, version_number, superseded_at
+      id, document_id, document_version_id, version_number, status, superseded_at
     ) VALUES (
-      'boq-version-1', 'doc-1', 1, NULL
+      'boq-version-1', 'doc-1', 'doc-version-1', 1, 'Completed', NULL
     );
 
     INSERT INTO boq_items (
-      id, project_id, extraction_version_id, row_type,
+      id, project_id, extraction_version_id, source_document_id, row_type,
       sequence, original_quantity, description, unit, source_location
     ) VALUES (
-      'boq-1', '${PROJECT_ID}', 'boq-version-1', 'BOQ Item',
+      'boq-1', '${PROJECT_ID}', 'boq-version-1', 'doc-1', 'BOQ Item',
       1, '1', 'Smoke detector', 'EA', '{}'
     );
 

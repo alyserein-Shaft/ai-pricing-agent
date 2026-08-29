@@ -49,10 +49,10 @@ test("undated supplier evidence stays blocked from costing", () => {
   assert.ok(result.blockers.includes("CURRENT_PRICE_SOURCE_REQUIRED"));
 });
 
-test("manual pricing requires governed source, reason, validity, scope and role", () => {
+test("manual pricing requires governed source, reason, validity and scope", () => {
   const result = validateManualPriceInput({
     input: { projectId: "p1", boqItemId: "b1", candidateId: "c1", productId: "product-1", price: 10, currency: "SAR" },
-    user: { role: "Estimator" }, technicalApproval: { status: "Approved", candidateId: "c1" },
+    user: { id: "u1" }, technicalApproval: { status: "Approved", candidateId: "c1" },
   });
   assert.equal(result.permitted, false);
   assert.ok(result.missing.length > 0);
