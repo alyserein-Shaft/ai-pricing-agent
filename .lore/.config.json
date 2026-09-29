@@ -1,0 +1,1 @@
+{"auto_mirror":false,"compress_thresholds":{"max_days_since_compress":30,"max_entries":500},"mirror_mode":"index","mirror_targets":[],"schema_version":1,"sync_thresholds":{"min_directories_changed":2,"min_lines_changed":50},"sync_trust":"medium"}

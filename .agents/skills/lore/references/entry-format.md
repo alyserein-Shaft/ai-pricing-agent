@@ -1,0 +1,102 @@
+# Entry format reference
+
+Detailed specification for `.lore/` entries. The main `SKILL.md` covers entry structure briefly; this file is the full spec.
+
+## Bullet structure
+
+Each entry is a Markdown bullet (≤ 2 lines), containing:
+
+- **Layer prefix**: `ARCH`, `DEC`, or `CONV`
+- **ID**: `LAYER-YYYY-MM-DD-xxxx` where `xxxx` is a 4-char content hash
+- **Inline status tags** (at the end of the entry)
+
+```markdown
+- [ARCH-2026-07-09-a3f2] Use Next.js App Router; reason: streaming + RSC. #added:2026-07-09
+- [DEC-2026-02-03-7c19] Chose Zustand over Redux; reason: 60% less boilerplate. Alternatives: Redux Toolkit, Jotai. #added:2026-02-03
+- [CONV-2026-01-20-b1e8] Never commit secrets; use `dotenv` + `.env.local` (gitignored). #added:2026-01-20
+- [ARCH-2026-03-10-a1b2] Use TanStack Query for all server state. #added:2026-03-10 #verified:2026-06-15
+```
+
+## ID generation
+
+The 4-char `xxxx` is the first 4 hex chars of `sha256(entry text)`. This makes IDs:
+
+- **Deterministic**: the exact same entry text produces the same hash
+- **Coordination-light**: concurrent agents can compute IDs independently, with the collision check below as the safeguard
+- **Searchable**: tools can locate stored entries by their IDs
+
+Identical text producing the same hash is a duplicate, not a collision. A collision is when two different entry bodies produce the same 4-character hash. If that would create the same full ID, keep the existing entry unchanged, add a meaningful qualifier (such as scope, object, or applicability) to the new body, and recompute its hash. Do not resolve collisions with invisible whitespace.
+
+### Updating an entry (REFINED)
+
+Because the ID hashes the body, **any body change produces a new ID**. `sync`'s `[REFINED]` proposal follows this rule: tags-only updates (body unchanged) keep the ID; body rewrites create a new entry with a freshly hashed ID and link the old one via `#superseded-by:<new-id>` (see `references/stale-new-markers.md`).
+
+## Tag specification
+
+| Tag | Meaning |
+|---|---|
+| `#added:YYYY-MM-DD` | When the entry was created |
+| `#verified:YYYY-MM-DD` | Last time a human or audit confirmed the entry is still true |
+| `#stale:YYYY-MM-DD` | Flagged by `sync` as no longer accurate. Two cases: (a) the entry was superseded — pair with `#superseded-by:<new-id>`; (b) deprecated with no successor — alone. |
+| `#superseded-by:LAYER-YYYY-MM-DD-xxxx` | Points to the entry that replaces this one. When present, it implies staleness; the `#stale:<date>` tag is optional but encouraged for clarity. The `xxxx` is the 4-hex content hash of the replacement. |
+
+Multiple tags can co-exist on one entry (e.g. `#added:2026-01-15 #verified:2026-06-01`).
+
+**Active-entry rule:** an entry is active when it has neither `#stale:<date>` nor `#superseded-by:<id>`. In `list_entries.py --json`, check that `"stale"` is absent from `tags` and `replaced_by` is unset. Apply this rule to current-state `query` answers, `compress` selection, and sync's verification-only duplicate handling. It excludes stale entries even without a successor. Entries with no tags remain eligible; age alone is a review signal, not proof of invalidity. Historical queries and audits may still read inactive entries and must identify their status. This is a consumer rule; `list_entries.py` continues to enumerate all entries.
+
+## Cross-file references
+
+When `SUMMARY.md` or another file references an entry, qualify it with the file path to avoid ID collisions across scopes:
+
+```
+[scopes/frontend/DECISIONS.md#DEC-2026-02-03-7c19]
+[_global/CONVENTIONS.md#CONV-2026-01-20-b1e8]
+```
+
+The path is relative to `.lore/`.
+
+## Splitting vs. single entries
+
+If a fact can't fit in ≤ 2 lines, split into multiple entries and cross-reference them by ID:
+
+```markdown
+- [ARCH-2026-07-09-a3f2] Use Next.js App Router. #added:2026-07-09
+- [DEC-2026-07-09-b1e8] Reason: streaming + RSC, see [ARCH-2026-07-09-a3f2]. #added:2026-07-09
+```
+
+Instead of stuffing them into a single overly long bullet.
+
+## Superseded-by chain
+
+When an entry is replaced by another (e.g. a tech-stack swap, a convention reversal), the old entry carries `#superseded-by:<new-id>` alongside `#stale:<date>`. This turns the replacement relationship from prose into data that scripts can walk.
+
+Syntax: `#superseded-by:LAYER-YYYY-MM-DD-xxxx` — the replacement entry's full ID. The replacement entry itself carries no back-reference; its `#verified:DATE` and `#added:DATE` are sufficient.
+
+Worked example — bcrypt replaces SHA-256 in `scopes/backend/DECISIONS.md`:
+
+```markdown
+- [DEC-2026-07-10-ee31] SHA-256 + salt for password hashing; reason: no native dep, deterministic. #added:2026-07-10 #stale:2026-07-10 #superseded-by:DEC-2026-07-10-e45d
+- [DEC-2026-07-10-e45d] Use bcrypt (rounds=12) for password hashing; reason: industry standard, built-in salt. #added:2026-07-10
+```
+
+Consumers:
+
+- `find_stale.py --json` — groups stale entries by their `replaced_by` target; flags chains where the target ID does not exist (broken chain).
+- `history.py --follow-superseded <id>` — prints the requested entry first, followed by each successor in chain order.
+- `compress` — applies the active-entry rule above when selecting the 3–5 entries per (scope, layer).
+- `audit` — when reporting CONFLICT between two entries, surfaces the chain if both belong to one.
+
+Constraints:
+
+- The tag is **optional**. Old entries without it continue to work; old skills ignore it.
+- **At most one `#superseded-by` tag per entry.** Successive replacements form a chain (A → B → C), never a fork: an entry is replaced by one successor at a time. If an entry carries more than one tag, `list_entries.py` warns and keeps the first.
+- Cross-file references: qualify the ID with its `.lore/`-relative file path whenever the target file is known. If a legacy bare-ID reference matches more than one file, prefer the entry in the same scope and report the ambiguity rather than guessing silently.
+
+## What counts as "atomic"
+
+A fact is atomic if it answers one primary question. A brief inline reason may qualify the same ARCH fact within the two-line limit; it does not by itself require a separate DEC entry. Follow the Layer semantics in `SKILL.md`:
+
+- "What is the frontend framework?" → `ARCH` entry about Next.js
+- "Why Next.js not Remix?" → `DEC` entry referencing the `ARCH` entry
+
+Split independent facts, alternatives, or tradeoffs into separate entries; detailed rationale that needs its own entry belongs in DEC. The presence of `reason:` or `because` alone does not require a split.

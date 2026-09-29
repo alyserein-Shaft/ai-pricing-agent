@@ -1,0 +1,9 @@
+# Global Conventions
+
+- [CONV-2026-09-29-763e] Never commit, push, deploy, stash, reset, revert, clean, restart services, or run destructive migrations unless explicitly requested; assume shared tree holds others' uncommitted work; see `AGENTS.md`. #added:2026-09-29
+- [CONV-2026-09-29-7fb8] READ-ONLY means READ-ONLY: no source/format/schema/DB/project-data edits, no auto-fix, no commit/push/deploy/restart during audits; report smallest sufficient next slice and STOP. #added:2026-09-29
+- [CONV-2026-09-29-eeb3] Do not invent API shapes, product identities, prices, quantities, compatibility claims, or workflow states; verify fixes with relevant tests and report exact failures. #added:2026-09-29
+- [CONV-2026-09-29-9538] All agents may READ/query `.lore/`; only one designated main/continuity owner writes canonical `.lore/` state at a time; subagents return evidence/reports; no parallel overlapping Lore writes or concurrent init/sync/compress. #added:2026-09-29
+- [CONV-2026-09-29-0e80] At new session start load continuity once: read `.lore/SUMMARY.md`, query relevant scope, inspect tree state, classify delta (KNOWN/VALID/STALE/NEW), work smallest delta; do not re-bootstrap mid-session unless state materially changes. #added:2026-09-29
+- [CONV-2026-09-29-a173] Reuse prior test/audit/runtime/Playwright/benchmark evidence when inputs/dependencies are materially unchanged and cover current assertion; revalidate only affected scope when stale; check Lore + authoritative scripts/docs before rerunning oracles. #added:2026-09-29
+- [CONV-2026-09-29-2be5] After a meaningful VERIFIED slice reconcile durable knowledge into `.lore/` (architecture, decisions, conventions, blockers, superseded conclusions, limitations, verified outcomes); never store transient chain-of-thought or full logs; uncertainty stays uncertainty. #added:2026-09-29
