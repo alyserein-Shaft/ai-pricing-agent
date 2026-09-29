@@ -1,8 +1,31 @@
-import { normalizeMeasurement } from "./engineering-knowledge.mjs";
+import { normalizeMeasurement, resolveScopedFacts } from "./engineering-knowledge.mjs";
 import { buildRequirementIntelligence, REQUIREMENT_INTELLIGENCE_VERSION } from "./requirement-intelligence-engine.mjs";
 import { requiresDetectorBase, requiresPanelCompatibility } from "./system-knowledge-registry.mjs";
+import { normalizeStage4DrawingArchitectureContext } from "./stage4-drawing-architecture-context.mjs";
+import { statusAwareSourceAuthority } from "./drawing-authority-policy.mjs";
 
-export const REQUIREMENT_ENGINE_VERSION = "technical-requirement-engine-1.1.0";
+// Source Fact Authority Slice 3 -- maps an Active engineering_facts row
+// (worker/spec-source-fact-promotion.mjs's fact_type="Source Fact" store)
+// into this profile's own technicalFacts shape. Deliberately does NOT
+// include a human-readable label (SOURCE_FACT_PREDICATE_LABELS lives in the
+// worker/UI layer only -- domain semantics stay label-free) and deliberately
+// does NOT become a requirement/applicability entry of any kind.
+const toTechnicalFact = (fact) => ({
+  factId: fact.factId, predicate: fact.predicate, value: fact.value, unit: fact.unit ?? null,
+  confidence: fact.confidence, scopeType: fact.scopeType, scopeId: fact.scopeId,
+  factType: fact.factType || "Source Fact", status: fact.status || "Active",
+  provenance: Array.isArray(fact.provenance) ? fact.provenance : [],
+  modelVersion: fact.modelVersion || null,
+});
+
+export const REQUIREMENT_ENGINE_VERSION = "technical-requirement-engine-1.2.0";
+// Source Fact Authority Slice 3 -- bumped because buildTechnicalRequirementProfile
+// now consumes Active Source Facts (technicalFacts output, plus honest
+// standards/compatibility enrichment and conflict surfacing) where it
+// previously ignored them entirely. executeRequirementProfile's own
+// idempotency check compares only input_fingerprint, which folds in this
+// version string precisely so a profile cached before this change is never
+// silently trusted as still reflecting current Source Fact evidence.
 // Sprint 1.14 -- bumped because detectMissingInformation's compatibilityTarget
 // blocking rule changed (per-family now, not blanket for every Fire Alarm
 // item). executeRequirementProfile's own idempotency check compares only
@@ -20,10 +43,38 @@ export const REQUIREMENT_ENGINE_VERSION = "technical-requirement-engine-1.1.0";
 // input data -- a cached profile from before this fix would otherwise keep
 // reporting the old, over-broad derived requirement forever. Matches the
 // same reasoning as the prior Sprint 1.14 bump of this same constant.
-export const REQUIREMENT_RULESET_VERSION = "requirement-rules-2026-08-27-detector-base";
+// Stage 9 (2026-09-01) -- bumped because worker/technical-requirement-api.mjs
+// now folds governed Drawing-sourced requirement entries into the same
+// requirements/links arrays that feed this fingerprint (see
+// loadDrawingEvidenceGroups + buildDrawingRequirementEntries). A profile
+// cached before this change never considered drawing evidence at all; this
+// bump forces every existing cached profile to recompute on next generation
+// so a real governed drawing link is not silently ignored forever.
+// OPERATIONAL POLICY FOUNDATION Stage 1 (2026-09-02) -- bumped because the
+// DEFAULT governing-source selection changed from the flat, status-blind
+// SOURCE_PRECEDENCE table to statusAwareSourceAuthority (see
+// drawing-authority-policy.mjs), which can rank a Drawing source
+// differently depending on its drawingStatus. A profile cached before this
+// change picked its governingSourceId under the old flat rule; this bump
+// forces every existing cached profile to recompute so that change is never
+// silently missed.
+// R11 safety repair: the panel-compatibility gate now fails CLOSED when the
+// product family is present but not a governed taxonomy family, so an
+// unreviewed raw BOQ-extractor noun can no longer grant a compatibility
+// exemption. This changes readiness semantics for such items, so the ruleset
+// version is bumped to force every existing profile to recompute (it is part of
+// the profile input fingerprint in worker/technical-requirement-api.mjs).
+export const REQUIREMENT_RULESET_VERSION = "requirement-rules-2026-09-27-fail-closed-panel-compat";
 export const REQUIREMENT_MODEL_VERSION = "deterministic-applicability-1.1.0";
 export const APPLICABILITY_STATUSES = ["Confirmed Applicable", "Suggested Applicable", "Conditionally Applicable", "Not Applicable", "Rejected", "Needs Review", "Unknown", "Superseded"];
 export const READINESS_STATUSES = ["Ready for Matching", "Ready with Warnings", "Needs Technical Review", "Missing Critical Information", "Conflict Blocking", "Classification Required", "Not Applicable", "Rejected"];
+// Legacy flat precedence table -- kept unchanged for any caller that still
+// passes an explicit {sourceType: rank} object into consolidateRequirements/
+// buildTechnicalRequirementProfile. It cannot express status-aware Drawing
+// ranking (an Approved IFC drawing and a Tender/Reference drawing are both
+// sourceType "Drawing"), which is exactly why it is no longer the DEFAULT --
+// see statusAwareSourceAuthority (drawing-authority-policy.mjs, OPERATIONAL
+// POLICY FOUNDATION Stage 1) below.
 export const SOURCE_PRECEDENCE = { "Approved Clarification": 100, Addendum: 95, Specification: 90, Drawing: 80, BOQ: 70, "Approved Vendor List": 65, Manufacturer: 55, "Previous Project": 35, "Organization Rule": 30, "AI Inference": 10 };
 
 const text = (value) => String(value ?? "").trim();
@@ -105,10 +156,16 @@ export const resolveApplicability = ({ boqItem, link, requirement }) => {
   return { status: conditional ? "Conditionally Applicable" : confidence >= 70 ? "Suggested Applicable" : confidence >= 40 ? "Needs Review" : "Unknown", method: link?.linkMethod || "Deterministic structured signals", confidence, evidence: [...new Set(evidence)], reviewStatus: "Needs Review" };
 };
 
-export const consolidateRequirements = (requirements, precedence = SOURCE_PRECEDENCE) => {
+// precedence may be either a flat {sourceType: rank} object (legacy,
+// status-blind -- e.g. SOURCE_PRECEDENCE) or a function(entry) => rank
+// (the new default, statusAwareSourceAuthority, which can also look at
+// entry.source.drawingStatus for a Drawing entry). Accepting both keeps
+// every existing explicit-object caller/test working unchanged.
+const rankOf = (entry, precedence) => (typeof precedence === "function" ? Number(precedence(entry) || 0) : Number(precedence[entry.sourceType] || 0));
+export const consolidateRequirements = (requirements, precedence = statusAwareSourceAuthority) => {
   const groups = new Map();
   for (const requirement of requirements) { const key = keyOf(requirement); const current = groups.get(key) || []; current.push(requirement); groups.set(key, current); }
-  return [...groups.entries()].map(([key, sources]) => { const ordered = [...sources].sort((left, right) => (precedence[right.sourceType] || 0) - (precedence[left.sourceType] || 0)); const governing = ordered[0]; return { id: `consolidated:${key}`, key, normalizedRequirement: governing.normalizedRequirement || governing.originalText, requirementCategory: governing.requirementCategory || governing.category, requirementType: governing.requirementType, priority: requirementPriority(governing), governingSourceId: governing.id, sources: ordered.map((entry) => ({ requirementId: entry.id, sourceType: entry.sourceType, source: entry.source, confidence: entry.confidence })), attributes: ordered.flatMap((entry) => entry.attributes || []), standards: ordered.flatMap((entry) => entry.standards || []), manufacturers: ordered.flatMap((entry) => entry.manufacturers || []), compatibility: ordered.flatMap((entry) => entry.compatibility || []), accessories: ordered.flatMap((entry) => entry.accessories || []), confidence: mean(ordered.map((entry) => entry.confidence)) }; });
+  return [...groups.entries()].map(([key, sources]) => { const ordered = [...sources].sort((left, right) => rankOf(right, precedence) - rankOf(left, precedence)); const governing = ordered[0]; return { id: `consolidated:${key}`, key, normalizedRequirement: governing.normalizedRequirement || governing.originalText, requirementCategory: governing.requirementCategory || governing.category, requirementType: governing.requirementType, priority: requirementPriority(governing), governingSourceId: governing.id, sources: ordered.map((entry) => ({ requirementId: entry.id, sourceType: entry.sourceType, source: entry.source, confidence: entry.confidence })), attributes: ordered.flatMap((entry) => entry.attributes || []), standards: ordered.flatMap((entry) => entry.standards || []), manufacturers: ordered.flatMap((entry) => entry.manufacturers || []), compatibility: ordered.flatMap((entry) => entry.compatibility || []), accessories: ordered.flatMap((entry) => entry.accessories || []), confidence: mean(ordered.map((entry) => entry.confidence)) }; });
 };
 
 // detectRequirementConflicts only compares attributes WITHIN one consolidated
@@ -193,10 +250,10 @@ export const calculateReadiness = ({ boqItem, requirements, missing, conflicts, 
   if (missing.some((item) => item.blocking)) return { status: "Missing Critical Information", blockingReasons: missing.filter((item) => item.blocking).map((item) => item.whyNeeded), approved: false };
   if (!requirements.some((item) => ["Critical Mandatory", "Mandatory"].includes(item.priority))) return { status: "Needs Technical Review", blockingReasons: ["No confirmed mandatory technical baseline exists."], approved: false };
   if (confidence.overall < 80) return { status: "Ready with Warnings", blockingReasons: ["Requirement profile confidence is below 80%."], approved: false };
-  return { status: "Ready for Matching", blockingReasons: [], approved: false, approvalRequired: true };
+  return { status: "Ready for Matching", blockingReasons: [], approved: true, approvalRequired: false };
 };
 
-export const buildTechnicalRequirementProfile = ({ boqItem, links = [], requirements = [], knowledgeFacts = [], relationships = [], projectPrecedence = SOURCE_PRECEDENCE, previousVersion = 0 }) => {
+export const buildTechnicalRequirementProfile = ({ boqItem, links = [], requirements = [], knowledgeFacts = [], relationships = [], sourceFacts = [], sourceFactConflicts = [], projectPrecedence = statusAwareSourceAuthority, previousVersion = 0, drawingArchitectureContext = null }) => {
   const applicable = requirements.map((requirement) => { const link = links.find((entry) => entry.requirementId === requirement.id); const applicability = resolveApplicability({ boqItem, link, requirement }); return { ...requirement, applicability, priority: requirementPriority(requirement) }; }).filter((requirement) => !["Rejected", "Not Applicable", "Unknown"].includes(requirement.applicability.status));
   const confirmed = applicable.filter((requirement) => requirement.applicability.status === "Confirmed Applicable"); const suggested = applicable.filter((requirement) => requirement.applicability.status !== "Confirmed Applicable");
   const intelligence = buildRequirementIntelligence(confirmed);
@@ -207,10 +264,104 @@ export const buildTechnicalRequirementProfile = ({ boqItem, links = [], requirem
     if (scopeType === "BOQ Item") return scopeId === boqItem.id;
     return scopeType === "Project" || scopeType === "Global" || !scopeType;
   });
-  const consolidated = consolidateRequirements(confirmed, projectPrecedence); const conflicts = [...detectRequirementConflicts(consolidated), ...detectAttributeValueConflicts(consolidated)]; const standards = consolidated.flatMap((item) => item.standards); const manufacturers = consolidated.flatMap((item) => item.manufacturers); const compatibility = [...consolidated.flatMap((item) => item.compatibility), ...requirementRelationships.filter((item) => /compatible|interface|protocol/i.test(item.relationshipType || ""))]; const accessories = [...consolidated.flatMap((item) => item.accessories), ...requirementRelationships.filter((item) => /requires|includes|mounted|installed/i.test(item.relationshipType || ""))]; const missing = detectMissingInformation({ boqItem, consolidated, standards, compatibility }); const derived = generateDerivedRequirements({ boqItem, consolidated }); const assumptions = createAssumptions(missing, boqItem);
-  const confidence = { itemClassification: clamp(boqItem.classificationConfidence), requirementExtraction: mean(confirmed.map((item) => item.confidence)), applicability: mean(confirmed.map((item) => item.applicability.confidence)), attributeCompleteness: clamp(100 - missing.length * 12), standards: standards.length ? mean(standards.map((item) => item.confidence || 70)) : 0, compatibility: compatibility.length ? mean(compatibility.map((item) => item.confidence || 70)) : 0, accessories: accessories.length ? mean(accessories.map((item) => item.confidence || 70)) : 0 }; confidence.overall = Math.min(...Object.values(confidence));
+  // Source Fact Authority Slice 3 -- reuses resolveScopedFacts (the SAME
+  // precedence ladder engineering_facts already uses elsewhere, extended in
+  // this slice to recognize "Product Family" scope) rather than a second,
+  // independent scope algorithm. A real BOQ-Item-scoped fact (e.g. a future
+  // per-row human decision) outranks a Product-Family default without
+  // deleting it -- the family fact simply loses the natural-key slot when a
+  // more specific one exists, exactly like every other scope type here.
+  // A Source Fact currently named in an Open, blocking
+  // engineering_knowledge_conflicts row is excluded from authoritative
+  // consumption and surfaced as a profile conflict instead -- defense in
+  // depth: Slice 2's own confirm gate already refuses to Activate a
+  // conflicted fact, so this should normally never fire, but generation
+  // must never silently trust a fact that becomes conflicted after the fact.
+  const conflictedFactIds = new Set((sourceFactConflicts || []).map((entry) => entry.factId ?? entry.left_entity_id ?? entry.leftEntityId ?? entry.right_entity_id ?? entry.rightEntityId).filter(Boolean));
+  const scopedSourceFacts = resolveScopedFacts(
+    (sourceFacts || []).filter((fact) => (fact.factType || fact.fact_type) === "Source Fact" && (fact.status || "Active") === "Active"),
+    { projectId: boqItem.projectId, boqItemId: boqItem.id, productFamily: boqItem.productFamily },
+  );
+  // Consumption precedence, not deletion: resolveScopedFacts already sorted
+  // scopedSourceFacts most-specific-scope-first (BOQ Item ahead of Product
+  // Family ahead of Project/Global), so keeping only the FIRST entry seen
+  // per predicate here is exactly "the more specific scope wins" -- the
+  // family-level fact is never deleted anywhere (it stays exactly as it
+  // was in engineering_facts), it simply is not the one THIS profile
+  // treats as authoritative once a more specific one exists.
+  const seenPredicates = new Set();
+  const authoritativeSourceFacts = scopedSourceFacts.filter((fact) => {
+    if (conflictedFactIds.has(fact.factId)) return false;
+    if (seenPredicates.has(fact.predicate)) return false;
+    seenPredicates.add(fact.predicate);
+    return true;
+  });
+  const conflictedSourceFacts = scopedSourceFacts.filter((fact) => conflictedFactIds.has(fact.factId));
+  const technicalFacts = authoritativeSourceFacts.map(toTechnicalFact);
+  const sourceFactConflictEntries = conflictedSourceFacts.map((fact) => ({ id: `source-fact-conflict:${fact.factId}`, type: "Source Fact Value Conflict", requirementId: null, attribute: fact.predicate, values: [{ value: fact.value, unit: fact.unit ?? null, source: "Source Fact" }], severity: "High", technicalImpact: `${fact.predicate} has an open, unresolved conflict between current project Specification sources; it cannot be used as authoritative technical evidence until the governing source is confirmed.`, commercialImpact: "Product scope or supplier price may change.", blocking: true, recommendedAction: "Review the conflicting Source Facts and confirm which one governs.", resolutionStatus: "Open" }));
+  // Deterministic, semantically-honest cross-population only -- never a
+  // fabricated match. applicable_standard genuinely IS a standard (the
+  // existing "standard" missing-information gate is exactly
+  // `standards.length ? true : null`, so this is a real satisfaction, not
+  // an invented one). protocol_compatibility is added to the compatibility
+  // EVIDENCE array for visibility, but deliberately carries neither
+  // `targetItem` nor `rightEntityId` -- detectMissingInformation's
+  // `compatibilityTarget` gate specifically requires one of those fields
+  // (a named compatible PRODUCT/PANEL, not merely "supports this
+  // protocol"), so a protocol Source Fact is visible evidence without
+  // dishonestly claiming to resolve a gap it does not actually answer.
+  const sourceFactStandards = authoritativeSourceFacts.filter((fact) => fact.predicate === "applicable_standard").map((fact) => ({ body: fact.value?.body ?? null, number: fact.value?.number ?? null, part: fact.value?.part ?? null, year: fact.value?.year ?? null, confidence: fact.confidence, source: "Source Fact", factId: fact.factId }));
+  // severity/blocking/status are set explicitly (not left undefined) purely
+  // so persistProfile's existing profile_issues writer (which folds
+  // profile.compatibility into "Compatibility Requirement" issue rows)
+  // records this evidence cleanly -- never a blocking issue of its own,
+  // since it never overwrote or satisfied compatibilityTarget.
+  const sourceFactCompatibility = authoritativeSourceFacts.filter((fact) => fact.predicate === "protocol_compatibility").map((fact) => ({ relationshipType: "Protocol Compatibility", value: fact.value, confidence: fact.confidence, source: "Source Fact", factId: fact.factId, severity: "Informational", blocking: false, status: "Evidence" }));
+  const consolidated = consolidateRequirements(confirmed, projectPrecedence); const conflicts = [...detectRequirementConflicts(consolidated), ...detectAttributeValueConflicts(consolidated), ...sourceFactConflictEntries]; const standards = [...consolidated.flatMap((item) => item.standards), ...sourceFactStandards]; const manufacturers = consolidated.flatMap((item) => item.manufacturers); const compatibility = [...consolidated.flatMap((item) => item.compatibility), ...requirementRelationships.filter((item) => /compatible|interface|protocol/i.test(item.relationshipType || "")), ...sourceFactCompatibility]; const accessories = [...consolidated.flatMap((item) => item.accessories), ...requirementRelationships.filter((item) => /requires|includes|mounted|installed/i.test(item.relationshipType || ""))]; const missing = detectMissingInformation({ boqItem, consolidated, standards, compatibility }); const derived = generateDerivedRequirements({ boqItem, consolidated }); const assumptions = createAssumptions(missing, boqItem);
+  const confidence = {
+    itemClassification: clamp(boqItem.classificationConfidence),
+    requirementExtraction: mean(confirmed.map((item) => item.confidence)),
+    applicability: mean(confirmed.map((item) => item.applicability.confidence)),
+    attributeCompleteness: clamp(100 - missing.length * 12),
+    standards: standards.length ? mean(standards.map((item) => item.confidence || 70)) : 0,
+    compatibility: compatibility.length ? mean(compatibility.map((item) => item.confidence || 70)) : 0,
+    accessories: accessories.length ? mean(accessories.map((item) => item.confidence || 70)) : 0,
+  };
+
+  const requiredConfidenceDimensions = [
+    "itemClassification",
+    "requirementExtraction",
+    "applicability",
+    "attributeCompleteness",
+  ];
+
+  const minimumFields = categoryMinimums[boqItem.system] || [];
+  if (minimumFields.includes("standard") || standards.length) requiredConfidenceDimensions.push("standards");
+
+  const compatibilityRequired = requiresPanelCompatibility(
+    boqItem.system,
+    boqItem.category,
+    boqItem.productFamily,
+  );
+  if (compatibilityRequired || compatibility.length) requiredConfidenceDimensions.push("compatibility");
+
+  const accessoryRequirementPresent =
+    accessories.length > 0 ||
+    derived.some((entry) => entry.output?.accessory || entry.ruleId?.startsWith("accessory."));
+  if (accessoryRequirementPresent) requiredConfidenceDimensions.push("accessories");
+
+  confidence.overall = Math.min(
+    ...requiredConfidenceDimensions.map((name) => confidence[name]),
+  );
   const readiness = calculateReadiness({ boqItem, requirements: consolidated, missing, conflicts, confidence });
-  return { engineVersion: REQUIREMENT_ENGINE_VERSION, rulesetVersion: REQUIREMENT_RULESET_VERSION, modelVersion: REQUIREMENT_MODEL_VERSION, intelligenceVersion: REQUIREMENT_INTELLIGENCE_VERSION, versionNumber: previousVersion + 1, boqItem, applicableRequirements: confirmed, suggestedRequirements: suggested, consolidatedRequirements: consolidated, intelligence, standards, manufacturers, compatibility, accessories, derivedRequirements: derived, assumptions, missingInformation: missing, conflicts, clarifications: [...missing.map((item) => ({ question: item.clarificationQuestion, reason: item.whyNeeded, impact: `${item.technicalImpact} ${item.commercialImpact}`, priority: item.blocking ? "High" : "Medium", suggestedRecipient: item.recommendedOwner, status: "Open", relatedField: item.field })), ...conflicts.map((item) => ({ question: `Please confirm the governing ${item.attribute} requirement and applicable source revision.`, reason: item.type, impact: `${item.technicalImpact} ${item.commercialImpact}`, priority: item.severity, suggestedRecipient: "Consultant / Technical Authority", status: "Open", conflictId: item.id }))], knowledgeFacts, confidence, readiness, explanation: `This BOQ item is classified as ${boqItem.category || "an unconfirmed category"} under ${boqItem.system || "an unconfirmed system"}. ${confirmed.length} requirement source${confirmed.length === 1 ? " is" : "s are"} confirmed applicable. Matching readiness is ${readiness.status.toLowerCase()}${readiness.blockingReasons.length ? ` because ${readiness.blockingReasons[0]}` : "."}`, generatedAt: new Date().toISOString() };
+  return { engineVersion: REQUIREMENT_ENGINE_VERSION, rulesetVersion: REQUIREMENT_RULESET_VERSION, modelVersion: REQUIREMENT_MODEL_VERSION, intelligenceVersion: REQUIREMENT_INTELLIGENCE_VERSION, versionNumber: previousVersion + 1, boqItem, applicableRequirements: confirmed, suggestedRequirements: suggested, consolidatedRequirements: consolidated, intelligence, standards, manufacturers, compatibility, accessories, derivedRequirements: derived, assumptions, missingInformation: missing, conflicts,
+    // Source Fact Authority Slice 3 -- what the project Specification
+    // establishes as a technical FACT (Active Source Facts), kept
+    // structurally separate from applicableRequirements/
+    // consolidatedRequirements (what the project REQUIRES). Never a
+    // Mandatory obligation, never merged into the normative arrays above.
+    technicalFacts,
+    clarifications: [...missing.map((item) => ({ question: item.clarificationQuestion, reason: item.whyNeeded, impact: `${item.technicalImpact} ${item.commercialImpact}`, priority: item.blocking ? "High" : "Medium", suggestedRecipient: item.recommendedOwner, status: "Open", relatedField: item.field })), ...conflicts.map((item) => ({ question: `Please confirm the governing ${item.attribute} requirement and applicable source revision.`, reason: item.type, impact: `${item.technicalImpact} ${item.commercialImpact}`, priority: item.severity, suggestedRecipient: "Consultant / Technical Authority", status: "Open", conflictId: item.id }))], knowledgeFacts, confidence, readiness, drawingArchitectureContext: normalizeStage4DrawingArchitectureContext(drawingArchitectureContext), explanation: `This BOQ item is classified as ${boqItem.category || "an unconfirmed category"} under ${boqItem.system || "an unconfirmed system"}. ${confirmed.length} requirement source${confirmed.length === 1 ? " is" : "s are"} confirmed applicable. Matching readiness is ${readiness.status.toLowerCase()}${readiness.blockingReasons.length ? ` because ${readiness.blockingReasons[0]}` : "."}`, generatedAt: new Date().toISOString() };
 };
 
 export const normalizeProfileAttribute = (attribute) => attribute.originalUnit ? { ...attribute, normalization: normalizeMeasurement({ value: attribute.parsedValue, unit: attribute.originalUnit, targetUnit: attribute.normalizedUnit || undefined }) } : attribute;
