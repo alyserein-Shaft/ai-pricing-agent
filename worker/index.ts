@@ -6,6 +6,7 @@ import { handleClassificationApi } from "./classification-api.mjs";
 import { handleBoqExtractionApi } from "./boq-extraction-api.mjs";
 import { handleSpecificationExtractionApi, handleSpecificationExtractionQueue } from "./specification-extraction-api.mjs";
 import { handleEngineeringKnowledgeApi } from "./engineering-knowledge-api.mjs";
+import { handleFireAlarmEcosystemDecisionApi } from "./fire-alarm-ecosystem-decision-api.mjs";
 import { handleTechnicalRequirementApi } from "./technical-requirement-api.mjs";
 import { handleEngineeringClassificationApi } from "./engineering-classification-api.mjs";
 import { handleEngineeringKnowledgeGraphApi } from "./engineering-knowledge-graph-api.mjs";
@@ -206,6 +207,7 @@ const worker = {
     if (engineeringClassificationApiResponse) return secured(engineeringClassificationApiResponse);
 
     const technicalRequirementApiResponse = await handleTechnicalRequirementApi(request, env, ctx);
+    const fireAlarmEcosystemDecisionApiResponse = await handleFireAlarmEcosystemDecisionApi(request, env, ctx);
     if (technicalRequirementApiResponse) return secured(technicalRequirementApiResponse);
     const engineeringKnowledgeApiResponse = await handleEngineeringKnowledgeApi(request, env);
     if (engineeringKnowledgeApiResponse) return secured(engineeringKnowledgeApiResponse);
