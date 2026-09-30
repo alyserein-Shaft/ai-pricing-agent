@@ -46,6 +46,63 @@ export const CURRENT_BOQ_EVIDENCE_SQL = `
 export const currentBoqEvidenceFrom = (alias = "b") => `(${CURRENT_BOQ_EVIDENCE_SQL}) ${alias}`;
 export const currentBoqItemPredicate = (alias = "b") => `${alias}.row_type IN ('Item','BOQ Item')`;
 
+// This is the specification-side sibling of CURRENT_BOQ_EVIDENCE_SQL above, and
+// it is deliberately built from the SAME clauses in the SAME order: current
+// document version (d.current_version_id = dv.id), a non-superseded extraction
+// in a Completed/Needs Review state, an undeleted and unarchived document and
+// project, and no newer extraction of the same document version. Two authorities
+// that cannot disagree are what makes it safe for a caller to ask "is this
+// extraction still current?" without knowing which side of the project it came
+// from -- a requirement and a BOQ item extracted from the same document version
+// can never be judged current by different rules.
+//
+// It is added so Source Fact currentness can be answered by LINEAGE (does the
+// fact's provenance still name a live extraction?) rather than by a
+// `superseded_at IS NULL` approximation. Consumers may add their own project,
+// review, or matching predicates outside this query, but must not recreate a
+// weaker definition of "current".
+//
+// SCOPE NOTE. This mirrors the temporal authority ALREADY committed in
+// CURRENT_BOQ_EVIDENCE_SQL. When the calendared effective-time layer
+// (app/domain/effective-time-policy.mjs) is adopted repository-wide, this
+// sibling must move to the same governed-document-version predicate in the SAME
+// commit as CURRENT_BOQ_EVIDENCE_SQL, or the two sides would begin to disagree
+// about which document version governs.
+export const CURRENT_TECHNICAL_REQUIREMENT_SQL = `
+  SELECT r.*
+  FROM technical_requirements r
+  JOIN specification_extraction_versions e
+    ON e.id=r.extraction_version_id
+   AND e.document_id=r.source_document_id
+   AND e.superseded_at IS NULL
+   AND e.status IN ('Completed','Needs Review')
+  JOIN documents d
+    ON d.id=e.document_id
+   AND d.project_id=r.project_id
+   AND d.deleted_at IS NULL
+   AND d.archived_at IS NULL
+  JOIN document_versions dv
+    ON dv.id=e.document_version_id
+   AND dv.document_id=d.id
+   AND d.current_version_id=dv.id
+  JOIN projects requirement_project
+    ON requirement_project.id=d.project_id
+   AND requirement_project.archived_at IS NULL
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM specification_extraction_versions newer
+    WHERE newer.document_id=e.document_id
+      AND newer.document_version_id=e.document_version_id
+      AND newer.superseded_at IS NULL
+      AND newer.status IN ('Completed','Needs Review')
+      AND (
+        newer.version_number>e.version_number
+        OR (newer.version_number=e.version_number AND newer.id>e.id)
+      )
+  )`;
+
+export const currentTechnicalRequirementsFrom = (alias = "r") => `(${CURRENT_TECHNICAL_REQUIREMENT_SQL}) ${alias}`;
+
 export async function currentBoqEvidenceCounts(db, { projectId, organizationId = null } = {}) {
   const organization = organizationId ? " AND b.evidence_organization_id=?" : "";
   const values = organizationId ? [projectId, organizationId] : [projectId];

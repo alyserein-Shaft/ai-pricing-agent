@@ -39,7 +39,140 @@ const loadApprovedIntelligenceAttributes = async (db, item, requirementIds) => {
   return byRequirement;
 };
 
-const loadInputs = async (db, item) => {
+// Source Fact Authority Slice 3 -- deliberately separate from the existing
+// `facts`/factsResult query above (worker/spec-source-fact-promotion.mjs's
+// fact_type="Source Fact" store, status='Active' only -- never Pending
+// Review, Rejected, or any other fact_type such as Supplier Claim/
+// Manufacturer Rule/Human Decision). Fetched project-wide (bounded; a
+// project's Source Fact count is small) rather than pre-filtered by scope
+// here, because precise BOQ-Item-overrides-Product-Family-overrides-Project
+// precedence is resolveScopedFacts' job (called inside
+// buildTechnicalRequirementProfile itself), not a second, independent
+// scope algorithm duplicated in this query. Bounded provenance (document/
+// page/section/clause only, bounded per fact) is attached so the profile
+// output stays traceable without ever duplicating a full raw document.
+//
+// STALE-EVIDENCE (F7). Whether a fact's provenance still names LIVE extraction
+// evidence is a LINEAGE question, answered by lineage and never by a
+// source_type string -- the same discipline
+// worker/engineering-fact-freshness.mjs's EXTRACTION_PROVENANCE_SQL already
+// encodes, and deliberately reproduced here rather than imported because that
+// module is owned elsewhere. A provenance row is extraction-dependent when it
+// carries an extraction_version_id that resolves to a real BOQ or
+// specification extraction version.
+const EXTRACTION_PROVENANCE_PREDICATE = (alias = "efp") => `${alias}.extraction_version_id IS NOT NULL AND (`
+  + `EXISTS (SELECT 1 FROM boq_extraction_versions bev WHERE bev.id=${alias}.extraction_version_id) `
+  + `OR EXISTS (SELECT 1 FROM specification_extraction_versions sev WHERE sev.id=${alias}.extraction_version_id))`;
+
+// "Still current" is DELEGATED to the canonical authorities, never re-derived
+// here. A specification extraction version counts as live only while it still
+// produces a current technical requirement row, through the very same
+// CURRENT_TECHNICAL_REQUIREMENT_SQL the confirmed-requirement links above are
+// read through; a BOQ extraction version only while it still produces a
+// current BOQ item row, through CURRENT_BOQ_EVIDENCE_SQL. There is deliberately
+// no local `superseded_at IS NULL` approximation anywhere in this file: that
+// would be exactly the "weaker definition of current" that
+// worker/current-evidence-scope.mjs forbids, and it would miss the governing
+// document version and the newer-extraction clauses entirely.
+//
+// One documented consequence of reusing the row-anchored authorities: an
+// extraction version that produces no current row at all is treated as
+// non-current, which is the fail-closed direction, not the permissive one.
+const CURRENT_SPECIFICATION_EXTRACTION_PREDICATE = (alias = "efp") =>
+  `EXISTS (SELECT 1 FROM ${currentTechnicalRequirementsFrom("cr")} WHERE cr.extraction_version_id=${alias}.extraction_version_id)`;
+const CURRENT_BOQ_EXTRACTION_PREDICATE = (alias = "efp") =>
+  `EXISTS (SELECT 1 FROM ${currentBoqEvidenceFrom("cb")} WHERE cb.extraction_version_id=${alias}.extraction_version_id)`;
+const CURRENT_EXTRACTION_PROVENANCE_PREDICATE = (alias = "efp") => `(${CURRENT_SPECIFICATION_EXTRACTION_PREDICATE(alias)} OR ${CURRENT_BOQ_EXTRACTION_PREDICATE(alias)})`;
+
+// Provenance lineage can only be read where the column exists. The active
+// migration chain has carried engineering_fact_provenance.extraction_version_id
+// since the baseline, and worker/spec-source-fact-promotion.mjs writes it for
+// every promoted Source Fact, so in production this is always true. The probe
+// exists only so a database whose provenance table cannot express an
+// extraction reference degrades to "no extraction lineage is expressible",
+// which is a faithful no-op rather than a silent weakening: with no such
+// column, no provenance can be extraction-dependent, so no fact can be stale by
+// extraction supersession. It is memoized per database handle because the
+// schema cannot change under a running process.
+const provenanceExtractionLineage = new WeakMap();
+const supportsExtractionProvenanceLineage = async (db) => {
+  if (provenanceExtractionLineage.has(db)) return provenanceExtractionLineage.get(db);
+  let supported = false;
+  try {
+    const columns = await db.prepare("PRAGMA table_info(engineering_fact_provenance)").all();
+    supported = (columns?.results || []).some((column) => column?.name === "extraction_version_id");
+  } catch { supported = false; }
+  provenanceExtractionLineage.set(db, supported);
+  return supported;
+};
+
+// A fact is STALE -- and therefore must not be silently profiled on -- only
+// when BOTH windows are empty, which is exactly the condition
+// worker/engineering-fact-freshness.mjs's invalidator acts on:
+//
+//   no CURRENT extraction provenance   AND   no non-extraction provenance
+//
+// Either surviving support is enough, because a provenance set is a
+// disjunction, not a conjunction: a datasheet, a calibration or a human
+// inspection does not become non-authoritative because an unrelated extraction
+// was superseded. A fact with no provenance rows at all is not returned here
+// and is not stale-by-supersession; it simply carries no lineage.
+const staleSourceFactIds = async (db, factIds) => {
+  if (!factIds.length) return [];
+  if (!await supportsExtractionProvenanceLineage(db)) return [];
+  const placeholders = factIds.map(() => "?").join(",");
+  const rows = await db.prepare(`SELECT efp.fact_id AS factId,
+      SUM(CASE WHEN ${CURRENT_EXTRACTION_PROVENANCE_PREDICATE("efp")} THEN 1 ELSE 0 END) AS currentExtractionProvenance,
+      SUM(CASE WHEN NOT (${EXTRACTION_PROVENANCE_PREDICATE("efp")}) THEN 1 ELSE 0 END) AS nonExtractionProvenance
+    FROM engineering_fact_provenance efp
+    WHERE efp.fact_id IN (${placeholders})
+    GROUP BY efp.fact_id`).bind(...factIds).all();
+  return (rows.results || [])
+    .filter((row) => Number(row.currentExtractionProvenance || 0) === 0 && Number(row.nonExtractionProvenance || 0) === 0)
+    .map((row) => row.factId)
+    .sort();
+};
+
+const loadActiveSourceFacts = async (db, projectId) => {
+  const factsResult = await db.prepare(
+    "SELECT * FROM engineering_facts WHERE project_id=? AND fact_type='Source Fact' AND status='Active'",
+  ).bind(projectId).all();
+  const rows = factsResult.results || [];
+  if (!rows.length) return { facts: [], conflicts: [] };
+  // STALE-EVIDENCE (F7): FAIL CLOSED. Silently dropping these facts would
+  // produce a differently-numbered profile whose fingerprint and content
+  // changed with no explanation anywhere, which is precisely the
+  // "differently-numbered result without explanation" outcome that must not
+  // happen. The module's structured-failure convention is an Error carrying
+  // `code` (see the BOQ_ITEM_NOT_FOUND throw in executeRequirementProfile),
+  // which its catch records against the processing run, so the refusal is
+  // auditable and names every affected fact.
+  const staleFactIds = await staleSourceFactIds(db, rows.map((row) => row.id));
+  if (staleFactIds.length) {
+    throw Object.assign(new Error(
+      `Active Source Fact evidence is no longer current for ${staleFactIds.length} fact(s): ${staleFactIds.join(", ")}. Every extraction provenance of these facts resolves to a superseded or non-current extraction version and none carries non-extraction provenance, so the requirement profile cannot be generated from them.`,
+    ), {
+      code: "STALE_SOURCE_FACT_EVIDENCE",
+      technicalDetails: { staleSourceFactIds: staleFactIds, reason: "No current extraction provenance and no non-extraction provenance for any of these Active Source Facts." },
+      suggestedAction: "Re-run specification extraction for the affected document version, or supersede the stale Source Facts, then regenerate the requirement profile.",
+    });
+  }
+  const factIds = rows.map((row) => row.id);
+  const placeholders = factIds.map(() => "?").join(",");
+  const [provenanceResult, conflictsResult] = await Promise.all([
+    db.prepare(`SELECT fact_id, document_id, page, section, clause FROM engineering_fact_provenance WHERE fact_id IN (${placeholders}) ORDER BY created_at`).bind(...factIds).all(),
+    db.prepare(`SELECT * FROM engineering_knowledge_conflicts WHERE project_id=? AND resolution_status='Open' AND blocking=1 AND (left_entity_id IN (${placeholders}) OR right_entity_id IN (${placeholders}))`).bind(projectId, ...factIds, ...factIds).all(),
+  ]);
+  const provenanceByFact = new Map();
+  for (const row of provenanceResult.results || []) { const list = provenanceByFact.get(row.fact_id) || []; if (list.length < 5) list.push({ documentId: row.document_id, page: row.page, section: row.section, clause: row.clause }); provenanceByFact.set(row.fact_id, list); }
+  const facts = rows.map((row) => ({ factId: row.id, predicate: row.predicate, value: parse(row.value, {})?.value ?? null, unit: parse(row.value, {})?.unit ?? null, confidence: row.confidence, scopeType: row.scope_type, scopeId: row.scope_id, factType: row.fact_type, status: row.status, provenance: provenanceByFact.get(row.id) || [], modelVersion: row.model_version || null }));
+  const conflicts = (conflictsResult.results || []).map((row) => ({ factId: factIds.includes(row.left_entity_id) ? row.left_entity_id : row.right_entity_id, conflictId: row.id }));
+  return { facts, conflicts };
+};
+
+// Exported so the handoff contract can be asserted directly: this loader is the
+// only thing that decides which Source Facts may participate in a profile.
+export const loadInputs = async (db, item) => {
   const [linksResult, factsResult, relationsResult] = await Promise.all([
     db.prepare("SELECT l.*, r.* FROM boq_requirement_links l JOIN technical_requirements r ON r.id=l.requirement_id WHERE l.boq_item_id=? AND l.superseded_at IS NULL AND l.status='Confirmed' AND r.approved_for_downstream=1").bind(item.id).all(),
     db.prepare("SELECT * FROM engineering_facts WHERE project_id=? AND status<>'Superseded' AND (scope_type='Project' OR (scope_type='BOQ Item' AND scope_id=?))").bind(item.project_id, item.id).all(),
@@ -55,7 +188,8 @@ const loadInputs = async (db, item) => {
   }
   const approvedIntelligence = await loadApprovedIntelligenceAttributes(db, item, requirements.map((entry) => entry.id));
   for (const requirement of requirements) { const promoted = approvedIntelligence.get(requirement.id); if (promoted?.length) requirement.attributes = [...requirement.attributes, ...promoted]; }
-  return { requirements, links, facts: factsResult.results || [], relationships: (relationsResult.results || []).map((entry) => ({ ...entry, relationshipType: entry.relationship_type, rightEntityId: entry.right_entity_id })) };
+  const sourceFacts = await loadActiveSourceFacts(db, item.project_id);
+  return { requirements, links, sourceFacts, facts: factsResult.results || [], relationships: (relationsResult.results || []).map((entry) => ({ ...entry, relationshipType: entry.relationship_type, rightEntityId: entry.right_entity_id })) };
 };
 
 const persistProfile = async (db, item, userId, profile, inputFingerprint, previous, runId = null) => {
@@ -94,7 +228,7 @@ export const executeRequirementProfile = async (env, { itemId, userId, runId = n
     // makes any cached profile stale through the normal comparison below --
     // there is no second, parallel staleness framework.
     const ecosystemBasisRelationships = await loadEcosystemRequirementBasis(env.DB, item.project_id);
-    const inputFingerprint = await fingerprint({ boqItem, links: inputs.links, requirements: inputs.requirements, facts: inputs.facts, relationships: inputs.relationships, ecosystemBasis: ecosystemBasisRelationships, ruleset: REQUIREMENT_RULESET_VERSION }); if (previous?.input_fingerprint === inputFingerprint) { await updateRun(env.DB, runId, "Completed", "Completed", 100); return { profileId: previous.id, status: previous.status, idempotent: true }; } await updateRun(env.DB, runId, "Consolidating Requirements", "Processing", 60); const profile = buildTechnicalRequirementProfile({ boqItem, links: inputs.links, requirements: inputs.requirements, knowledgeFacts: inputs.facts, relationships: [...inputs.relationships, ...ecosystemBasisRelationships], previousVersion: Number(previous?.version_number || 0) }); await updateRun(env.DB, runId, "Saving Profile", "Processing", 85); const persisted = await persistProfile(env.DB, item, userId, profile, inputFingerprint, previous, runId); await updateRun(env.DB, runId, "Completed", persisted.status === "Blocked" ? "Needs Review" : persisted.status, 100); return { ...persisted, profile, idempotent: false }; } catch (error) { await updateRun(env.DB, runId, "Failed", "Failed", 100, { code: error.code || "REQUIREMENT_PROFILE_FAILED", message: error.message, technicalDetails: error.stack, suggestedAction: "Review source links and retry profile generation." }); throw error; }
+    const inputFingerprint = await fingerprint({ boqItem, links: inputs.links, requirements: inputs.requirements, facts: inputs.facts, sourceFacts: inputs.sourceFacts.facts, sourceFactConflicts: inputs.sourceFacts.conflicts, relationships: inputs.relationships, ecosystemBasis: ecosystemBasisRelationships, ruleset: REQUIREMENT_RULESET_VERSION }); if (previous?.input_fingerprint === inputFingerprint) { await updateRun(env.DB, runId, "Completed", "Completed", 100); return { profileId: previous.id, status: previous.status, idempotent: true }; } await updateRun(env.DB, runId, "Consolidating Requirements", "Processing", 60); const profile = buildTechnicalRequirementProfile({ boqItem, links: inputs.links, requirements: inputs.requirements, knowledgeFacts: inputs.facts, sourceFacts: inputs.sourceFacts.facts, sourceFactConflicts: inputs.sourceFacts.conflicts, relationships: [...inputs.relationships, ...ecosystemBasisRelationships], previousVersion: Number(previous?.version_number || 0) }); await updateRun(env.DB, runId, "Saving Profile", "Processing", 85); const persisted = await persistProfile(env.DB, item, userId, profile, inputFingerprint, previous, runId); await updateRun(env.DB, runId, "Completed", persisted.status === "Blocked" ? "Needs Review" : persisted.status, 100); return { ...persisted, profile, idempotent: false }; } catch (error) { await updateRun(env.DB, runId, "Failed", "Failed", 100, { code: error.code || "REQUIREMENT_PROFILE_FAILED", message: error.message, technicalDetails: error.stack, suggestedAction: "Review source links and retry profile generation." }); throw error; }
 };
 
 const decision = async (db, profile, user, entityType, entityId, action, previousValue, newValue, reason, evidence) => db.batch([db.prepare("INSERT INTO requirement_profile_decisions (id, project_id, profile_version_id, entity_type, entity_id, action, previous_value, new_value, reason, evidence, decided_by, decided_role) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").bind(id("profileDecision"), profile.project_id, profile.id, entityType, entityId, action, JSON.stringify(previousValue), JSON.stringify(newValue), reason, JSON.stringify(evidence || null), user.id, user.role), db.prepare("INSERT INTO document_audit_events (id, project_id, actor_user_id, action, old_value, new_value, reason, request_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)").bind(id("audit"), profile.project_id, user.id, `Requirement Profile ${action}`, JSON.stringify(previousValue), JSON.stringify(newValue), reason, id("request"))]);
@@ -128,4 +262,4 @@ export const handleTechnicalRequirementApi = async (request, env, ctx) => {
   const issueMatch = url.pathname.match(/^\/api\/profile-issues\/([^/]+)\/(resolve|approve|reject|answer)$/); if (issueMatch && request.method === "POST") { const issue = await env.DB.prepare("SELECT i.*, p.project_id FROM profile_issues i JOIN requirement_profile_versions p ON p.id=i.profile_version_id JOIN projects pr ON pr.id=p.project_id WHERE i.id=? AND pr.owner_user_id=?").bind(decodeURIComponent(issueMatch[1]), user.id).first(); if (!issue) return json({ error: { code: "PROFILE_ISSUE_NOT_FOUND", message: "Profile issue not found." } }, 404); const body = await request.json(); const reason = String(body.reason || body.answer || "").trim(); if (reason.length < 5) return json({ error: { code: "DECISION_REASON_REQUIRED", message: "Provide a reason or clarification answer." } }, 422); const profile = await env.DB.prepare("SELECT * FROM requirement_profile_versions WHERE id=?").bind(issue.profile_version_id).first(); const status = issueMatch[2] === "reject" ? "Rejected" : "Resolved"; await env.DB.prepare("UPDATE profile_issues SET status=?, resolved_by=?, resolved_at=? WHERE id=?").bind(status, user.id, now(), issue.id).run(); await decision(env.DB, profile, user, issue.issue_type, issue.id, issueMatch[2], { status: issue.status }, { status, answer: body.answer || null }, reason, body.evidence); return json({ resolved: true, status }); }
   return json({ error: { code: "REQUIREMENT_API_NOT_FOUND", message: "Requirement profile operation not found." } }, 404);
 };
-import { currentBoqEvidenceFrom, currentBoqItemPredicate } from "./current-evidence-scope.mjs";
+import { currentBoqEvidenceFrom, currentBoqItemPredicate, currentTechnicalRequirementsFrom } from "./current-evidence-scope.mjs";
