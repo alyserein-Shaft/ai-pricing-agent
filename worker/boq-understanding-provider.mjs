@@ -116,10 +116,92 @@ export function createConfiguredCloudflareStructuredProvider(env = {}, { schema,
   return provider;
 }
 
+// DETERMINISTIC HERMETIC PROVIDER (test-only seam).
+//
+// The Golden E2E journey is a governed acceptance gate, but BOQ Understanding
+// resolved to the REMOTE Workers AI binding. Two identical runs of the same seed
+// produced different governed outcomes (observed: 1 COMPLETED + 2 NEEDS_REVIEW, then
+// 1 COMPLETED + 1 NEEDS_REVIEW + 1 FAILED), because a remote model is neither
+// deterministic nor reliably reachable from a hermetic run. A governed gate whose
+// result moves between identical runs is not a gate.
+//
+// This seam replaces ONLY the external model inference. Everything downstream is
+// untouched: the same schema, the same normalizeBoqUnderstandingModelResponse, the
+// same persistence, the same governance, readiness and downstream consumers.
+// Fail-closed semantics are unchanged -- a line with missing mandatory identity still
+// yields a missing fact and downstream readiness still blocks it.
+//
+// It activates ONLY when GOLDEN_HERMETIC_AI=1, which only scripts/run-golden-e2e.sh sets, so
+// the canonical runtime and any deployment keep using the real provider. It never
+// widens the accepted status vocabulary and never skips understanding persistence.
+export function createDeterministicHermeticProvider(env = {}) {
+  if (String(env.GOLDEN_HERMETIC_AI || "") !== "1") return null;
+  const fact = (value, origin, confidence) => ({ value, origin, confidence });
+  const missing = () => fact(null, "MISSING", 0);
+  return {
+    metadata: {
+      provider: "hermetic-deterministic-boq-understanding",
+      model: "hermetic-fixture-v1",
+      modelVersion: "hermetic-fixture-v1",
+      escalationModel: null,
+      escalationEnabled: false,
+    },
+    readiness: {
+      state: "Ready \u2014 hermetic deterministic provider",
+      detail: "BOQ Understanding uses the deterministic hermetic fixture provider (GOLDEN_HERMETIC_AI).",
+      model: "hermetic-fixture-v1",
+    },
+    lastCallMetadata: null,
+    async interpret({ prompt }) {
+      // The description is recovered from the prompt so each BOQ line is interpreted
+      // on its own text rather than on a constant, but text -> governed output is a
+      // total, deterministic function.
+      const user = String((prompt && prompt.user) || "");
+      const described = /"description"\s*:\s*"([^"]+)"/i.exec(user)?.[1]
+        || /Description:\s*(.+)/i.exec(user)?.[1]
+        || null;
+      const description = String(described || "Hermetic fixture BOQ line").replace(/\s+/g, " ").trim();
+      // A line whose own text carries an engineering-grade identity (a model/part
+      // token AND a technical qualifier) is reported as confidently understood.
+      // Anything less is honestly reported as needing review. This is a deterministic
+      // function of the input, and it never asserts a value it did not read.
+      const hasModelToken = /\b[A-Z]{2,}[-_ ]?\d{2,}[A-Z0-9-]*\b/.test(description);
+      const hasQualifier = /\b\d+\s*V\b|\b\d+\s*W\b|\bUL\s*\d+|\b\d+\s*dB\b|\bIP\d{2}\b/i.test(description);
+      const confident = hasModelToken && hasQualifier;
+      const origin = confident ? "EXTRACTED" : "INFERRED";
+      const confidence = confident ? 100 : 60;
+      // The response schema sets additionalProperties:false, so ONLY the declared
+      // properties may be returned. The boq item id is supplied by the caller, not
+      // by the model, and must not be echoed here.
+      return {
+        normalizedDescription: fact(description.slice(0, 240), origin, confidence),
+        system: confident ? fact("Fire Alarm", "INFERRED", 70) : missing(),
+        category: confident ? fact("Detection Devices", "INFERRED", 70) : missing(),
+        equipmentType: confident ? fact("Detector", "INFERRED", 70) : missing(),
+        productFamily: missing(),
+        taxonomyCandidateKey: missing(),
+        technicalAttributes: [],
+        standards: [],
+        manufacturerEvidence: [],
+        compatibilityRequirements: [],
+        requiredAccessories: [],
+        searchTerms: [],
+        missingInformation: [],
+        ambiguities: [],
+        confidence: confident ? "HIGH" : "MEDIUM",
+      };
+    },
+  };
+}
+
 // BOQ Understanding production/runtime selection is deliberately native-only.
 // Diagnostic REST tooling, if ever needed, must live outside this factory and
 // require a separate explicit invocation; it is never an automatic fallback.
 export function createConfiguredBoqUnderstandingProvider(env = {}, options = {}) {
+  // Hermetic deterministic provider first, and only for an explicitly flagged test
+  // environment. Every other environment is completely unaffected.
+  const hermetic = createDeterministicHermeticProvider(env);
+  if (hermetic) return hermetic;
   return createConfiguredCloudflareStructuredProvider(env, {
     schema: BOQ_UNDERSTANDING_RESPONSE_SCHEMA,
     maxTokens: 900,
