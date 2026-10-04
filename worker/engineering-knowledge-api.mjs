@@ -1,9 +1,10 @@
 import { KNOWLEDGE_MODEL_VERSION, SCOPE_TYPES, createKnowledgeFact, scoreRequirementLink, validateRequirementLink } from "../app/domain/engineering-knowledge.mjs";
 import { executeRequirementProfile } from "./technical-requirement-api.mjs";
 import { applicationActor, resolveApplicationContext } from "./application-context.mjs";
+import { requireHumanActor } from "./human-actor.mjs";
 import { currentApprovedUnderstandingFacts } from "./estimator-understanding-review-api.mjs";
 import { systemTaxonomyMetadata } from "../app/domain/system-knowledge-registry.mjs";
-import { isSystemWideRequirementText, requirementConstrainsLoopParticipation, loopParticipationCategories } from "../app/domain/technical-requirement-engine.mjs";
+import { isSystemWideRequirementText, isAllComponentsScopeForSystem, classifyAllComponentsScope, ALL_COMPONENTS_REQUIREMENT_SCOPE, requirementConstrainsLoopParticipation, loopParticipationCategories } from "../app/domain/technical-requirement-engine.mjs";
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" } });
 const now = () => new Date().toISOString(); const id = (prefix) => `${prefix}_${crypto.randomUUID()}`;
@@ -51,10 +52,42 @@ const LINK_SHORTLIST_LIMIT = 40;
 // this only changes which already-eligible candidates survive the cap, and
 // only when the Mandatory-first ranking would otherwise have excluded them.
 const DEVICE_SPECIFIC_SHORTLIST_RESERVE = 5;
+// An all-component obligation over the item's own governed system ranks ahead of
+// everything else. It is the strongest applicability signal available -- the
+// clause says, in its own words, that it covers EVERY component of this system --
+// so it must not be crowded out of the cap by the many generic Mandatory clauses
+// that merely share the system (the same crowding-out the reserve above exists to
+// prevent for device-specific clauses). This changes only WHICH already-eligible
+// candidates survive the cap; it lowers no threshold and rewrites no score.
+const ALL_COMPONENTS_SCOPE_RANK = 1;
 export const buildLinkShortlist = (item, requirements) => {
-  const scored = requirements.map((requirement) => ({ requirement, suggestion: scoreRequirementLink({ boqItem: { description: item.description, system: item.system_value, category: item.category, specificationReference: item.specification_reference }, requirement: { originalText: requirement.original_text, system: requirement.system, category: requirement.category, source: source(requirement) } }) }))
-    .filter(({ requirement, suggestion }) => suggestion.confidence >= 25 || (/mandatory|required/i.test(requirement.requirement_type || "") && suggestion.confidence >= 15));
-  const ranked = [...scored].sort((left, right) => Number(/mandatory|required/i.test(right.requirement.requirement_type || "")) - Number(/mandatory|required/i.test(left.requirement.requirement_type || "")) || right.suggestion.confidence - left.suggestion.confidence);
+  const scored = requirements
+    .map((requirement) => {
+      const suggestion = scoreRequirementLink({ boqItem: { description: item.description, system: item.system_value, category: item.category, family: item.subcategory || null, specificationReference: item.specification_reference }, requirement: { originalText: requirement.original_text, system: requirement.system, category: requirement.category, source: source(requirement) } });
+      // ALL-COMPONENT SCOPE APPLICABILITY. Recognised ONLY from the requirement's
+      // OWN text, ONLY over EXACTLY this row's governed system, and ONLY for a
+      // Mandatory/Compliance obligation. This is deliberately additive and
+      // scope-aware rather than a scoring change: `scoreRequirementLink` remains
+      // an equipment-type heuristic, and a universal-component compliance clause
+      // names no equipment type, so it can never clear that heuristic on merit.
+      // Every refusal (hedged scope, no quantifier, no component subject, no
+      // modal, no named system, or a DIFFERENT system) leaves the row on the
+      // pre-existing scoring path untouched.
+      const classification = classifyAllComponentsScope(requirement.original_text);
+      const systemScoped = classification.scope === ALL_COMPONENTS_REQUIREMENT_SCOPE && isAllComponentsScopeForSystem(requirement.original_text, item.system_value);
+      const mandatoryOrCompliance = /mandatory|required/i.test(requirement.requirement_type || "") || /compliance/i.test(requirement.requirement_category || "");
+      const allComponentsApplies = Boolean(systemScoped && mandatoryOrCompliance);
+      return {
+        requirement,
+        allComponentsApplies,
+        // The link's own `link_method` records WHICH basis proposed it, so a
+        // reviewer reading the row can tell a scope-derived proposal apart from
+        // an equipment-scored one without re-deriving anything.
+        suggestion: allComponentsApplies ? { ...suggestion, method: "All-Component System Scope v1", allComponentsScope: classification } : suggestion,
+      };
+    })
+    .filter(({ requirement, suggestion, allComponentsApplies }) => allComponentsApplies || suggestion.confidence >= 25 || (/mandatory|required/i.test(requirement.requirement_type || "") && suggestion.confidence >= 15));
+  const ranked = [...scored].sort((left, right) => Number(right.allComponentsApplies) * ALL_COMPONENTS_SCOPE_RANK - Number(left.allComponentsApplies) * ALL_COMPONENTS_SCOPE_RANK || Number(/mandatory|required/i.test(right.requirement.requirement_type || "")) - Number(/mandatory|required/i.test(left.requirement.requirement_type || "")) || right.suggestion.confidence - left.suggestion.confidence);
   const primary = ranked.slice(0, LINK_SHORTLIST_LIMIT - DEVICE_SPECIFIC_SHORTLIST_RESERVE);
   const primaryIds = new Set(primary.map(({ requirement }) => requirement.id));
   const deviceSpecificReserve = scored
@@ -63,11 +96,55 @@ export const buildLinkShortlist = (item, requirements) => {
     .slice(0, DEVICE_SPECIFIC_SHORTLIST_RESERVE);
   return [...primary, ...deviceSpecificReserve].slice(0, LINK_SHORTLIST_LIMIT);
 };
-const suggestLinks = async (db, projectId, userId) => {
-  const [items, requirements, existing] = await Promise.all([db.prepare(`SELECT * FROM ${currentBoqEvidenceFrom("b")} WHERE b.project_id=? AND b.approved_for_downstream=1 AND ${currentBoqItemPredicate("b")}`).bind(projectId).all(), db.prepare("SELECT * FROM technical_requirements WHERE project_id=? AND review_status NOT IN ('Rejected','Superseded')").bind(projectId).all(), db.prepare("SELECT * FROM boq_requirement_links WHERE project_id=? AND superseded_at IS NULL").bind(projectId).all()]);
+// Suggestion eligibility is deliberately the SAME predicate as BOQ Understanding
+// eligibility (activeRows in worker/estimator-understanding-api.mjs): current,
+// real evidence + a real demand row type. It is NOT gated on
+// approved_for_downstream.
+//
+// That extra gate was carried over from the older loose
+// `boq_items WHERE approved_for_downstream=1 AND row_type='BOQ Item'` query when
+// commit c5dc8f6 ("enforce authoritative current BOQ scope") replaced it with the
+// authoritative scope helpers. It strengthened CURRENTNESS but was never a
+// deliberate link-suggestion policy, and it inverted the intended workflow:
+// requirement evidence could only ever be attached to items whose BOQ
+// interpretation had ALREADY been approved, so an unresolved item could never
+// receive the evidence needed to resolve it. Real Al Mousa consequence:
+// BOQ items L and M ("Fire alarm manual station", approved_for_downstream=0)
+// could not receive the approved break-glass requirement at all, and the only
+// alternative -- approving them first -- inverts cause and effect.
+//
+// This changes nothing about authority. A created link is still status
+// 'Suggested', which every governed consumer excludes:
+// confirmedSpecifications() requires status='Confirmed', and loadInputs()
+// requires status='Confirmed' AND approved_for_downstream=1. Suggestion grants
+// no downstream eligibility and does not alter approved_for_downstream; only
+// the existing confirmation route can promote a link to Confirmed.
+//
+// publishApprovedEngineeringKnowledge above is deliberately UNCHANGED: publishing
+// approved engineering knowledge legitimately still requires an approved item.
+// Optional targeted suggestion. When boqItemIds is supplied, creation AND the
+// supersede pass are restricted to those items, intersected with the canonical
+// eligible set above. Omitting it leaves behaviour byte-identical to before.
+//
+// Why supersede must be scoped too: the regeneration step supersedes existing
+// Suggested/Needs Review rows. Real Al Mousa holds 556 Suggested + 6 Needs Review
+// links, so a targeted run that still superseded project-wide would silently
+// discard unrelated review work -- exactly what a scoped suggestion must not do.
+//
+// This narrows WHICH suggestions are created. It grants no authority: links are
+// still written as 'Suggested', approved_for_downstream is untouched, and only
+// the confirmation route can promote a link to Confirmed.
+const suggestLinks = async (db, projectId, userId, { boqItemIds = null } = {}) => {
+  const [items, requirements, existing] = await Promise.all([db.prepare(`SELECT * FROM ${currentBoqEvidenceFrom("b")} WHERE b.project_id=? AND ${currentBoqItemPredicate("b")}`).bind(projectId).all(), db.prepare("SELECT * FROM technical_requirements WHERE project_id=? AND review_status NOT IN ('Rejected','Superseded')").bind(projectId).all(), db.prepare("SELECT * FROM boq_requirement_links WHERE project_id=? AND superseded_at IS NULL").bind(projectId).all()]);
+  // Intersect, never widen: an id that is not in the canonical eligible set
+  // simply never matches, so unknown, non-current, wrong-project and non-demand
+  // ids all fail closed without a special case.
+  const targeted = Array.isArray(boqItemIds) && boqItemIds.length ? new Set(boqItemIds.map((id) => String(id).trim()).filter(Boolean)) : null;
+  const candidateItems = targeted ? (items.results || []).filter((item) => targeted.has(item.id)) : (items.results || []);
   const active = existing.results || []; const stamp = now(); const statements = []; let created = 0; let superseded = 0;
-  for (const link of active.filter((entry) => ["Suggested", "Needs Review"].includes(entry.status))) { statements.push(db.prepare("UPDATE boq_requirement_links SET superseded_at=? WHERE id=? AND superseded_at IS NULL").bind(stamp, link.id)); superseded += 1; }
-  for (const item of items.results || []) {
+  const supersedable = active.filter((entry) => ["Suggested", "Needs Review"].includes(entry.status) && (!targeted || targeted.has(entry.boq_item_id)));
+  for (const link of supersedable) { statements.push(db.prepare("UPDATE boq_requirement_links SET superseded_at=? WHERE id=? AND superseded_at IS NULL").bind(stamp, link.id)); superseded += 1; }
+  for (const item of candidateItems) {
     const shortlist = buildLinkShortlist(item, requirements.results || []);
     for (const { requirement, suggestion } of shortlist) {
     const governed = active.find((entry) => entry.boq_item_id === item.id && entry.requirement_id === requirement.id && ["Confirmed", "Rejected", "Removed"].includes(entry.status));
@@ -100,7 +177,7 @@ const profile = async (db, item) => { const [links, facts, conflicts, decisions]
 
 export const handleEngineeringKnowledgeApi = async (request, env) => {
   const url = new URL(request.url); if (!url.pathname.includes("/engineering-knowledge") && !url.pathname.includes("/knowledge-profile") && !url.pathname.includes("/requirement-links/") && !url.pathname.includes("/propagate-system-wide")) return null; if (!env.DB) return json({ error: { code: "KNOWLEDGE_STORAGE_UNAVAILABLE", message: "Engineering knowledge storage is unavailable." } }, 503); const resolved = await resolveApplicationContext(request, env); if (resolved.error) return json({ error: resolved.error }, resolved.error.status); const user = applicationActor(resolved.context);
-  const projectMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/engineering-knowledge(?:\/(publish|suggest-links|links|facts|taxonomy|units|standards|conflicts))?$/); if (projectMatch) { const project = await ownedProject(env.DB, decodeURIComponent(projectMatch[1]), user.id); if (!project) return json({ error: { code: "PROJECT_NOT_FOUND", message: "Project not found." } }, 404); const operation = projectMatch[2] || "facts"; if (operation === "publish" && request.method === "POST") return json({ publication: await publishApprovedEngineeringKnowledge(env.DB, { projectId: project.id, userId: user.id }) }, 201); if (operation === "suggest-links" && request.method === "POST") return json({ suggestions: await suggestLinks(env.DB, project.id, user.id) }, 201); if (operation === "links" && request.method === "GET") { const rows = await env.DB.prepare("SELECT l.*, b.item_number, b.description AS boq_description, b.system_value AS boq_system, r.sequence AS requirement_sequence, r.original_text, r.normalized_requirement, r.requirement_type, r.requirement_category, r.source_location FROM boq_requirement_links l JOIN boq_items b ON b.id=l.boq_item_id JOIN technical_requirements r ON r.id=l.requirement_id WHERE l.project_id=? AND l.superseded_at IS NULL ORDER BY b.sequence, l.confidence DESC, r.sequence").bind(project.id).all(); return json({ links: (rows.results || []).map((row) => ({ ...row, evidence: parse(row.evidence, []), source_location: source(row) })) }); } const tables = { facts: "engineering_facts", taxonomy: "engineering_taxonomy_terms", units: "engineering_unit_definitions", standards: "engineering_standards", conflicts: "engineering_knowledge_conflicts" }; if (tables[operation] && request.method === "GET") { const page = Math.max(1, Number(url.searchParams.get("page") || 1)); const limit = Math.min(200, Math.max(1, Number(url.searchParams.get("limit") || 50))); const scoped = ["engineering_facts", "engineering_knowledge_conflicts"].includes(tables[operation]); const rows = await env.DB.prepare(`SELECT * FROM ${tables[operation]} ${scoped ? "WHERE project_id=? OR project_id IS NULL" : ""} LIMIT ? OFFSET ?`).bind(...(scoped ? [project.id, limit, (page - 1) * limit] : [limit, (page - 1) * limit])).all(); return json({ [operation]: rows.results || [], page, limit }); } }
+  const projectMatch = url.pathname.match(/^\/api\/projects\/([^/]+)\/engineering-knowledge(?:\/(publish|suggest-links|links|facts|taxonomy|units|standards|conflicts))?$/); if (projectMatch) { const project = await ownedProject(env.DB, decodeURIComponent(projectMatch[1]), user.id); if (!project) return json({ error: { code: "PROJECT_NOT_FOUND", message: "Project not found." } }, 404); const operation = projectMatch[2] || "facts"; if (operation === "publish" && request.method === "POST") return json({ publication: await publishApprovedEngineeringKnowledge(env.DB, { projectId: project.id, userId: user.id }) }, 201); if (operation === "suggest-links" && request.method === "POST") { const body = await request.json().catch(() => null); return json({ suggestions: await suggestLinks(env.DB, project.id, user.id, { boqItemIds: body?.boqItemIds ?? null }) }, 201); } if (operation === "links" && request.method === "GET") { const rows = await env.DB.prepare("SELECT l.*, b.item_number, b.description AS boq_description, b.system_value AS boq_system, r.sequence AS requirement_sequence, r.original_text, r.normalized_requirement, r.requirement_type, r.requirement_category, r.source_location FROM boq_requirement_links l JOIN boq_items b ON b.id=l.boq_item_id JOIN technical_requirements r ON r.id=l.requirement_id WHERE l.project_id=? AND l.superseded_at IS NULL ORDER BY b.sequence, l.confidence DESC, r.sequence").bind(project.id).all(); return json({ links: (rows.results || []).map((row) => ({ ...row, evidence: parse(row.evidence, []), source_location: source(row) })) }); } const tables = { facts: "engineering_facts", taxonomy: "engineering_taxonomy_terms", units: "engineering_unit_definitions", standards: "engineering_standards", conflicts: "engineering_knowledge_conflicts" }; if (tables[operation] && request.method === "GET") { const page = Math.max(1, Number(url.searchParams.get("page") || 1)); const limit = Math.min(200, Math.max(1, Number(url.searchParams.get("limit") || 50))); const scoped = ["engineering_facts", "engineering_knowledge_conflicts"].includes(tables[operation]); const rows = await env.DB.prepare(`SELECT * FROM ${tables[operation]} ${scoped ? "WHERE project_id=? OR project_id IS NULL" : ""} LIMIT ? OFFSET ?`).bind(...(scoped ? [project.id, limit, (page - 1) * limit] : [limit, (page - 1) * limit])).all(); return json({ [operation]: rows.results || [], page, limit }); } }
   const profileMatch = url.pathname.match(/^\/api\/boq-items\/([^/]+)\/knowledge-profile$/); if (profileMatch && request.method === "GET") { const item = await ownedBoqItem(env.DB, decodeURIComponent(profileMatch[1]), user.id); if (!item) return json({ error: { code: "BOQ_ITEM_NOT_FOUND", message: "BOQ item not found." } }, 404); return json({ profile: await profile(env.DB, item) }); }
   // Sprint 1.15 -- real Opera gap: requirement_160 ("components must be
   // compatible with the control unit") and requirement_200 ("initiating
@@ -138,6 +215,11 @@ export const handleEngineeringKnowledgeApi = async (request, env) => {
     const body = await request.json().catch(() => null);
     const reason = String(body?.reason || "").trim();
     if (reason.length < 10) return json({ error: { code: "PROPAGATION_REASON_REQUIRED", message: "Provide a substantive, evidence-backed reason naming why these categories are applicable." } }, 422);
+    // Human-authority mutation: system-wide classification is recorded under
+    // the server-configured R1 human identity (CONV-2026-10-01-3e17).
+    const propagationHuman = requireHumanActor(env);
+    if (propagationHuman.error) return json({ error: { code: propagationHuman.error, message: propagationHuman.message } }, 403);
+    const propagator = { ...user, id: propagationHuman.actor.id };
     const validCategories = new Set(Object.keys(meta.taxonomy));
     // Fire Alarm E2E fix (requirement applicability) -- a reviewer may opt
     // into "every governed category in this requirement's own system"
@@ -177,14 +259,14 @@ export const handleEngineeringKnowledgeApi = async (request, env) => {
       const governed = existingByItem.get(row.id);
       if (governed && ["Confirmed", "Rejected", "Removed"].includes(governed.status)) { skipped.push({ boqItemId: row.id, reason: `already ${governed.status}` }); continue; }
       const linkId = id("boqreqlink");
-      const candidate = { projectId: requirement.project_id, boqItemId: row.id, requirementId: requirement.id, status: "Confirmed", scopeType: "Engineering Domain", reviewedBy: user.id, reviewReason: reason };
+      const candidate = { projectId: requirement.project_id, boqItemId: row.id, requirementId: requirement.id, status: "Confirmed", scopeType: "Engineering Domain", reviewedBy: propagator.id, reviewReason: reason };
       try { validateRequirementLink(candidate); } catch (error) { skipped.push({ boqItemId: row.id, reason: error.message }); continue; }
-      statements.push(env.DB.prepare("INSERT INTO boq_requirement_links (id, project_id, boq_item_id, requirement_id, link_method, confidence, evidence, status, scope_type, scope_id, version_number, previous_version_id, reviewed_by, reviewed_at, review_reason, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(version_number),0)+1 FROM boq_requirement_links WHERE boq_item_id=? AND requirement_id=?), ?, ?, ?, ?, ?)").bind(linkId, requirement.project_id, row.id, requirement.id, wantsAllSystemCategories ? "System-Wide Applicability · whole-system wording" : "System-Wide Applicability · engineer-classified", 100, JSON.stringify({ basis: [reason], category: approvedCategory, propagationMethod: wantsAllSystemCategories ? "System-Wide Applicability (all governed categories -- requirement text states whole-system scope)" : "System-Wide Applicability" }), "Confirmed", "Engineering Domain", requirement.system, row.id, requirement.id, governed?.id || null, user.id, stamp, reason, user.id));
+      statements.push(env.DB.prepare("INSERT INTO boq_requirement_links (id, project_id, boq_item_id, requirement_id, link_method, confidence, evidence, status, scope_type, scope_id, version_number, previous_version_id, reviewed_by, reviewed_at, review_reason, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT COALESCE(MAX(version_number),0)+1 FROM boq_requirement_links WHERE boq_item_id=? AND requirement_id=?), ?, ?, ?, ?, ?)").bind(linkId, requirement.project_id, row.id, requirement.id, wantsAllSystemCategories ? "System-Wide Applicability · whole-system wording" : "System-Wide Applicability · engineer-classified", 100, JSON.stringify({ basis: [reason], category: approvedCategory, propagationMethod: wantsAllSystemCategories ? "System-Wide Applicability (all governed categories -- requirement text states whole-system scope)" : "System-Wide Applicability" }), "Confirmed", "Engineering Domain", requirement.system, row.id, requirement.id, governed?.id || null, propagator.id, stamp, reason, propagator.id));
       propagatedTo.push({ boqItemId: row.id, linkId, category: approvedCategory });
     }
     const decisionId = id("knowledgeDecision");
-    statements.push(env.DB.prepare("INSERT INTO engineering_knowledge_decisions (id, project_id, entity_type, entity_id, action, previous_value, new_value, reason, evidence, scope_type, scope_id, decided_by, decided_role) VALUES (?, ?, 'Technical Requirement', ?, 'propagate-system-wide', ?, ?, ?, ?, 'Engineering Domain', ?, ?, ?)").bind(decisionId, requirement.project_id, requirement.id, JSON.stringify({ categories }), JSON.stringify({ propagatedTo: propagatedTo.map((entry) => entry.boqItemId), skipped }), reason, JSON.stringify({ requirementId: requirement.id, categories, modelVersion: KNOWLEDGE_MODEL_VERSION }), requirement.system, user.id, user.role));
-    statements.push(env.DB.prepare("INSERT INTO document_audit_events (id, project_id, actor_user_id, action, old_value, new_value, reason, request_id) VALUES (?, ?, ?, 'Requirement Classified System-Wide', ?, ?, ?, ?)").bind(id("audit"), requirement.project_id, user.id, JSON.stringify({ requirementId: requirement.id }), JSON.stringify({ requirementId: requirement.id, categories, propagatedTo: propagatedTo.map((entry) => entry.boqItemId), decisionId }), reason, id("request")));
+    statements.push(env.DB.prepare("INSERT INTO engineering_knowledge_decisions (id, project_id, entity_type, entity_id, action, previous_value, new_value, reason, evidence, scope_type, scope_id, decided_by, decided_role) VALUES (?, ?, 'Technical Requirement', ?, 'propagate-system-wide', ?, ?, ?, ?, 'Engineering Domain', ?, ?, ?)").bind(decisionId, requirement.project_id, requirement.id, JSON.stringify({ categories }), JSON.stringify({ propagatedTo: propagatedTo.map((entry) => entry.boqItemId), skipped }), reason, JSON.stringify({ requirementId: requirement.id, categories, modelVersion: KNOWLEDGE_MODEL_VERSION }), requirement.system, propagator.id, propagator.role));
+    statements.push(env.DB.prepare("INSERT INTO document_audit_events (id, project_id, actor_user_id, action, old_value, new_value, reason, request_id) VALUES (?, ?, ?, 'Requirement Classified System-Wide', ?, ?, ?, ?)").bind(id("audit"), requirement.project_id, propagator.id, JSON.stringify({ requirementId: requirement.id }), JSON.stringify({ requirementId: requirement.id, categories, propagatedTo: propagatedTo.map((entry) => entry.boqItemId), decisionId }), reason, id("request")));
     for (let index = 0; index < statements.length; index += 60) await env.DB.batch(statements.slice(index, index + 60));
     for (const entry of propagatedTo) await executeRequirementProfile(env, { itemId: entry.boqItemId, userId: user.id });
     return json({ requirementId: requirement.id, categories, propagatedTo, skipped, decisionId }, 201);
@@ -215,19 +297,25 @@ export const handleEngineeringKnowledgeApi = async (request, env) => {
     const body = await request.json();
     const reason = String(body.reason || "").trim();
     if (reason.length < 5) return json({ error: { code: "LINK_REVIEW_REASON_REQUIRED", message: "Provide a substantive correction reason." } }, 422);
-    try { validateRequirementLink({ ...link, projectId: link.project_id, boqItemId: link.boq_item_id, requirementId: link.requirement_id, status: "Rejected", reviewedBy: user.id, reviewReason: reason }); } catch (error) { return json({ error: { code: error.code || "LINK_REVIEW_INVALID", message: error.message } }, 422); }
+    // Human-authority mutation: link corrections are recorded under the
+    // server-configured R1 human identity (CONV-2026-10-01-3e17), never the
+    // synthetic development user.
+    const human = requireHumanActor(env);
+    if (human.error) return json({ error: { code: human.error, message: human.message } }, 403);
+    const reviewer = { ...user, id: human.actor.id };
+    try { validateRequirementLink({ ...link, projectId: link.project_id, boqItemId: link.boq_item_id, requirementId: link.requirement_id, status: "Rejected", reviewedBy: reviewer.id, reviewReason: reason }); } catch (error) { return json({ error: { code: error.code || "LINK_REVIEW_INVALID", message: error.message } }, 422); }
     const stamp = now(); const newLinkId = id("boqreqlink"); const decisionId = id("knowledgeDecision");
     const originalDecision = await env.DB.prepare("SELECT id FROM engineering_knowledge_decisions WHERE entity_type='BOQ Requirement Link' AND entity_id=? AND action='confirm' ORDER BY decided_at DESC LIMIT 1").bind(link.id).first();
     await env.DB.batch([
       env.DB.prepare("UPDATE boq_requirement_links SET superseded_at=? WHERE id=? AND superseded_at IS NULL").bind(stamp, link.id),
-      env.DB.prepare("INSERT INTO boq_requirement_links (id, project_id, boq_item_id, requirement_id, link_method, confidence, evidence, status, scope_type, scope_id, version_number, previous_version_id, reviewed_by, reviewed_at, review_reason, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(newLinkId, link.project_id, link.boq_item_id, link.requirement_id, link.link_method, link.confidence, link.evidence, "Rejected", link.scope_type, link.scope_id, link.version_number + 1, link.id, user.id, stamp, reason, user.id),
-      env.DB.prepare("INSERT INTO engineering_knowledge_decisions (id, project_id, entity_type, entity_id, action, previous_value, new_value, reason, evidence, scope_type, scope_id, reversible, reverses_decision_id, decided_by, decided_role) VALUES (?, ?, 'BOQ Requirement Link', ?, 'supersede', ?, ?, ?, ?, 'BOQ Item', ?, 1, ?, ?, ?)").bind(decisionId, link.project_id, newLinkId, JSON.stringify({ linkId: link.id, status: link.status }), JSON.stringify({ linkId: newLinkId, status: "Rejected" }), reason, JSON.stringify({ supersedesLinkId: link.id, modelVersion: KNOWLEDGE_MODEL_VERSION }), link.boq_item_id, originalDecision?.id || null, user.id, user.role),
-      env.DB.prepare("INSERT INTO document_audit_events (id, project_id, actor_user_id, action, old_value, new_value, reason, request_id) VALUES (?, ?, ?, 'Requirement Link Superseded', ?, ?, ?, ?)").bind(id("audit"), link.project_id, user.id, JSON.stringify({ linkId: link.id, status: link.status }), JSON.stringify({ linkId: newLinkId, status: "Rejected", supersedes: link.id }), reason, id("request")),
+      env.DB.prepare("INSERT INTO boq_requirement_links (id, project_id, boq_item_id, requirement_id, link_method, confidence, evidence, status, scope_type, scope_id, version_number, previous_version_id, reviewed_by, reviewed_at, review_reason, created_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)").bind(newLinkId, link.project_id, link.boq_item_id, link.requirement_id, link.link_method, link.confidence, link.evidence, "Rejected", link.scope_type, link.scope_id, link.version_number + 1, link.id, reviewer.id, stamp, reason, reviewer.id),
+      env.DB.prepare("INSERT INTO engineering_knowledge_decisions (id, project_id, entity_type, entity_id, action, previous_value, new_value, reason, evidence, scope_type, scope_id, reversible, reverses_decision_id, decided_by, decided_role) VALUES (?, ?, 'BOQ Requirement Link', ?, 'supersede', ?, ?, ?, ?, 'BOQ Item', ?, 1, ?, ?, ?)").bind(decisionId, link.project_id, newLinkId, JSON.stringify({ linkId: link.id, status: link.status }), JSON.stringify({ linkId: newLinkId, status: "Rejected" }), reason, JSON.stringify({ supersedesLinkId: link.id, modelVersion: KNOWLEDGE_MODEL_VERSION }), link.boq_item_id, originalDecision?.id || null, reviewer.id, reviewer.role),
+      env.DB.prepare("INSERT INTO document_audit_events (id, project_id, actor_user_id, action, old_value, new_value, reason, request_id) VALUES (?, ?, ?, 'Requirement Link Superseded', ?, ?, ?, ?)").bind(id("audit"), link.project_id, reviewer.id, JSON.stringify({ linkId: link.id, status: link.status }), JSON.stringify({ linkId: newLinkId, status: "Rejected", supersedes: link.id }), reason, id("request")),
     ]);
     const profileResult = await executeRequirementProfile(env, { itemId: link.boq_item_id, userId: user.id });
-    return json({ link: { id: newLinkId, previousVersionId: link.id, status: "Rejected", reviewedBy: user.id, reviewedAt: stamp, reviewReason: reason }, supersededLinkId: link.id, decisionId, profile: profileResult });
+    return json({ link: { id: newLinkId, previousVersionId: link.id, status: "Rejected", reviewedBy: reviewer.id, reviewedAt: stamp, reviewReason: reason }, supersededLinkId: link.id, decisionId, profile: profileResult });
   }
-  const linkMatch = url.pathname.match(/^\/api\/requirement-links\/([^/]+)\/(confirm|reject|remove)$/); if (linkMatch && request.method === "POST") { const link = await env.DB.prepare("SELECT l.* FROM boq_requirement_links l JOIN projects p ON p.id=l.project_id WHERE l.id=? AND p.owner_user_id=? AND l.superseded_at IS NULL").bind(decodeURIComponent(linkMatch[1]), user.id).first(); if (!link) return json({ error: { code: "LINK_NOT_FOUND", message: "Requirement link not found." } }, 404); const body = await request.json(); const reason = String(body.reason || "").trim(); if (reason.length < 5) return json({ error: { code: "LINK_REVIEW_REASON_REQUIRED", message: "Provide a substantive applicability review reason." } }, 422); const status = { confirm: "Confirmed", reject: "Rejected", remove: "Removed" }[linkMatch[2]]; try { validateRequirementLink({ ...link, projectId: link.project_id, boqItemId: link.boq_item_id, requirementId: link.requirement_id, status, reviewedBy: user.id, reviewReason: reason }); } catch (error) { return json({ error: { code: error.code || "LINK_REVIEW_INVALID", message: error.message } }, 422); } const stamp = now(); const decisionId = id("knowledgeDecision"); await env.DB.batch([env.DB.prepare("UPDATE boq_requirement_links SET status=?, reviewed_by=?, reviewed_at=?, review_reason=? WHERE id=? AND status IN ('Suggested','Needs Review')").bind(status, user.id, stamp, reason, link.id), env.DB.prepare("INSERT INTO engineering_knowledge_decisions (id, project_id, entity_type, entity_id, action, previous_value, new_value, reason, evidence, scope_type, scope_id, decided_by, decided_role) VALUES (?, ?, 'BOQ Requirement Link', ?, ?, ?, ?, ?, ?, 'BOQ Item', ?, ?, ?)").bind(decisionId, link.project_id, link.id, linkMatch[2], JSON.stringify({ status: link.status, confidence: link.confidence }), JSON.stringify({ status }), reason, JSON.stringify({ linkId: link.id, modelVersion: KNOWLEDGE_MODEL_VERSION }), link.boq_item_id, user.id, user.role), env.DB.prepare("INSERT INTO document_audit_events (id, project_id, actor_user_id, action, old_value, new_value, reason, request_id) VALUES (?, ?, ?, 'Requirement Applicability Reviewed', ?, ?, ?, ?)").bind(id("audit"), link.project_id, user.id, JSON.stringify({ linkId: link.id, status: link.status }), JSON.stringify({ linkId: link.id, status, decisionId }), reason, id("request"))]); let profileResult = null; if (status === "Confirmed") profileResult = await executeRequirementProfile(env, { itemId: link.boq_item_id, userId: user.id }); return json({ link: { ...link, status, reviewed_by: user.id, reviewed_at: stamp, review_reason: reason }, decisionId, profile: profileResult }); }
+  const linkMatch = url.pathname.match(/^\/api\/requirement-links\/([^/]+)\/(confirm|reject|remove)$/); if (linkMatch && request.method === "POST") { const link = await env.DB.prepare("SELECT l.* FROM boq_requirement_links l JOIN projects p ON p.id=l.project_id WHERE l.id=? AND p.owner_user_id=? AND l.superseded_at IS NULL").bind(decodeURIComponent(linkMatch[1]), user.id).first(); if (!link) return json({ error: { code: "LINK_NOT_FOUND", message: "Requirement link not found." } }, 404); const body = await request.json(); const reason = String(body.reason || "").trim(); if (reason.length < 5) return json({ error: { code: "LINK_REVIEW_REASON_REQUIRED", message: "Provide a substantive applicability review reason." } }, 422); const human = requireHumanActor(env); if (human.error) return json({ error: { code: human.error, message: human.message } }, 403); const reviewer = { ...user, id: human.actor.id }; const status = { confirm: "Confirmed", reject: "Rejected", remove: "Removed" }[linkMatch[2]]; try { validateRequirementLink({ ...link, projectId: link.project_id, boqItemId: link.boq_item_id, requirementId: link.requirement_id, status, reviewedBy: reviewer.id, reviewReason: reason }); } catch (error) { return json({ error: { code: error.code || "LINK_REVIEW_INVALID", message: error.message } }, 422); } const stamp = now(); const decisionId = id("knowledgeDecision"); await env.DB.batch([env.DB.prepare("UPDATE boq_requirement_links SET status=?, reviewed_by=?, reviewed_at=?, review_reason=? WHERE id=? AND status IN ('Suggested','Needs Review')").bind(status, reviewer.id, stamp, reason, link.id), env.DB.prepare("INSERT INTO engineering_knowledge_decisions (id, project_id, entity_type, entity_id, action, previous_value, new_value, reason, evidence, scope_type, scope_id, decided_by, decided_role) VALUES (?, ?, 'BOQ Requirement Link', ?, ?, ?, ?, ?, ?, 'BOQ Item', ?, ?, ?)").bind(decisionId, link.project_id, link.id, linkMatch[2], JSON.stringify({ status: link.status, confidence: link.confidence }), JSON.stringify({ status }), reason, JSON.stringify({ linkId: link.id, modelVersion: KNOWLEDGE_MODEL_VERSION }), link.boq_item_id, reviewer.id, reviewer.role), env.DB.prepare("INSERT INTO document_audit_events (id, project_id, actor_user_id, action, old_value, new_value, reason, request_id) VALUES (?, ?, ?, 'Requirement Applicability Reviewed', ?, ?, ?, ?)").bind(id("audit"), link.project_id, reviewer.id, JSON.stringify({ linkId: link.id, status: link.status }), JSON.stringify({ linkId: link.id, status, decisionId }), reason, id("request"))]); let profileResult = null; if (status === "Confirmed") profileResult = await executeRequirementProfile(env, { itemId: link.boq_item_id, userId: user.id }); return json({ link: { ...link, status, reviewed_by: reviewer.id, reviewed_at: stamp, review_reason: reason }, decisionId, profile: profileResult }); }
   return json({ error: { code: "KNOWLEDGE_API_NOT_FOUND", message: "Engineering knowledge operation not found." } }, 404);
 };
 import { currentBoqEvidenceFrom, currentBoqItemPredicate } from "./current-evidence-scope.mjs";

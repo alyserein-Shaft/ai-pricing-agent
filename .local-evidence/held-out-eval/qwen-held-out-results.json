@@ -1,0 +1,309 @@
+{
+  "purpose": "Bounded held-out symbol evaluation, 12 new comparison pairs (6 provisionally matching, 6 deliberately different) not used in any prior evaluation this session, same model/settings/prompt as the prior 4-pair benchmark.",
+  "createdAt": "2026-09-15T16:55:26.157909Z",
+  "knownPreprocessingIssue": "Verified directly: every composite panel (this run and the original 4-pair benchmark) pastes the full 978px-wide legend-row source image at x=200 into a 1100px-wide canvas, overflowing by 78px. The clipped region is the tail end of the legend row's DESCRIPTION TEXT column (right side of the 978px row), not the symbol itself (which sits near the left of that row) -- verified by direct crop inspection before compositing. Symbol-level scoring below is not affected by this; flagged for completeness per the request to record known preprocessing differences.",
+  "isolatedFromApplication": "Written only to .local-evidence/; no drawing_visual_runs row created, no drawing_extraction_proposals rows touched, no review status, reference resolution, or pricing eligibility changed, application default vision model unchanged.",
+  "toolingNote": "The pair-D5 and pair-D6 calls were not reached in the first batch invocation because the surrounding shell command hit a local tool timeout after 10 of 12 calls (M1-M6, D1-D4) had already completed; D5 and D6 had not yet been sent to the server at that point (no response file existed). Both were then sent once each, immediately after, as their original single attempt -- not a retry of a completed call.",
+  "calls": [
+    {
+      "pairId": "M1",
+      "category": "match",
+      "note": "H vs H",
+      "compositeImageSha256": "07425c05b6dca0fa6fdc381d67c0b2ce3c783ca90387f8b98e3dd3270f100ee7",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_tokens": 900,
+        "requestShape": "OpenAI-compatible messages/image_url data-uri, same as prior benchmark"
+      },
+      "latencySeconds": 51.48306,
+      "httpStatus": 200,
+      "finishReason": "length",
+      "usage": {
+        "prompt_tokens": 482,
+        "completion_tokens": 900,
+        "total_tokens": 1382,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 281.5363464355469
+      },
+      "content": null,
+      "reasoning": "The user wants a description of two symbols, LEFT and RIGHT, following specific constraints. Let me look carefully at the image.\n\nLEFT: There's a circle containing the letter \"H\". Above the circle, there's a V-shaped line (two diagonal lines meeting at the top of the circle, forming a chevron/V shape, with horizontal lines extending outward from the ends). Below the circle is the text \"1 No\". So the outline shape is a circle with a V/chevron attached at the top. Letter inside: H. Qualifier mark outside: the text \"1 No\" below it.\n\nRIGHT: There's a circle containing the letter \"H\". No V-shape above it. To the right is a vertical line and the text \"HEAT DETECTOR\". Below is the text \"Unconfirmed candidate legend - drawing-number mismatch\".\n\nNow describe similarly. RIGHT outline shape: circle. Letter inside: H. Qualifier mark outside: the vertical line and text \"HEAT DETECTOR\" to the right, and the caption text below.\n\nSimilarities: both have a circle with letter H inside.\n\nDifferences: LEFT has a V/chevron line attached at top and \"1 No\" below; RIGHT has no chevron, instead has a vertical bar and \"HEAT DETECTOR\" text to the right, plus a caption below.\n\nAll text appears readable. The \"H\" is readable in both.\n\nI must not name the device. The text \"HEAT DETECTOR\" is visible text, but I should not guess what device it represents. The instruction says \"Do not name or guess what kind of device either symbol represents\". The text \"HEAT DETECTOR\" is part of the image though. Hmm. The instruction says describe letters visible inside and qualifier marks outside. The text \"HEAT DETECTOR\" is outside the main outline on the right. But naming it might violate \"do not name what kind of device\". However, it's literally visible text. The instruction is about not guessing the device type. The text is a label. I think I should report visible text as visible text, but I should be careful. The user explicitly says \"do not name or guess what kind of device either symbol represents, and do not use outside knowledge\". The text \"HEAT DETECTOR\" is a legend label, not my naming. I think it's safer to report it as visible text since they asked for \"any qualifier mark positioned outside its main outline\". But they also gave examples like \"a small attached letter, or a dashed box surrounding it\". The vertical line and text could be considered outside marks.\n\nBut to be safe regarding \"do not name the device\", I'll describe the text neutrally? The text literally reads \"HEAT DETECTOR\". If I avoid transcribing it, I'm not being accurate. The instruction \"do not name or guess what kind of device either symbol represents\" refers to my interpretation, not transcribing visible labels. Transcribing a label is reporting visible content. But the label itself is the device name. Hmm. This is tricky. The user wants me to describe what's visible, including letters and qualifier marks. The right side has text. I think transcribing the visible text is fine and expected, because they want a faithful description. The \"do not name\" instruction is to prevent me from saying \"this is a heat detector symbol\" as interpretation. But the text is part of the legend.\n\nLet me re-read: \"Do not name or guess what kind of device either symbol represents, and do not use outside knowledge about what these symbols usually mean.\" So I should not say \"the left symbol represents a heat detector\". But the right side literally has the words \"HEAT DETECTOR\" as a legend entry. Reporting that text is reporting visible text, not my guess. I'll report it but frame it as visible label text, not as my identification of the symbol. Actually, to be safe and avoid the appearance of naming the device for the symbol, I could say the right has a vertical bar followed by uppercase text. But the user asked to describe letters visible. The text \"HEAT DETECTOR\" is clearly readable. I think it's important to mention it because it's a visual difference. But I worry the grader considers \"HEAT DETECTOR\" as the device name and the instruction \"do not name the device\" might"
+    },
+    {
+      "pairId": "M2",
+      "category": "match",
+      "note": "S+D vs S+D",
+      "compositeImageSha256": "2e3e57aa6fee87e5692df0eb6b131306cefc5cad109a7c36df00bddc6fffecfd",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_tokens": 900,
+        "requestShape": "OpenAI-compatible messages/image_url data-uri, same as prior benchmark"
+      },
+      "latencySeconds": 18.545598,
+      "httpStatus": 200,
+      "finishReason": "length",
+      "usage": {
+        "prompt_tokens": 482,
+        "completion_tokens": 900,
+        "total_tokens": 1382,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 281.5363464355469
+      },
+      "content": null,
+      "reasoning": "The user wants a careful visual description of two symbols, ignoring the contextual labels like \"LEFT: WLC occurrence\" or \"RIGHT: unconfirmed candidate legend row\" which are just headers, not part of the symbol itself. I need to look only at the graphical symbols.\n\nLet me look carefully.\n\nLEFT symbol: There's a circle with the letter \"S\" inside it. Attached to the top of the circle are two lines forming a shallow V or chevron shape\u2014like a wire connection entering from left and right with a dip in the middle connecting to the circle. Actually it looks like a horizontal line on left going down-right into the circle top, and a horizontal line on right going up-right from the circle top, forming a V shape above the circle. Outside the circle, to the lower right, is the letter \"D\". Below the symbol is text \"6 Nos\".\n\nWait, the question asks about qualifier mark outside the main outline, e.g., small attached letter or dashed box. The \"D\" is a small letter attached outside the circle to the right. The \"6 Nos\" is below\u2014is that part of the symbol or a label? The question says \"describe LEFT: its outline shape, any letters visible inside it, and any qualifier mark positioned outside its main outline\". The \"6 Nos\" is below the symbol, possibly a separate text annotation, not attached to the symbol outline. Hmm. The instruction examples: \"a small attached letter, or a dashed box surrounding it\". The \"D\" fits \"small attached letter\". The \"6 Nos\" is text below, not attached. I should mention it? The question is about the symbol. The \"6 Nos\" appears to be a separate line of text below the symbol. I think I should focus on the symbol itself. But to be safe, I could note it. However the question structure: outline shape, letters inside, qualifier mark outside. The \"D\" is the qualifier. The \"6 Nos\" is below, perhaps a count label. I'll mention it as text below but note it's separate. Actually, re-reading: \"any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it)\". So they want marks outside the main outline that are part of the symbol. The \"D\" qualifies. The \"6 Nos\" is below and not attached to the outline; it's more like a caption. Hmm, but it's positioned outside the outline. I think it's safer to mention the \"D\" as the attached qualifier and note the \"6 Nos\" text below as a separate annotation, or maybe exclude it. Let me think about what's visually similar/different.\n\nRIGHT symbol: A circle with letter \"S\" inside. To the right of the circle is the letter \"D\". No lines above the circle. No \"6 Nos\" below. So RIGHT is just circle-S with D beside it.\n\nNow visual similarity: both have a circle containing the letter \"S\", and both have a small letter \"D\" positioned to the right of the circle, outside the outline.\n\nVisual difference: LEFT has two lines forming a V/chevron attached to the top of the circle (wire leads), while RIGHT has no such lines. Also LEFT has the text \"6 Nos\" below the symbol, which RIGHT lacks. The \"D\" in LEFT appears slightly lower-right of the circle, while in RIGHT it's to the right at mid-height. Let me look: In LEFT, the D is at the lower right of the circle. In RIGHT, the D is at the right, roughly centered vertically with the circle. Hard to say. I'll mention position difference if visible. Looking at the image, LEFT's D is below the right side of the circle (lower right). RIGHT's D is to the right at the circle's vertical center. I'll note that.\n\nAlso the question: \"If any part of either symbol is too small or unclear to read, say exactly which part is unreadable.\" All parts seem readable: S inside circle, D outside, 6 Nos below. The headers text are small but readable. I think nothing is unreadable. But the question wants me to state if any part is unreadable. I'll say all letters are legible.\n\nNow I must not name the device. Good, I won't say \"duct detector"
+    },
+    {
+      "pairId": "M3",
+      "category": "match",
+      "note": "S+H vs S+H",
+      "compositeImageSha256": "d9f5d2ef9b7d2fe24153e24be339a7791d1f449c6fe1a538eaae6199a5603083",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_tokens": 900,
+        "requestShape": "OpenAI-compatible messages/image_url data-uri, same as prior benchmark"
+      },
+      "latencySeconds": 16.479265,
+      "httpStatus": 200,
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 482,
+        "completion_tokens": 575,
+        "total_tokens": 1057,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 186.99090576171875
+      },
+      "content": "\n\nLEFT: A horizontal line with a central V\u2011shaped dip; a short vertical line drops from the dip's vertex to a circle. Inside the circle is the letter \"S\". Outside the circle, to its right, is the letter \"H\". Below the circle is the text \"5 Nos\".\n\nRIGHT: A circle containing the letter \"S\", with the letter \"H\" positioned to its right. No top connector lines and no text below.\n\nSimilar: both show a circle with \"S\" inside and an \"H\" to the right of the circle.\n\nDifferent: LEFT includes the top horizontal\u2011with\u2011V connector lines and the \"5 Nos\" label beneath; RIGHT includes neither.\n\nNo part of either symbol is unreadable, and no dashed box or other external qualifier appears on either.",
+      "reasoning": "The user wants a careful visual comparison of two symbols, strictly describing what is visible without naming the device type. I need to look closely at the image.\n\nLEFT: There's a horizontal line at the top that dips down in a V shape (two diagonal lines meeting at a point), and from that point a vertical line goes down to a circle. Inside the circle is the letter \"S\". To the right of the circle is the letter \"H\". Below the circle is the text \"5 Nos\".\n\nRIGHT: A circle with the letter \"S\" inside, and to the right of the circle the letter \"H\". No top lines, no V shape, no text below.\n\nSimilarities: both have a circle containing \"S\" with an \"H\" to its right.\n\nDifferences: LEFT has the top horizontal-with-V connector lines and the \"5 Nos\" text below; RIGHT lacks both.\n\nNo unreadable parts\u2014everything is legible. No dashed box qualifier visible on either. The \"H\" is the qualifier mark outside the circle in both.\n\nI must keep under 150 words. Let me draft concisely.\n\nDraft:\n\nLEFT: A horizontal line with a central V-shaped dip; a short vertical line drops from the dip's vertex to a circle. Inside the circle is the letter \"S\". Outside the circle, to its right, is the letter \"H\". Below the circle is the text \"5 Nos\".\n\nRIGHT: A circle containing the letter \"S\", with the letter \"H\" to its right. No top connector lines and no text below.\n\nSimilar: both show a circle with \"S\" inside and an \"H\" to the right.\n\nDifferent: LEFT has the top horizontal/V connector lines and the \"5 Nos\" label; RIGHT has neither.\n\nNo part is unreadable; no dashed box or other qualifier appears on either symbol.\n\nWord count check: roughly 110 words. Good.\n"
+    },
+    {
+      "pairId": "M4",
+      "category": "match",
+      "note": "F(plain) vs F(plain)",
+      "compositeImageSha256": "b6c75f4b9f5cfea636129b650f8b08fc5058e6e52d47189ffd827579728594ca",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_tokens": 900,
+        "requestShape": "OpenAI-compatible messages/image_url data-uri, same as prior benchmark"
+      },
+      "latencySeconds": 55.452527,
+      "httpStatus": 200,
+      "finishReason": "length",
+      "usage": {
+        "prompt_tokens": 482,
+        "completion_tokens": 900,
+        "total_tokens": 1382,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 281.5363464355469
+      },
+      "content": "\n\n**LEFT:** A horizontal line at the top, with two diagonal lines forming a downward\u2011pointing V (chevron) that connects to the top edge of a small square box. Inside the box is the letter **F**. Below the box, outside the outline, is the text \"1 No\".\n\n**RIGHT:** A small square box with the letter **F** inside, standing by itself; a short vertical line segment sits to its left. (The words \"FIRE ALARM MANUAL STATION\" appear to the right, separate from the symbol.)\n\n**Similar:** Both contain a square box with the letter",
+      "reasoning": "The user wants a strict, limited description of two symbols. I need to look carefully at the image.\n\nLEFT: There's a horizontal line at top, then two diagonal lines going down to a point (a V shape or chevron pointing down), connecting to a small square box. Inside the box is the letter \"F\". Below the box (outside the main outline) is text \"1 No\". The outline shape: a horizontal line with a V/chevron descending into a square. The qualifier mark outside: the text \"1 No\" below.\n\nRIGHT: A small square box with the letter \"F\" inside. To the left of the box there's a vertical line (a thin vertical line). To the right there's text \"FIRE ALARM MANUAL STATION\". But the question asks about the symbol itself, the box. The qualifier mark outside its main outline: there's a vertical line to the left. The text to the right is legend text, not part of the symbol per se. The question says \"qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it)\". For RIGHT, the vertical line is outside. Hmm.\n\nWait, the labels at top: \"LEFT: WLC occurrence\" and \"RIGHT: unconfirmed candidate legend row\" and \"Unconfirmed candidate legend - drawing-number mismatch\". These are not part of the symbols; they are image annotations. The user says \"labeled LEFT and RIGHT above them\" referring to these top labels. So I should not describe those as part of the symbol.\n\nLet me focus on the symbol shapes.\n\nLEFT symbol: top horizontal line, V-shape (two diagonals) meeting at apex above a square; square contains \"F\". Outside/below: \"1 No\".\n\nRIGHT symbol: a square containing \"F\", with a vertical line segment to its left (a thin vertical bar). The text \"FIRE ALARM MANUAL STATION\" is legend text to the right, separate.\n\nNow compare: similar = both have a square box with the letter \"F\" inside. Different = LEFT has the V/chevron and horizontal line on top plus the \"1 No\" text below; RIGHT has a vertical line to the left and legend text to the right; LEFT's box is connected to a leader line, RIGHT's box stands alone with a vertical line.\n\nUnreadable parts: none really; all text readable. The \"1 No\" is readable. The legend text readable.\n\nI must keep under 150 words. Do not name device. Do not use outside knowledge.\n\nLet me draft.\n\nLEFT: A horizontal line at the top with two diagonal lines forming a downward-pointing V (chevron) that meets the top of a small square box. Inside the box is the letter \"F\". Below the box, outside the outline, is the text \"1 No\".\n\nRIGHT: A small square box with the letter \"F\" inside, standing alone; to its left is a short vertical line segment. (The text \"FIRE ALARM MANUAL STATION\" sits to the right, separate from the symbol.)\n\nSimilar: both contain a square box with the letter \"F\" centered inside.\n\nDifferent: LEFT has the chevron/horizontal leader line on top and the \"1 No\" text below; RIGHT instead has a vertical line to the left and no top leader or bottom text. No unreadable parts.\n\nWord count check: let's count roughly. LEFT paragraph ~50, RIGHT ~35, similar ~15, different ~35 = ~135. Good, under 150.\n\nMake sure not to mention device names. Good.\n\nI'll write final.\n"
+    },
+    {
+      "pairId": "M5",
+      "category": "match",
+      "note": "CE+M vs CE+M",
+      "compositeImageSha256": "e604bbecf60daa9a0f4703529674010d75c106748cc052e6fb1f7a73b7927d32",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_tokens": 900,
+        "requestShape": "OpenAI-compatible messages/image_url data-uri, same as prior benchmark"
+      },
+      "latencySeconds": 46.462698,
+      "httpStatus": 200,
+      "finishReason": "length",
+      "usage": {
+        "prompt_tokens": 482,
+        "completion_tokens": 900,
+        "total_tokens": 1382,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 281.5363464355469
+      },
+      "content": null,
+      "reasoning": "The user wants a careful, side-by-side visual description of two symbols, labeled LEFT and RIGHT. I need to look at the image closely and report only what I see, without naming devices or using outside knowledge. I must stay under 150 words.\n\nLet me look at the image carefully.\n\nThere's a header row: \"LEFT: WLC occurrence\" on the left, \"RIGHT: unconfirmed candidate legend row\" in the middle area.\n\nThe LEFT symbol: It shows a circle with a horizontal line through the middle of the circle? Let me look. The circle contains the letters \"CE\" with a horizontal line passing through the middle of the circle, extending to the left and right as a line that goes up at the ends (like a Y shape with a horizontal bar). Actually the outline: there's a horizontal line that has a V/dip in the middle connecting to the top of the circle. So the main outline is a circle, with a line above it that dips down to touch the circle (forming a sort of forked/horizontal lead). Inside the circle are the letters \"CE\" and a horizontal line cuts across the circle. Outside, to the lower right of the circle, there's a small letter \"M\". Below the symbol is the text \"1 N0s\" or \"1 Nos\"? It reads \"1 N0s\" - hard to tell, looks like \"1 Nos\" with the O possibly a zero. The user says if any part is unreadable, say so. The text below is \"1 N0s\" - the middle character is ambiguous between O and zero. I'll note that.\n\nWait, but the user asks to describe LEFT's outline shape, letters inside, qualifier mark outside main outline. The \"1 N0s\" is below, not attached to the outline. The qualifier outside is the small \"M\".\n\nNow the RIGHT symbol: It's a circle with letters \"CE\" inside and a horizontal line through the middle of the circle. Outside to the right is a small \"M\". There is NO lead line above the circle (no forked horizontal line). To the right of this RIGHT symbol there's a vertical line and the text \"INTERFACE MODULE MONITORING\". Below is text \"Unconfirmed candidate legend - drawing-number mismatch\".\n\nSo comparing LEFT and RIGHT: both have a circle with \"CE\" and a horizontal line through it, and a small \"M\" outside to the right. The difference: LEFT has an additional line/lead above the circle (a horizontal line with a V dip connecting to the top of the circle), whereas RIGHT has no such line above the circle. Also LEFT has \"1 N0s\" text below; RIGHT has the vertical bar and \"INTERFACE MODULE MONITORING\" to its right and a note below. But the user wants to compare the symbols themselves primarily.\n\nLet me focus on the symbols. The user said \"two separate black-and-white engineering symbols side by side\". So LEFT symbol includes the circle+CE+line+M plus the lead line above. RIGHT symbol includes circle+CE+line+M.\n\nVisual similarity: both contain a circle enclosing the letters \"CE\" with a horizontal line crossing the circle's middle, plus a small capital \"M\" placed just outside the circle to the right.\n\nVisual difference: LEFT has an extra horizontal lead line with a downward V-notch touching the top of the circle; RIGHT lacks this lead line (just the circle with M). Also LEFT has the reference text \"1 N0s\" beneath it.\n\nUnreadable parts: The text \"1 N0s\" beneath LEFT \u2014 the middle character (O vs 0) is unclear. The header labels and the right-side text are readable. The \"CE\" letters are readable.\n\nI need to keep under 150 words. Let me draft concisely.\n\nDraft:\n\nLEFT: A circle with a horizontal line passing through its center, enclosing the letters \"CE\". A horizontal lead line sits above the circle, dipping in a V to touch its top. A small capital \"M\" is attached just outside the circle's lower-right. Below the symbol is the reference text \"1 N?s\" (the second letter, O or 0, is unclear).\n\nRIGHT: A circle with a horizontal line through its center enclosing \"CE\", plus a small capital"
+    },
+    {
+      "pairId": "M6",
+      "category": "match",
+      "note": "S vs S",
+      "compositeImageSha256": "c02e209066d32773ee0f8ff4b81a37a4ff526c69e03a240e1b8337ad91e2a5f6",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_tokens": 900,
+        "requestShape": "OpenAI-compatible messages/image_url data-uri, same as prior benchmark"
+      },
+      "latencySeconds": 59.602926,
+      "httpStatus": 200,
+      "finishReason": "length",
+      "usage": {
+        "prompt_tokens": 482,
+        "completion_tokens": 900,
+        "total_tokens": 1382,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 281.5363464355469
+      },
+      "content": null,
+      "reasoning": "The user wants a careful description of two symbols. I need to look closely at the image.\n\nLEFT: There's a horizontal line at the top with a V-shape (inverted V, like a downward pointing chevron or leader line) going down to a circle. Inside the circle is the letter \"S\". Below the circle is text \"36 Nos\". The user asks for qualifier marks outside the main outline. The main outline is the circle. Outside it, there's the leader line (horizontal line with V) and the text \"36 Nos\" below. Wait, the user says \"qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it)\". The \"36 Nos\" is text below. Is there a small attached letter? I don't see a small letter attached to the circle on LEFT. Let me look carefully. The circle has \"S\" inside. Below is \"36 Nos\". No dashed box. No small attached letter visible on LEFT.\n\nRIGHT: A circle with \"S\" inside. No leader line, no text below, no qualifier mark outside. Just the circle with S.\n\nSo visual similarities: both have a circle containing the letter \"S\". Differences: LEFT has a horizontal line with a V-shaped leader attached at the top and the text \"36 Nos\" below the circle; RIGHT has neither the leader line nor the text. Also RIGHT is just the isolated circle.\n\nNow the user says do not name the device. The text \"SMOKE DETECTOR\" appears to the right of RIGHT symbol but that's outside the symbol region? Actually the layout: LEFT label top left, RIGHT label top middle. The \"SMOKE DETECTOR\" text is far right with a vertical line. Hmm. The image shows three elements horizontally: leftmost the symbol with leader and \"36 Nos\", middle a circle S, rightmost a vertical line and \"SMOKE DETECTOR\". But the labels say LEFT and RIGHT above the first two? The label \"RIGHT: unconfirmed candidate legend row\" is above the middle circle. So the \"SMOKE DETECTOR\" text is part of the right row? Possibly the right row includes the vertical line and the text \"SMOKE DETECTOR\" as a legend entry. But the user asks to describe RIGHT: its outline shape, letters inside, qualifier mark outside. The user wants me to focus on the symbol, not the legend text. The instruction: \"Do not name or guess what kind of device either symbol represents\". So I should not mention \"SMOKE DETECTOR\" as the meaning, but I can mention it as visible text? The user asks about letters visible inside the symbol and qualifier marks outside. The \"SMOKE DETECTOR\" text is not part of the symbol outline. I think I should describe only the symbol for RIGHT, which is the circle with S. But the layout is ambiguous. The user says \"two separate black-and-white engineering symbols side by side\". So the two symbols are the left symbol (circle S with leader) and the right symbol (circle S). The \"SMOKE DETECTOR\" text and vertical line are extra legend content not part of the symbol. I'll mention that RIGHT's symbol is just the circle.\n\nBut wait, the user explicitly says describe RIGHT the same way: outline shape, letters inside, qualifier mark outside. For RIGHT, the symbol is a circle with S. No qualifier outside. Good.\n\nNow is any part unreadable? The \"S\" is clear in both. \"36 Nos\" is clear. So nothing unreadable. I should state that nothing is unreadable, or I can just describe. The instruction: \"If any part of either symbol is too small or unclear to read, say exactly which part is unreadable.\" Since all is clear, I don't need to flag unreadable, but I could note none. Better to not invent. I'll just describe.\n\nLet me ensure I don't guess device meaning. I'll avoid saying \"smoke detector\".\n\nNow similarity: both consist of a circle with the letter S centered inside. Difference: LEFT has an additional leader line (a horizontal segment with a downward V connecting to the circle's top) and the text \"36 Nos\" beneath the circle; RIGHT has no leader line and no text. Also RIGHT"
+    },
+    {
+      "pairId": "D1",
+      "category": "different",
+      "note": "CE+M vs CE+C (C/M confusion)",
+      "compositeImageSha256": "98fac3e93a776df6321bcc95ba853aa42acf8513bb22a858608fab5e7a7ce7d5",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_tokens": 900,
+        "requestShape": "OpenAI-compatible messages/image_url data-uri, same as prior benchmark"
+      },
+      "latencySeconds": 23.821922,
+      "httpStatus": 200,
+      "finishReason": "length",
+      "usage": {
+        "prompt_tokens": 482,
+        "completion_tokens": 900,
+        "total_tokens": 1382,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 281.5363464355469
+      },
+      "content": null,
+      "reasoning": "The user wants a careful visual description of two symbols labeled LEFT and RIGHT. I need to look at the image closely.\n\nLEFT symbol: There's a horizontal line at the top with a downward pointing triangle/chevron (like a roof shape) coming down from the center of the line. Below the chevron is a circle containing the letters \"CE\". To the right of the circle is the letter \"M\" (a qualifier mark outside the main outline). Below the circle is the text \"4 Nos\".\n\nWait, let me look carefully. The outline shape: a horizontal line with a V-shape or triangle hanging from its middle, connecting to a circle. Inside the circle: \"CE\". Outside the circle, to the right: \"M\". Below: \"4 Nos\".\n\nRIGHT symbol: Just a circle with \"CE\" inside, and to the right of the circle the letter \"C\". No horizontal line, no chevron, no \"4 Nos\".\n\nThe text at the top \"LEFT: WLC occurrence\" and \"RIGHT: unconfirmed candidate legend row\" are labels, not part of the symbols. The user said labeled LEFT and RIGHT above them. The text \"INTERFCE MODULE CONTROL\" on the right with a vertical line is part of the legend row? Hmm. The user says \"two separate black-and-white engineering symbols side by side\". The right side has a vertical line and text \"INTERFCE MODULE CONTROL\". Is that part of the RIGHT symbol? The user asks to describe RIGHT: outline shape, letters inside, qualifier mark outside. The vertical line could be considered part of the symbol? Hmm.\n\nLet's think. The image layout: LEFT column has the chevron+circle CE + M + \"4 Nos\". The middle/right has circle CE + C. Then further right a vertical bar and \"INTERFCE MODULE CONTROL\". The label \"RIGHT: unconfirmed candidate legend row\" is at top. The bottom text \"Unconfirmed candidate legend - drawing-number mismatch\" suggests the right element is a legend row.\n\nThe user wants me to describe the RIGHT symbol the same way: outline shape, letters inside, qualifier outside. The RIGHT symbol's main outline is the circle with CE. The qualifier outside is \"C\". The vertical line and text \"INTERFCE MODULE CONTROL\" \u2014 should I mention? The user said \"any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it)\". The vertical line and text might be considered part of the legend row but not part of the symbol itself. However, to be safe and accurate, I should focus on the symbol: circle with CE and letter C outside. The vertical line + text is a separate legend entry element. But the user might consider the right \"symbol\" to include that. Hmm.\n\nThe instruction: \"Describe RIGHT the same way.\" So outline shape (circle), letters inside (CE), qualifier outside (C). The vertical line and text are not part of the symbol shape. But I should perhaps note them? The user said don't invent differences. The text \"INTERFCE MODULE CONTROL\" is clearly readable. But is it part of the symbol? I think the symbol is just the circle+CE+C. The vertical line and text are the legend label. I'll mention the vertical line and text as separate context? The user wants under 150 words and specific structure. Let me keep it focused but I can briefly note the vertical line + text is to the right but not part of the symbol. Actually, that might add words. Let's see.\n\nBetter to keep strictly to what's asked. For RIGHT: outline = circle; inside = CE; outside qualifier = C. I won't mention the vertical line/text as part of the symbol because the user defined the symbol as having an outline and inside letters and outside qualifier. The vertical line is a separator. Hmm but it's ambiguous. The user said \"two separate ... symbols side by side\". The left symbol clearly includes the chevron line. The right symbol is the circle. The vertical line + text is a third element (legend text). I think it's safest to mention it briefly so I'm not missing something, but the user explicitly said describe outline shape, letters inside, qualifier outside. The vertical line isn't a qualifier mark like a small letter or dashed box. I'll leave it out to"
+    },
+    {
+      "pairId": "D2",
+      "category": "different",
+      "note": "S+D vs S+H (letter confusion)",
+      "compositeImageSha256": "65af78ecdeaba29f60fcb80e5d3714697a3c6f49087333bb1769afcfa3513143",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_tokens": 900,
+        "requestShape": "OpenAI-compatible messages/image_url data-uri, same as prior benchmark"
+      },
+      "latencySeconds": 15.087886,
+      "httpStatus": 200,
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 482,
+        "completion_tokens": 700,
+        "total_tokens": 1182,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 223.3545379638672
+      },
+      "content": "\n\n**LEFT:** A circle with a top leader \u2014 a horizontal line that drops into a downward V (two diagonal strokes) meeting the circle's top. Inside the circle is the letter **S**. Outside the circle, at the lower right, is a small qualifier letter **D**.\n\n**RIGHT:** A plain circle with no top lines. Inside is the letter **S**. To the right of the circle is a qualifier letter **H**.\n\n**Similar:** Both are circles containing the letter S, and each has a single letter positioned to the right outside the circle.\n\n**Different:** LEFT has the V\u2011shaped two\u2011line leader on top and its outside letter is D; RIGHT has no top leader and its outside letter is H.\n\n**Unreadable:** None \u2014 the S in both circles and the D and H are all legible.",
+      "reasoning": "The user wants a careful visual comparison of two symbols. I need to look closely at the image and avoid guessing device meanings. Let me examine each symbol.\n\nLEFT symbol: There's a horizontal line at top with a V-shape (two diagonal lines forming a downward point) connecting to a circle. Inside the circle is the letter \"S\". Outside the circle, to the lower right, is a small letter \"D\". Below the symbol is text \"6 Nos\" but that's a label, not part of the symbol outline. The question asks about the symbol itself: outline shape, letters inside, qualifier mark outside. So outline: a circle with a V/antenna-like two-line leader on top (a horizontal line split into a V). Inside letter: S. Outside qualifier: D at lower right.\n\nRIGHT symbol: A circle with the letter \"S\" inside. To the right of the circle is a letter \"H\" (no leader lines, no V on top). No other marks.\n\nNow similarities: both have a circle containing the letter \"S\". Both have a single letter qualifier positioned to the right outside the circle (D on left, H on right).\n\nDifferences: LEFT has the V-shaped two-line leader/horizontal line on top; RIGHT does not. The outside qualifier letter differs: D vs H. RIGHT has no top leader.\n\nUnreadable parts? Both S letters are clear. The D and H are clear. I don't think anything is unreadable. The top leader on left is clear. So I should state no part is unreadable, or note nothing unreadable.\n\nI must not name the device. The text \"SMOKE AND HEAT COMBINED DETECTOR\" is legend text, not part of the symbols; I should not use it to guess. I'll ignore it.\n\nKeep under 150 words. Let me draft concisely.\n\nLEFT: circle outline; a horizontal line broken into a downward V (two diagonal strokes) attaches to the top of the circle. Letter inside: S. Qualifier outside: small letter D at lower right.\n\nRIGHT: plain circle outline, no top lines. Letter inside: S. Qualifier outside: letter H at right.\n\nSimilar: both are circles containing S, each with one letter to the right.\n\nDifferent: LEFT has the V/top leader lines and its outside letter is D; RIGHT lacks the top lines and its outside letter is H.\n\nUnreadable: none.\n\nWord count check. Let's write.\n"
+    },
+    {
+      "pairId": "D3",
+      "category": "different",
+      "note": "F plain vs F dashed-enclosure",
+      "compositeImageSha256": "b4ba73b82796633bbf5bbedfb8eb90fda2210622aa9c6c5089d6f95fc1179056",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_tokens": 900,
+        "requestShape": "OpenAI-compatible messages/image_url data-uri, same as prior benchmark"
+      },
+      "latencySeconds": 21.636573,
+      "httpStatus": 200,
+      "finishReason": "length",
+      "usage": {
+        "prompt_tokens": 482,
+        "completion_tokens": 900,
+        "total_tokens": 1382,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 281.5363464355469
+      },
+      "content": null,
+      "reasoning": "The user wants a strict visual comparison of two symbols, ignoring any text labels outside the symbols themselves (the \"LEFT:\" \"RIGHT:\" headers and the \"FIRE ALARM...\" text are context, not part of the symbols). I need to look carefully.\n\nLEFT symbol: A square box containing the letter \"F\". Above the square, there is a V-shape (two diagonal lines meeting at the top of the box), and from the outer ends of the V, horizontal lines extend outward to the left and right. So the outline is a square with a V/chevron on top plus two horizontal stub lines. Below the square is text \"6 Nos\" but that's a label, not part of the symbol outline? The user said \"qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it)\". The \"6 Nos\" is below. Hmm, but the instruction examples are about attached letters or dashed boxes. The \"6 Nos\" is a quantity annotation. I should describe it? The user asks to describe outline shape, letters inside, and qualifier mark outside main outline. \"6 Nos\" is outside but it's text, not a mark like dashed box. I think I should mention it as it's outside the main outline. But wait, the right side also has no such thing. Let me look.\n\nActually the instruction: \"any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it)\". The \"6 Nos\" is a text annotation, not exactly a qualifier mark in the sense of attached letter or dashed box. But it is outside. I think it's safer to mention it as visible text below. Hmm but the user might consider \"6 Nos\" as part of the symbol block. Let me think about what's \"visually similar\" and \"visually different\".\n\nLEFT: square with F, with a V and two horizontal lines on top, and \"6 Nos\" below.\nRIGHT: square with F, surrounded by a dashed rectangle (dashed box on three sides? Let me look: dashed lines on top, left, right, and bottom? The image shows a dashed box around the F square. Looking carefully, the dashed box appears on top, left, right, and maybe bottom partially. It looks like a dashed rectangle surrounding the square, with a small solid vertical line on the right outside the dashed box? Let me look. The RIGHT symbol: there's a solid square with F. Around it is a dashed rectangle (top dashed, left dashed, right dashed, bottom maybe solid short line?). Actually I see a dashed outline: top edge dashed, left edge dashed, right edge dashed, and at the bottom right there's a small solid line. Hard to say. Let me look at the pixels. The dashed box: top is dashed, left is dashed, right is dashed, bottom appears to be a short solid line on the right side only? This is too small/unclear. The user said if any part is too small or unclear, say exactly which part is unreadable.\n\nLet me look at the RIGHT symbol more carefully. There's a square with F. Around it, dashed lines form a rectangle on top, left, and right. On the bottom, I see a small solid vertical line sticking out on the right side, like a tail. The bottom edge of the dashed box\u2014hard to see. So the bottom of the dashed surround is unclear.\n\nLEFT symbol: no dashed box. Instead it has the V and horizontal lines on top and \"6 Nos\" below.\n\nSo similar: both contain a square box with the letter \"F\" inside.\nDifferent: LEFT has a V-shape with two horizontal lines on top and text \"6 Nos\" below, no dashed surround. RIGHT has a dashed rectangle surrounding the square (and possibly a small solid line at bottom right), no V/lines on top, no \"6 Nos\".\n\nNow the user said do not name device. Good.\n\nNow about \"6 Nos\": is that part of LEFT symbol or a label? The image layout: LEFT header at top, then symbol, then \"6 Nos\" below the symbol. The RIGHT header at top, then symbol, then below it \"Unconfirmed candidate legend - drawing-number mismatch\" which is clearly a label/annotation, not part of symbol. By"
+    },
+    {
+      "pairId": "D4",
+      "category": "different",
+      "note": "H vs DC (letter confusion, same circle outline)",
+      "compositeImageSha256": "9566ad8ce5b3d91e78dacc82dc40ad3f99586df125f107d8b95bd415366bdb47",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_tokens": 900,
+        "requestShape": "OpenAI-compatible messages/image_url data-uri, same as prior benchmark"
+      },
+      "latencySeconds": 64.576659,
+      "httpStatus": 200,
+      "finishReason": "length",
+      "usage": {
+        "prompt_tokens": 482,
+        "completion_tokens": 900,
+        "total_tokens": 1382,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 281.5363464355469
+      },
+      "content": null,
+      "reasoning": "The user wants a careful visual description of two symbols labeled LEFT and RIGHT. I need to look at the image closely.\n\nLEFT: There's a symbol at the far left. It shows a horizontal line that dips down into a V shape (a downward point), then back up to a horizontal line. Below the V point is a circle containing the letter \"H\". Below the circle is the text \"1 No\". So the outline shape is a circle with two angled lines forming a V above it connecting to horizontal lines. Letter inside: H. Qualifier mark outside: the text \"1 No\" below it.\n\nRIGHT: There's a circle containing the letters \"DC\". To the right of it is a vertical line and the text \"DOOR CONTACT\". Wait, the user says \"two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them.\" The labels above are \"LEFT: WLC occurrence\" and \"RIGHT: unconfirmed candidate legend row\". So LEFT symbol is the H one. RIGHT symbol is the DC circle. The \"DOOR CONTACT\" text and vertical line\u2014hmm. The vertical line and DOOR CONTACT text might be part of the RIGHT entry? The label \"RIGHT: unconfirmed candidate legend row\" spans above the DC circle and possibly the DOOR CONTACT. Let's look at positions. The header \"LEFT: WLC occurrence\" is at top left above the H symbol. The header \"RIGHT: unconfirmed candidate legend row\" is positioned above the DC circle roughly. The vertical line and DOOR CONTACT are further right. There's also a line of text below: \"Unconfirmed candidate legend - drawing-number mismatch\" positioned under the DC circle area.\n\nThe user asks to describe RIGHT the same way: outline shape, letters inside, qualifier mark outside main outline (small attached letter or dashed box surrounding it). For RIGHT, the circle contains \"DC\". Qualifier mark outside? There's a vertical line to its right and text \"DOOR CONTACT\". Hmm but is that part of the symbol? The user mentions \"qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it)\". For RIGHT I don't see a dashed box or small attached letter. There's the vertical bar and text to the right. But the instruction says do not name the device. The vertical line and DOOR CONTACT text\u2014should I mention them? The user wants description of outline shape, letters inside, qualifier mark outside. The vertical line is separate. Hmm.\n\nActually the layout: maybe the RIGHT \"symbol\" is just the DC circle, and the vertical line + DOOR CONTACT is a legend row element. The header for RIGHT is \"unconfirmed candidate legend row\" which suggests the legend row includes the vertical line and DOOR CONTACT text. But the symbol itself is the DC circle.\n\nThe user's prompt structure: \"Describe RIGHT the same way\" meaning outline shape, letters inside, qualifier mark outside. So for RIGHT: outline shape = circle. Letters inside = DC. Qualifier mark outside = none visible (no dashed box, no attached letter). I should note the vertical line and text are to the right but they aren't a qualifier mark on the symbol. But the user said \"any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it)\". So I should state there is none for RIGHT, or describe what's outside if it qualifies. The vertical line and text are not attached to the circle as a qualifier mark; they're separate legend text. I think it's safer to mention that to the right there is a vertical line and the words \"DOOR CONTACT\", but these are separate text, not a qualifier mark on the circle. However the user said don't guess device. The text \"DOOR CONTACT\" is visible text, I can transcribe it. But the instruction \"Do not name or guess what kind of device either symbol represents\" \u2014 transcribing visible text \"DOOR CONTACT\" is not naming the device, it's reading visible text. But it might be considered naming? It's a label. Hmm. The user wants letters visible inside described. The DOOR CONTACT is outside. I think it's fine to mention it as visible text, but the user might consider it part of \"qualifier mark outside\"? No.\n\nLet's re-read: \"Describe LEFT:"
+    },
+    {
+      "pairId": "D5",
+      "category": "different",
+      "note": "square-F vs circle-S (outline difference)",
+      "compositeImageSha256": "8bee6ca96a8b8d25f2547ed2e297bd1b30876c52bbbbce0041616ef00a127b9f",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_tokens": 900,
+        "requestShape": "OpenAI-compatible messages/image_url data-uri, same as prior benchmark"
+      },
+      "latencySeconds": 31.624639,
+      "httpStatus": 200,
+      "finishReason": "length",
+      "usage": {
+        "prompt_tokens": 482,
+        "completion_tokens": 900,
+        "total_tokens": 1382,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 281.5363464355469
+      },
+      "content": null,
+      "reasoning": "The user wants a strict visual description of two symbols, labeled LEFT and RIGHT, in the image. I need to look carefully at the image.\n\nLEFT symbol: There's a horizontal line at the top with a downward chevron/V shape (an angled line forming a V pointing down) connecting two horizontal segments. Below the V is a square box containing the letter \"F\". Below the box is the text \"1 No\". Wait, the instruction says \"qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it)\". The \"1 No\" is below, which is a qualifier/text. Let me look. Actually the LEFT symbol's main outline is the square with F, plus the lines above. The \"1 No\" is text below. Hmm, but the instruction mentions \"small attached letter, or a dashed box surrounding it\". I don't see a dashed box. I see \"1 No\" below. Let me describe what's there.\n\nRIGHT symbol: A circle containing the letter \"S\". There's no text below it like \"1 No\"? Let me look. The RIGHT column has the circle with S in the middle row. Below it there's text \"Unconfirmed candidate legend - drawing-number mismatch\" but that's a separate caption, not part of the symbol. To the right of the circle is a vertical line and \"SMOKE DETECTOR\" text. Hmm, that's part of the legend row layout.\n\nWait, I need to be careful. The image has three columns essentially? Let's parse the layout. Top row text: \"LEFT: WLC occurrence\" on far left, \"RIGHT: unconfirmed candidate legend row\" in middle. Then there's the LEFT symbol (the F box with V and \"1 No\") under the \"LEFT\" label. Then in the middle there's the circle with S. Then on the right there's a vertical line and \"SMOKE DETECTOR\".\n\nHmm, this is confusing. The user says \"two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them.\" So LEFT symbol is the F one. RIGHT symbol is... the circle with S? Or the circle with S plus \"SMOKE DETECTOR\"? The \"SMOKE DETECTOR\" with vertical bar looks like a legend entry. The user says describe RIGHT the same way: outline shape, letters inside, qualifier mark outside.\n\nLet me think. The RIGHT symbol likely is the circle with S. The vertical line and \"SMOKE DETECTOR\" might be considered part of the legend row but not the symbol itself. But the user said \"labeled RIGHT above them\" and the RIGHT label is above the circle S region (middle). The text \"RIGHT: unconfirmed candidate legend row\" is positioned above the circle S. So RIGHT = circle with S. The \"SMOKE DETECTOR\" is to the right, part of the same legend row perhaps.\n\nHmm but the user wants qualifier mark outside main outline, like a small attached letter or dashed box. For LEFT, the qualifier is \"1 No\" below? Or maybe the V shape is part of outline. Let's just describe faithfully.\n\nLet me look at LEFT again: top has a horizontal line, then a V (two angled lines meeting at a point at bottom), then a square box with \"F\" inside, then below \"1 No\". So outline shape = a square box with a V/chevron above it connected to horizontal lines. Letter inside = F. Qualifier outside = \"1 No\" below the box.\n\nRIGHT: outline shape = circle. Letter inside = S. Qualifier outside = none visible attached to the circle itself? The vertical line and SMOKE DETECTOR are separate text. The user said \"if any part is too small or unclear to read, say exactly which part is unreadable.\" Everything seems readable.\n\nNow similar/different: Both are simple line-drawn shapes containing a single capital letter (F vs S). Both are black-and-white. Different: LEFT uses a square with an attached chevron/line on top and a \"1 No\" qualifier below; RIGHT uses a circle with no attached lines or qualifier text immediately on the symbol. Also LEFT's letter is F, RIGHT's is S.\n\nBut wait, the user says \"Do not name or guess what kind of device either"
+    },
+    {
+      "pairId": "D6",
+      "category": "different",
+      "note": "S vs CE+M (clearly different)",
+      "compositeImageSha256": "270d0d4868918bc0265feedce555dff48de3c6aa8610d69767f641ca58d6aee7",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_tokens": 900,
+        "requestShape": "OpenAI-compatible messages/image_url data-uri, same as prior benchmark"
+      },
+      "latencySeconds": 20.188363,
+      "httpStatus": 200,
+      "finishReason": "length",
+      "usage": {
+        "prompt_tokens": 482,
+        "completion_tokens": 900,
+        "total_tokens": 1382,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 281.5363464355469
+      },
+      "content": null,
+      "reasoning": "The user wants a careful, literal description of two symbols, LEFT and RIGHT, focusing on outline shape, letters inside, and any external qualifier marks. I must avoid naming device types or using outside knowledge. I need to compare them for similarities and differences, and note any unreadable parts. Keep under 150 words.\n\nLet me look closely at the image.\n\nLEFT: There's a horizontal line at top with a V-shaped dip in the middle (like a zigzag or chevron pointing down). The bottom point of the V connects to a circle. Inside the circle is the letter \"S\". Below the circle is the text \"36 Nos\". There's no dashed box or attached external letter on the symbol itself; the \"36 Nos\" is below, separate. The outline shape is a line with a V and a circle.\n\nRIGHT: There's a circle. Inside the circle are the letters \"CE\" (C and E). To the right of the circle, outside it, is the letter \"M\" as a qualifier mark. There's no top line/V shape, no text below.\n\nWait, the image also has \"INTERFACE MODULE MONITORING\" text and a vertical line on the far right, but that seems to be part of the RIGHT label row? The prompt says \"two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them.\" The LEFT label is at top-left, RIGHT label at top-middle. The symbols are the S-circle with V-line (left position) and the CE-circle with M (middle position). The \"INTERFACE MODULE MONITORING\" with vertical line is likely a third element, perhaps the legend row reference. Hmm.\n\nThe prompt's framing: \"This image shows two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them.\" The LEFT label is at x~10, RIGHT label at x~213. The S symbol is at x~90, the CE symbol at x~325. The \"INTERFACE MODULE MONITORING\" is at x~550. So which is RIGHT? The RIGHT label is at 213, closer to the CE symbol at 325? The S symbol at 90 is between LEFT (10) and RIGHT (213). Hmm.\n\nActually the layout: LEFT label top-left. Then below it the S symbol with \"36 Nos\". The RIGHT label is at top, positioned above the CE symbol roughly (213 vs 325, not exact). The \"INTERFACE MODULE MONITORING\" with vertical bar might be a separate legend entry not part of the two symbols. The prompt explicitly says two symbols. So I should treat LEFT = S symbol, RIGHT = CE symbol. The text \"INTERFACE MODULE MONITORING\" is likely extraneous legend text not part of either symbol's outline. But the prompt says describe what's in the image. Hmm, but it says \"two separate ... symbols side by side\". The vertical line + text might be considered part of RIGHT? Unlikely; the prompt's RIGHT label is at 213 which is left of CE (325) and far left of the text (550).\n\nThis is confusing. Let me think about typical VQA layout. The image likely was constructed with LEFT region containing the S symbol and RIGHT region containing the CE symbol, and the \"INTERFACE MODULE MONITORING\" is a distractor legend row. The prompt's instruction \"Do not name or guess what kind of device\" suggests they want pure visual description.\n\nI think the safest interpretation: LEFT symbol = the line-with-V-and-circle-S (plus \"36 Nos\" below which is text, not part of outline but I can mention). RIGHT symbol = the circle-CE with external M.\n\nBut wait, the \"36 Nos\" is below the S circle\u2014is that part of the symbol or a label? The prompt asks for \"letters visible inside it\" and \"qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it)\". The \"36 Nos\" is below, not attached as a small letter nor a dashed box. I'll mention it as text below but not as a qualifier mark. Actually the example qualifier marks are \"small attached letter\" like M, or \"d"
+    }
+  ]
+}

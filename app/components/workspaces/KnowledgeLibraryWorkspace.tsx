@@ -21,7 +21,13 @@ export function KnowledgeLibraryWorkspace({
   onSearch,
   onFiles,
 }: Props) {
-  const subsectionTitle = section === "Price Lists" ? "Prices" : section;
+  const subsectionTitle = section === "Price Lists"
+      ? "Prices"
+      : section === "Product governance"
+        ? "Product governance"
+      : section === "Commercial"
+        ? "Commercial"
+      : section;
 
   return (
     <section className="module-page product-library-page">
@@ -63,6 +69,45 @@ export function KnowledgeLibraryWorkspace({
           <strong>{String(results.length)}</strong>
         </span>
       </div>
+
+      {section === "Products" && (
+        <div className="products-filter">
+          <div className="filter-row">
+            <span>Filter by:</span>
+            <select
+              value={productFilter || ""}
+              onChange={(event) => onSearch(event.target.value)}
+              style={{minWidth: '120px', marginRight: '8px'}}>
+              <option value="">Part number</option>
+              <option value="Honeywell-IFP2100HV">Honeywell IFP-2100HV</option>
+              <option value="Farenhyt-IFP2100">Farenhyt IFP-2100</option>
+            </select>
+            <select
+              value={productFamilyFilter || ""}
+              onChange={(event) => onSearch(event.target.value)}
+              style={{minWidth: '100px', marginRight: '8px'}}>
+              <option value="">Family</option>
+              <option value="IFP-2100">IFP-2100</option>
+              <option value="IFP-2200">IFP-2200</option>
+            </select>
+            <select
+              value={productManufacturerFilter || ""}
+              onChange={(event) => onSearch(event.target.value)}
+              style={{minWidth: '110px', marginRight: '8px'}}>
+              <option value="">Manufacturer</option>
+              <option value="Honeywell">Honeywell</option>
+              <option value="Farenhyt">Farenhyt</option>
+            </select>
+            <select
+              value={productBrandFilter || ""}
+              onChange={(event) => onSearch(event.target.value)}
+              style={{minWidth: '100px'}}>
+              <option value="">Brand</option>
+              <option value="Farenhyt">Farenhyt</option>
+            </select>
+          </div>
+        </div>
+      )}
       <label className="library-search">
         <span>Search {subsectionTitle.toLowerCase()}</span>
         <input
@@ -96,7 +141,18 @@ export function KnowledgeLibraryWorkspace({
         ))}
         {!loading && !files.length && (
           <div className="empty-state">
-            No {subsectionTitle.toLowerCase()} found.
+            {section === "Products"
+              ? "No catalog products match these filters."
+              : section === "Price Lists"
+              ? "No pricing records for this product."
+              : section === "Product governance"
+              ? "No product governance facts match the current filters."
+              : section === "Master data"
+              ? "No master data records match the current filters."
+              : section === "Sources"
+              ? "No source documents match the current filters."
+              : `No {subsectionTitle.toLowerCase()} found.`
+            }
           </div>
         )}
       </div>

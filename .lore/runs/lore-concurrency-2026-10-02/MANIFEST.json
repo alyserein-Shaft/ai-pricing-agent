@@ -1,0 +1,45 @@
+{
+  "run": "lore-concurrency-2026-10-02",
+  "recorded_at": "2026-10-02",
+  "note": "Baseline recorded at session bootstrap. Consolidation refuses to merge if any listed target has changed since.",
+  "baselines": {
+    ".lore/_global/CONVENTIONS.md": {
+      "sha256": "60f8b9adc883c1b2c6917780cdef75ab463d2b6ca85202ecaa43ca8c51d30b77",
+      "ids": [
+        "CONV-2026-09-29-763e",
+        "CONV-2026-09-29-7fb8",
+        "CONV-2026-09-29-eeb3",
+        "CONV-2026-09-29-9538",
+        "CONV-2026-09-29-0e80",
+        "CONV-2026-09-29-a173",
+        "CONV-2026-09-29-2be5",
+        "CONV-2026-09-30-9f31",
+        "CONV-2026-09-30-2ad4",
+        "CONV-2026-10-01-3e17",
+        "CONV-2026-10-01-8a52",
+        "CONV-2026-10-01-5f90",
+        "CONV-2026-10-01-2d76",
+        "CONV-2026-10-01-3d67",
+        "CONV-2026-10-01-9b42",
+        "CONV-2026-10-01-1c60",
+        "CONV-2026-10-01-4c92",
+        "CONV-2026-10-01-7e25",
+        "CONV-2026-10-01-b038",
+        "CONV-2026-10-01-2a44",
+        "CONV-2026-10-01-c815",
+        "CONV-2026-10-01-2d90",
+        "CONV-2026-10-01-a742",
+        "CONV-2026-10-01-2f77",
+        "CONV-2026-10-01-9a30",
+        "CONV-2026-10-01-5e73",
+        "CONV-2026-10-01-4d88",
+        "CONV-2026-10-01-6f10",
+        "CONV-2026-10-02-5c72",
+        "CONV-2026-10-02-9e14",
+        "CONV-2026-10-02-2f68",
+        "CONV-2026-10-02-8a70",
+        "CONV-2026-10-02-4f27"
+      ]
+    }
+  }
+}

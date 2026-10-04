@@ -5,6 +5,7 @@ import { applicationActor, resolveApplicationContext } from "./application-conte
 import { CANONICAL_DISCOVERY_PRODUCT_PREDICATE } from "./canonical-product-authority.mjs";
 import { currentBoqEvidenceFrom, currentBoqItemPredicate } from "./current-evidence-scope.mjs";
 import { currentApprovedUnderstandingFacts } from "./estimator-understanding-review-api.mjs";
+import { currentRequirementProfile, currentRequirementProfileId, STALE_REQUIREMENT_PROFILE_REASON } from "./requirement-profile-currency.mjs";
 import { executeRequirementProfile } from "./technical-requirement-api.mjs";
 
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { "content-type": "application/json" } });
@@ -13,10 +14,115 @@ const now = () => new Date().toISOString();
 const parse = (value, fallback) => { try { return value == null ? fallback : JSON.parse(value); } catch { return fallback; } };
 const hash = async (value) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(value))))).map((entry) => entry.toString(16).padStart(2, "0")).join("");
 const ownedItem = (db, itemId, userId) => db.prepare(`SELECT i.*,i.evidence_document_version_id source_document_version_id FROM ${currentBoqEvidenceFrom("i")} JOIN projects p ON p.id=i.project_id WHERE i.id=? AND ${currentBoqItemPredicate("i")} AND p.owner_user_id=?`).bind(itemId, userId).first();
-const currentProfile = (db, itemId) => db.prepare("SELECT * FROM requirement_profile_versions WHERE boq_item_id=? AND superseded_at IS NULL ORDER BY version_number DESC LIMIT 1").bind(itemId).first();
-const currentRun = (db, itemId) => db.prepare("SELECT * FROM product_match_runs WHERE boq_item_id=? AND superseded_at IS NULL ORDER BY version_number DESC LIMIT 1").bind(itemId).first();
+const currentProfile = currentRequirementProfile;
+// Exported because governed consumers already depend on this exact reader --
+// worker/fire-alarm-panel-sizing-api.mjs resolves a panel's CURRENT primary
+// selection through it, and worker/ai-presales-agent-tools.mjs imports it as
+// currentMatchRun. The implementation and its single read are unchanged; it was
+// only ever a private const that those imports could not reach.
+export const currentRun = (db, itemId) => db.prepare("SELECT * FROM product_match_runs WHERE boq_item_id=? AND superseded_at IS NULL ORDER BY version_number DESC LIMIT 1").bind(itemId).first();
+
+// matchRunStaleness -- THE authority for "does this product match run still
+// reflect the item's current requirements?". It was missing (never exported,
+// despite three importing consumers and an existing in-repo statement of the
+// contract), so this re-adds the single canonical implementation rather than a
+// per-consumer re-derivation.
+//
+// THE CONTRACT, and only the contract:
+//
+//     stale  <=>  run.requirement_profile_version_id
+//                  !== currentRequirementProfileId(db, itemId)
+//
+// Proven from four independent in-repo sources, not inferred:
+//   - worker/requirement-profile-currency.mjs exists precisely to be the single
+//     reader of that relationship for "is this match run / safety decision still
+//     current", and ships the matching STALE_REQUIREMENT_PROFILE_REASON.
+//   - DOC-R2A.2-DEPENDENCY-FRESHNESS-ARCHITECTURE-STUDY.md:255 lists this exact
+//     predicate under "Computed Current-State Flags": `run.requirement_profile_
+//     version_id != currentProfileId` -- computed at read time, never stored as
+//     a flag that could itself go stale.
+//   - DOC-R2A.4-TARGETED-FRESHNESS-DESIGN.md:333 scenario "B: Profile change ->
+//     Match run stale" gives the same single comparison.
+//   - worker/ai-presales-agent-tools.mjs:134 and tests/ai-presales-agent-tools
+//     .test.mjs:325 both state it in prose ("compares the match run's stored
+//     requirement_profile_version_id against the item's current requirement
+//     profile version ... via currentRequirementProfileId").
+//
+// DIMENSIONS DELIBERATELY NOT COMPARED HERE, each with its authority:
+//
+//   - input_fingerprint drift. The fingerprint is an IDEMPOTENCY key, not a
+//     freshness marker: this file's own executeProductMatching returns
+//     `{ idempotent: true }` when `existing.input_fingerprint === fingerprint`.
+//     Prices are inside that hash, so treating drift as staleness would make a
+//     run stale on any price edit and permanently refuse every consumer.
+//     Recomputing it at read time is a documented STUDY item
+//     (DOC-R2A.2:28), not shipped behaviour.
+//   - engine_version / ruleset_version / search_version / model_version drift.
+//     DECISIVELY excluded by evidence: every governed fixture seeds these as
+//     'engine-1'/'rules-1'/'search-1'/'model-1' (see
+//     tests/specification-approval-profile-freshness.test.mjs:164 and
+//     tests/requirement-profile-approval-invalidation.test.mjs:44) while the real
+//     constants are 'product-matching-engine-1.0.0' /
+//     'matching-rules-2026-08-27-family-tier' / ... (product-matching-engine.mjs
+//     :8-19). Comparing them would make every "bound to current profile is
+//     fresh" assertion fail immediately. A ruleset upgrade invalidating
+//     historical runs is also a GOVERNANCE decision needing an explicit
+//     supersession writer, which does not exist; retroactively flipping existing
+//     rows to stale is not something to invent inside a read helper.
+//   - product identity / product supersession. Out of scope at RUN level by
+//     construction: persistResult stores the ALREADY-CANONICAL current product
+//     id on each candidate (candidates are drawn from the
+//     canonical_library_products projection), so successor resolution happens
+//     at match time, not read time. Marking a whole run stale because one
+//     candidate's product was later superseded would invalidate unrelated
+//     candidates on the same run. Proof this is a candidate-, not run-, concern:
+//     tests/requirement-profile-approval-invalidation.test.mjs:128 calls
+//     candidateStaleness(db, { boq_item_id, requirement_profile_version_id }) --
+//     the sibling helper is scoped to the SAME requirement-profile relationship
+//     and takes no product identity at all.
+//   - superseded match runs. The AUTHORITY for which run governs an item is
+//     currentRun() above, whose SELECT already requires `superseded_at IS NULL`;
+//     proven by tests/ai-presales-agent-tools.test.mjs:388 ("uses the CURRENT
+//     (non-superseded) match run only, ignoring an older superseded run"). That
+//     stays the single place that SELECTS the governing run. This helper still
+//     refuses to certify a superseded run, for one reason: it is a general
+//     authority helper, and every current consumer happens to pre-filter through
+//     currentRun() -- so a caller holding a historical run (e.g. from
+//     /matching/history or /compare-runs) would otherwise be told a superseded
+//     run is current, which is the exact defect class this file's sibling
+//     helpers exist to prevent. It can only ever turn a "fresh" verdict into
+//     "stale" (it can never launder a stale run as fresh), so it is strictly
+//     fail-closed, and it keeps that property inside the helper rather than
+//     trusting each caller to remember it.
+//
+// A MISSING run is stale, not fresh: it can reflect nothing, and a null profile
+// (the invalidated window between approval publication and regeneration -- see
+// tests/specification-approval-profile-freshness.test.mjs:264) fails the same
+// comparison, which is why that window correctly reads stale. Fail-closed here
+// matters because worker/fire-alarm-panel-sizing-api.mjs passes currentRun's
+// result straight in and only guards `result.status`, so a null run must not
+// surface as a TypeError or as "fresh".
+export const matchRunStaleness = async (db, itemId, run) => {
+  if (!run) return { stale: true, staleReason: STALE_REQUIREMENT_PROFILE_REASON, reason: "MATCH_RUN_NOT_FOUND" };
+  const currentProfileVersionId = await currentRequirementProfileId(db, itemId);
+  if (run.superseded_at) return { stale: true, staleReason: STALE_REQUIREMENT_PROFILE_REASON, reason: "MATCH_RUN_SUPERSEDED", currentProfileVersionId };
+  const stale = !currentProfileVersionId || run.requirement_profile_version_id !== currentProfileVersionId;
+  return stale
+    ? { stale: true, staleReason: STALE_REQUIREMENT_PROFILE_REASON, reason: currentProfileVersionId ? "REQUIREMENT_PROFILE_CHANGED" : "NO_CURRENT_REQUIREMENT_PROFILE", currentProfileVersionId }
+    : { stale: false, staleReason: null, currentProfileVersionId };
+};
 const currentUnderstanding = (db, itemId) => db.prepare("SELECT status,validated_interpretation,input_fingerprint,provider,model,model_version FROM estimator_item_interpretations WHERE boq_item_id=? AND status IN ('COMPLETED','NEEDS_REVIEW') ORDER BY version_number DESC LIMIT 1").bind(itemId).first();
-const productFromRow = (row) => ({ id: row.id, manufacturer: row.manufacturer, brand: row.brand, family: row.family, category: row.category, partNumber: row.part_number, normalizedPartNumber: row.normalized_part_number, description: row.description, lifecycleStatus: row.lifecycle_status, attributes: parse(row.attributes, []), standards: parse(row.standards, []), compatibility: parse(row.compatibility, []), accessories: parse(row.accessories, []), reviewStatus: row.review_status, source: parse(row.source, null) });
+const productFromRow = (row) => ({ id: row.id, manufacturer: row.manufacturer, brand: row.brand, family: row.family, category: row.category, partNumber: row.part_number, normalizedPartNumber: row.normalized_part_number, description: row.description, lifecycleStatus: row.lifecycle_status, attributes: parse(row.attributes, []), // Governed, reviewed Product Knowledge -- see the `reviewedAttributes`
+    // subquery in loadProducts for why this is a SEPARATE authority rather than
+    // a merge into `attributes`.
+    reviewedAttributes: parse(row.reviewedAttributes, []), // GOVERNED CERTIFICATION EVIDENCE -- see the `certifications` subquery in loadProducts.
+    // Every certification is scoped to THIS product id, so no other SKU's listing can
+    // ever satisfy a requirement for this one. Live rows only (deleted/superseded
+    // excluded). `reviewStatus` is projected rather than filtered so the comparator
+    // can tell "approved evidence" from "not yet evidence" from "evidence against":
+    // only Approved rows may PASS a listing requirement, and only Approved rows may
+    // CONTRADICT one. A Needs Review row is neither.
+    certifications: parse(row.certifications, []), standards: parse(row.standards, []), compatibility: parse(row.compatibility, []), accessories: parse(row.accessories, []), reviewStatus: row.review_status, source: parse(row.source, null) });
 // Phase 5 workflow-continuity fix -- familyMatchTier (the mechanism behind
 // frozen v1 principle "correct family always outranks a different family")
 // was computed by the engine for every ranking decision but discarded before
@@ -41,7 +147,34 @@ const updateJob = async (db, runId, stage, status, progress, error = null) => { 
 // the exact same way loadPrices()/commercialState() already treat
 // price_records.project_id (NULL = global, set = that project only) closes
 // this without touching scope_type semantics or any other consumer.
-const loadProducts = async (db, projectId) => { const rows = await db.prepare(`SELECT p.*, m.name manufacturer, b.name brand, f.name family, f.engineering_domain category, (SELECT json_group_array(json_object('targetItem', r.right_entity_id, 'relationshipType', r.relationship_type, 'conditions', r.conditions)) FROM engineering_relationships r WHERE r.left_entity_type='Product' AND r.left_entity_id=p.id AND r.status='Approved' AND (r.project_id IS NULL OR r.project_id=?)) compatibility, (SELECT json_group_array(json_object('name', COALESCE(af.name, ap.description), 'relationshipType', pa.relationship_type, 'accessoryProductId', pa.accessory_product_id, 'accessoryPartNumber', ap.part_number, 'included', pa.included, 'quantityRule', pa.quantity_rule, 'quantityParameter', pa.quantity_parameter, 'conditions', json(pa.condition_json), 'confidence', pa.confidence, 'evidence', json(pa.evidence_json))) FROM product_accessories pa JOIN library_products ap ON ap.id=pa.accessory_product_id LEFT JOIN product_families af ON af.id=ap.family_id WHERE pa.product_id=p.id AND pa.deleted_at IS NULL AND pa.superseded_at IS NULL AND pa.review_status NOT IN ('Rejected','Needs Review')) accessories, (SELECT json_object('sourceId', e.source_id, 'sheet', e.sheet, 'row', e.row_number, 'cells', e.cells) FROM product_source_evidence e WHERE e.product_id=p.id ORDER BY e.created_at LIMIT 1) source FROM canonical_library_products p JOIN product_manufacturers m ON m.id=p.manufacturer_id LEFT JOIN product_brands b ON b.id=p.brand_id LEFT JOIN product_families f ON f.id=p.family_id WHERE ${CANONICAL_DISCOVERY_PRODUCT_PREDICATE}`).bind(projectId).all(); return (rows.results || []).map(productFromRow); };
+//
+// `reviewedAttributes` -- GOVERNED PRODUCT KNOWLEDGE REACHES MATCHING.
+//
+// The `p.*` attribute column is a denormalized JSON blob written by the older
+// catalogue-ingest path. It is NOT the governed Product Knowledge table: every
+// reviewed attribute approved through worker/product-attribute-review.mjs lands
+// in `product_attributes`, and nothing ever copied those rows into the blob. So a
+// governed capability approved from a first-party manual -- with every evidence
+// gate passed and a human decision recorded -- was invisible to matching, and
+// every capability comparison against that product resolved to "Insufficient
+// Evidence: the product carries no evidence for this capability" forever,
+// regardless of how much approved evidence existed.
+//
+// This subquery is therefore deliberately SEPARATE rather than a merge into
+// `attributes`:
+//   * ONLY `review_status='Approved'` rows are projected. An attribute awaiting
+//     review is not evidence, and a Rejected one is evidence against itself.
+//     `deleted_at`/`superseded_at` exclude rows that history has retired.
+//   * It is NOT merged, because `findAttribute` resolves an ordinary attribute by
+//     first match. Merging two authorities under one name would silently make
+//     INSERT ORDER the authority, which is exactly the kind of ungoverned
+//     precedence this codebase refuses elsewhere. Keeping them apart lets the
+//     capability comparator see BOTH and fail closed on disagreement (see
+//     capabilityValuesFor in app/domain/product-matching-engine.mjs), while every
+//     other comparison path stays byte-for-byte on its existing single authority.
+//   * Nothing is written back to the blob. This is a read path repair, so no
+//     canonical row is rewritten and no other consumer of the blob changes.
+const loadProducts = async (db, projectId) => { const rows = await db.prepare(`SELECT p.*, m.name manufacturer, b.name brand, f.name family, f.engineering_domain category, (SELECT json_group_array(json_object('targetItem', r.right_entity_id, 'relationshipType', r.relationship_type, 'conditions', r.conditions)) FROM engineering_relationships r WHERE r.left_entity_type='Product' AND r.left_entity_id=p.id AND r.status='Approved' AND (r.project_id IS NULL OR r.project_id=?)) compatibility, (SELECT json_group_array(json_object('name', pa.attribute_name, 'normalizedValue', COALESCE(pa.normalized_value, json_extract(pa.value_json, '$.normalized'), pa.original_value), 'unit', pa.unit, 'confidence', pa.confidence, 'attributeId', pa.id, 'sourceId', pa.source_id, 'authority', 'Governed Product Knowledge', 'decidedBy', (SELECT d.decided_by FROM product_library_decisions d WHERE d.entity_type='Product Attribute' AND d.entity_id=pa.id AND d.action='Approved' ORDER BY d.decided_at DESC LIMIT 1), 'decidedRole', (SELECT d.decided_role FROM product_library_decisions d WHERE d.entity_type='Product Attribute' AND d.entity_id=pa.id AND d.action='Approved' ORDER BY d.decided_at DESC LIMIT 1), 'decidedAt', (SELECT d.decided_at FROM product_library_decisions d WHERE d.entity_type='Product Attribute' AND d.entity_id=pa.id AND d.action='Approved' ORDER BY d.decided_at DESC LIMIT 1))) FROM product_attributes pa WHERE pa.product_id=p.id AND pa.deleted_at IS NULL AND pa.superseded_at IS NULL AND pa.review_status='Approved') reviewedAttributes, (SELECT json_group_array(json_object('certificationId', pc.id, 'type', pc.certification_type, 'body', pc.standard_body, 'number', pc.standard_number, 'part', pc.part, 'revisionYear', pc.revision_year, 'scope', pc.scope, 'region', pc.region, 'status', pc.status, 'reviewStatus', pc.review_status, 'confidence', pc.confidence, 'versionNumber', pc.version_number, 'variantId', pc.variant_id, 'documentId', pc.document_id, 'evidenceLocation', json(pc.evidence_location))) FROM product_certifications pc WHERE pc.product_id=p.id AND pc.deleted_at IS NULL AND pc.superseded_at IS NULL) certifications, (SELECT json_group_array(json_object('name', COALESCE(af.name, ap.description), 'relationshipType', pa.relationship_type, 'accessoryProductId', pa.accessory_product_id, 'accessoryPartNumber', ap.part_number, 'included', pa.included, 'quantityRule', pa.quantity_rule, 'quantityParameter', pa.quantity_parameter, 'conditions', json(pa.condition_json), 'confidence', pa.confidence, 'evidence', json(pa.evidence_json))) FROM product_accessories pa JOIN library_products ap ON ap.id=pa.accessory_product_id LEFT JOIN product_families af ON af.id=ap.family_id WHERE pa.product_id=p.id AND pa.deleted_at IS NULL AND pa.superseded_at IS NULL AND pa.review_status NOT IN ('Rejected','Needs Review')) accessories, (SELECT json_object('sourceId', e.source_id, 'sheet', e.sheet, 'row', e.row_number, 'cells', e.cells) FROM product_source_evidence e WHERE e.product_id=p.id ORDER BY e.created_at LIMIT 1) source FROM canonical_library_products p JOIN product_manufacturers m ON m.id=p.manufacturer_id LEFT JOIN product_brands b ON b.id=p.brand_id LEFT JOIN product_families f ON f.id=p.family_id WHERE ${CANONICAL_DISCOVERY_PRODUCT_PREDICATE}`).bind(projectId).all(); return (rows.results || []).map(productFromRow); };
 const loadPrices = async (db) => { const rows = await db.prepare("SELECT product_id, project_id, approval_status, downstream_use, valid_until FROM price_records").all(); return (rows.results || []).map((row) => ({ productId: row.product_id, projectId: row.project_id, approvalStatus: row.approval_status, downstreamUse: row.downstream_use, validUntil: row.valid_until })); };
 
 const persistResult = async (db, { item, profileRow, result, user, fingerprint, processingRunId }) => {

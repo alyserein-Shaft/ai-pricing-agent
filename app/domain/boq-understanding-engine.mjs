@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import {
+  assessFamilyNameClaimSupport,
   buildTaxonomyContext,
   governedAttributeProfile,
   isCanonicalPair,
@@ -303,6 +304,28 @@ export function validateAndMergeBoqInterpretation(input, response) {
     }
   }
   const taxonomyContext = input.taxonomyContext || buildTaxonomyContext(input);
+  // A governed family NAME can itself assert engineering ("Addressable" in
+  // "Addressable Smoke Detector", "Duct" in "Duct Detector") that the row's own
+  // evidence never establishes. Declared generically by the taxonomy; this only
+  // reports it. Deliberately NOT nulling the family: for the candidate-key path
+  // the family is production-derived and already evidence-backed (the candidate
+  // exists only because a registered phrase matched this row's text), so
+  // clearing it would discard real classification to enforce a weaker, text-
+  // level reading of the same family. The requirement is genuinely unresolved --
+  // it needs project or specification evidence, not a silent downgrade -- so it
+  // becomes a review reason (which forces NEEDS_REVIEW) and never an
+  // authoritative fact. Fail-closed on STATUS, not on classification.
+  const guardFamilyNameClaims = (family) => {
+    if (!governedProposed || !family) return;
+    const assessment = assessFamilyNameClaimSupport(governedSystem, family, evidenceText);
+    if (assessment.supported) return;
+    reviewReasons.push(`UNSUPPORTED_FAMILY_OVERCLAIM:${family}:${assessment.unsupported.map((claim) => `${claim.attribute}=${claim.value}`).join(",")}`);
+    output.ambiguities = [...(output.ambiguities || []), itemFact(
+      `Selected family asserts ${assessment.unsupported.map((claim) => `${claim.attribute} ${claim.value}`).join(" and ")} which the item evidence does not establish`,
+      "INFERRED",
+      100,
+    )];
+  };
   // governedSystem is set only when either (a) this row's own evidence was
   // recognized by a registered pack, or (b) the AI's own proposed system value
   // names a registered pack (tolerating that pack's own synonyms). Both paths
@@ -353,6 +376,13 @@ export function validateAndMergeBoqInterpretation(input, response) {
         output.system = { ...canonicalFact, value: governedSystem };
         output.category = { ...canonicalFact, value: selected.category };
         output.productFamily = { ...canonicalFact, value: selected.family };
+        // Real Al Mousa advisory finding: a governed family whose NAME embeds a
+        // claim the evidence never establishes ("Addressable" out of "Smoke
+        // detectors (above ceiling)"). In-vocabulary is not the same as
+        // supported. Reported here so the item is reviewable, never silently
+        // accepted -- see guardFamilyNameClaims for why this does not null the
+        // family itself.
+        guardFamilyNameClaims(selected.family);
       }
     } else {
       if (candidates.length) reviewReasons.push("GOVERNED_CANDIDATE_KEY_MISSING");
@@ -392,6 +422,9 @@ export function validateAndMergeBoqInterpretation(input, response) {
       } else {
         output.category = { ...output.category, value: category };
         output.productFamily = { ...output.productFamily, value: family };
+        // Same guard as the candidate-key path: the model asserted this family,
+        // so an unestablished claim embedded in its NAME must be reviewable.
+        guardFamilyNameClaims(family);
       }
     }
   }
@@ -543,6 +576,12 @@ export async function interpretBoqItem(input, { provider }) {
       const fallback = deterministicOnlyFallbackInterpretation(input);
       if (fallback) return { ...fallback, usageMetadata: provider.lastCallMetadata || null };
     }
-    return { status: "FAILED", error: { code: providerError ? "AI_PROVIDER_ERROR" : validationCode, message: providerError ? "Workers AI could not complete the request." : "AI interpretation failed strict schema validation." }, usageMetadata: provider.lastCallMetadata || null };
+    // Provider attribution is DERIVED, not hardcoded. Naming a single vendor here
+    // reported an NVIDIA failure as a Workers AI failure, which is a provenance
+    // defect: the operator would be told to debug the wrong provider. No governance
+    // decision, status or downstream behaviour changes -- only which provider is
+    // named in the diagnostic message.
+    const providerLabel = provider?.metadata?.provider === "NVIDIA_NIM" ? "NVIDIA NIM" : "Workers AI";
+    return { status: "FAILED", error: { code: providerError ? "AI_PROVIDER_ERROR" : validationCode, message: providerError ? `${providerLabel} could not complete the request.` : "AI interpretation failed strict schema validation." }, usageMetadata: provider.lastCallMetadata || null };
   }
 }

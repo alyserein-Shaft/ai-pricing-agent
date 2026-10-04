@@ -1,0 +1,158 @@
+[
+  {
+    "pairId": "M1",
+    "category": "match",
+    "note": "H vs H",
+    "wlcSource": "wlc-h",
+    "legendSource": "legend-row-02",
+    "compositePath": ".local-evidence/held-out-eval/pair-M1.png",
+    "compositeSha256": "07425c05b6dca0fa6fdc381d67c0b2ce3c783ca90387f8b98e3dd3270f100ee7",
+    "compositeSize": [
+      1100,
+      260
+    ]
+  },
+  {
+    "pairId": "M2",
+    "category": "match",
+    "note": "S+D vs S+D",
+    "wlcSource": "wlc-s-plus-d",
+    "legendSource": "legend-row-03",
+    "compositePath": ".local-evidence/held-out-eval/pair-M2.png",
+    "compositeSha256": "2e3e57aa6fee87e5692df0eb6b131306cefc5cad109a7c36df00bddc6fffecfd",
+    "compositeSize": [
+      1100,
+      260
+    ]
+  },
+  {
+    "pairId": "M3",
+    "category": "match",
+    "note": "S+H vs S+H",
+    "wlcSource": "wlc-s-plus-h",
+    "legendSource": "legend-row-04",
+    "compositePath": ".local-evidence/held-out-eval/pair-M3.png",
+    "compositeSha256": "d9f5d2ef9b7d2fe24153e24be339a7791d1f449c6fe1a538eaae6199a5603083",
+    "compositeSize": [
+      1100,
+      260
+    ]
+  },
+  {
+    "pairId": "M4",
+    "category": "match",
+    "note": "F(plain) vs F(plain)",
+    "wlcSource": "wlc-f-solid-top",
+    "legendSource": "legend-row-05",
+    "compositePath": ".local-evidence/held-out-eval/pair-M4.png",
+    "compositeSha256": "b6c75f4b9f5cfea636129b650f8b08fc5058e6e52d47189ffd827579728594ca",
+    "compositeSize": [
+      1100,
+      260
+    ]
+  },
+  {
+    "pairId": "M5",
+    "category": "match",
+    "note": "CE+M vs CE+M",
+    "wlcSource": "wlc-ce-plus-m-top",
+    "legendSource": "legend-row-19",
+    "compositePath": ".local-evidence/held-out-eval/pair-M5.png",
+    "compositeSha256": "e604bbecf60daa9a0f4703529674010d75c106748cc052e6fb1f7a73b7927d32",
+    "compositeSize": [
+      1100,
+      260
+    ]
+  },
+  {
+    "pairId": "M6",
+    "category": "match",
+    "note": "S vs S",
+    "wlcSource": "wlc-s-plain-36",
+    "legendSource": "legend-row-01",
+    "compositePath": ".local-evidence/held-out-eval/pair-M6.png",
+    "compositeSha256": "c02e209066d32773ee0f8ff4b81a37a4ff526c69e03a240e1b8337ad91e2a5f6",
+    "compositeSize": [
+      1100,
+      260
+    ]
+  },
+  {
+    "pairId": "D1",
+    "category": "different",
+    "note": "CE+M vs CE+C (C/M confusion)",
+    "wlcSource": "wlc-ce-plus-m-bottom",
+    "legendSource": "legend-row-18",
+    "compositePath": ".local-evidence/held-out-eval/pair-D1.png",
+    "compositeSha256": "98fac3e93a776df6321bcc95ba853aa42acf8513bb22a858608fab5e7a7ce7d5",
+    "compositeSize": [
+      1100,
+      260
+    ]
+  },
+  {
+    "pairId": "D2",
+    "category": "different",
+    "note": "S+D vs S+H (letter confusion)",
+    "wlcSource": "wlc-s-plus-d",
+    "legendSource": "legend-row-04",
+    "compositePath": ".local-evidence/held-out-eval/pair-D2.png",
+    "compositeSha256": "65af78ecdeaba29f60fcb80e5d3714697a3c6f49087333bb1769afcfa3513143",
+    "compositeSize": [
+      1100,
+      260
+    ]
+  },
+  {
+    "pairId": "D3",
+    "category": "different",
+    "note": "F plain vs F dashed-enclosure",
+    "wlcSource": "wlc-f-solid-bottom",
+    "legendSource": "legend-row-06",
+    "compositePath": ".local-evidence/held-out-eval/pair-D3.png",
+    "compositeSha256": "b4ba73b82796633bbf5bbedfb8eb90fda2210622aa9c6c5089d6f95fc1179056",
+    "compositeSize": [
+      1100,
+      260
+    ]
+  },
+  {
+    "pairId": "D4",
+    "category": "different",
+    "note": "H vs DC (letter confusion, same circle outline)",
+    "wlcSource": "wlc-h",
+    "legendSource": "legend-row-20",
+    "compositePath": ".local-evidence/held-out-eval/pair-D4.png",
+    "compositeSha256": "9566ad8ce5b3d91e78dacc82dc40ad3f99586df125f107d8b95bd415366bdb47",
+    "compositeSize": [
+      1100,
+      260
+    ]
+  },
+  {
+    "pairId": "D5",
+    "category": "different",
+    "note": "square-F vs circle-S (outline difference)",
+    "wlcSource": "wlc-f-solid-top",
+    "legendSource": "legend-row-01",
+    "compositePath": ".local-evidence/held-out-eval/pair-D5.png",
+    "compositeSha256": "8bee6ca96a8b8d25f2547ed2e297bd1b30876c52bbbbce0041616ef00a127b9f",
+    "compositeSize": [
+      1100,
+      260
+    ]
+  },
+  {
+    "pairId": "D6",
+    "category": "different",
+    "note": "S vs CE+M (clearly different)",
+    "wlcSource": "wlc-s-plain-36",
+    "legendSource": "legend-row-19",
+    "compositePath": ".local-evidence/held-out-eval/pair-D6.png",
+    "compositeSha256": "270d0d4868918bc0265feedce555dff48de3c6aa8610d69767f641ca58d6aee7",
+    "compositeSize": [
+      1100,
+      260
+    ]
+  }
+]

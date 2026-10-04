@@ -1,0 +1,20 @@
+✔ no configured AI provider -- reports the specific blocker (503), writes nothing (16.16225ms)
+✔ missing images -- rejected explicitly, never a fabricated/empty-image call to the model (2.273209ms)
+✔ a real two-stage call (vision then structured synthesis) persists proposals reusing the existing table/contract, all Unsupported/Needs Review (10.813083ms)
+✔ the synthesis prompt treats drawing text as EVIDENCE, not instructions -- an imperative-sounding note is placed under the evidence block, and the system prompt says so explicitly (3.752875ms)
+✔ a rerun that finds FEWER circuits than a prior run supersedes prior outputs without changing their review status (5.55775ms)
+✔ a rerun never retires a proposal a human has already reviewed, even if the new run does not reproduce it (3.686375ms)
+✔ raw invalid synthesis and its input persist even when parsing fails; existing findings remain current (4.238167ms)
+✔ same reviewed finding is not overwritten or duplicated on an identical rerun (5.627458ms)
+✔ analysis is scoped to requested page and never retires findings on another page (4.801792ms)
+✔ legacy Not Found is preserved with an explicit reconstruction warning, never guessed back to Needs Review (3.318791ms)
+✔ protected run and saved image endpoints verify document ownership (2.837417ms)
+✔ candidate legend comparison persists images and definitions without replacing WLC runs or findings (6.361ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 171.264125

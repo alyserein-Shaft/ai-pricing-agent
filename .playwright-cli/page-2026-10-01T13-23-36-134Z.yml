@@ -1,0 +1,118 @@
+- generic [ref=f1e2]:
+  - complementary "Primary navigation" [ref=f1e3]:
+    - generic [ref=f1e9]:
+      - strong [ref=f1e10]: AI Pricing Agent
+      - generic [ref=f1e11]: وكيل التسعير الذكي
+    - generic [ref=f1e12]:
+      - navigation "Global navigation" [ref=f1e13]:
+        - button "Home" [ref=f1e15] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e16]: ⌂
+          - text: Home
+        - button "Projects" [ref=f1e18] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e19]: ▦
+          - text: Projects
+        - button "Knowledge" [ref=f1e21] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e22]: ▤
+          - text: Knowledge
+          - generic [aria-hidden] [ref=f1e23]: ⌄
+        - button "Reports" [ref=f1e25] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e26]: ▥
+          - text: Reports
+        - button "Administration" [ref=f1e28] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e29]: ⚙
+          - text: Administration
+      - region "Project navigation" [ref=f1e30]:
+        - generic [ref=f1e31]:
+          - generic [ref=f1e32]: CURRENT PROJECT
+          - strong [ref=f1e33]: AlMoosa K12 Schools – Fire Alarm
+          - generic [ref=f1e34]: Loading project status…
+        - navigation "Current project workspaces" [ref=f1e35]:
+          - button "Overview" [ref=f1e37] [cursor=pointer]
+          - generic [ref=f1e38]:
+            - button "Tender" [expanded] [ref=f1e39] [cursor=pointer]:
+              - text: Tender
+              - generic [aria-hidden] [ref=f1e40]: ⌃
+            - generic [ref=f1e41]:
+              - button "Documents" [ref=f1e42] [cursor=pointer]
+              - button "BOQ" [ref=f1e43] [cursor=pointer]
+              - button "AI Understanding Review" [ref=f1e44] [cursor=pointer]
+              - button "Requirements" [ref=f1e45] [cursor=pointer]
+          - button "Product Selection" [ref=f1e47] [cursor=pointer]
+          - button "Strategy" [ref=f1e49] [cursor=pointer]:
+            - text: Strategy
+            - generic [aria-hidden] [ref=f1e50]: ⌄
+          - button "Engineering" [ref=f1e52] [cursor=pointer]:
+            - text: Engineering
+            - generic [aria-hidden] [ref=f1e53]: ⌄
+          - button "Review & Handoff" [ref=f1e55] [cursor=pointer]
+          - generic [ref=f1e56]:
+            - button "Pricing" [expanded] [ref=f1e57] [cursor=pointer]:
+              - text: Pricing
+              - generic [aria-hidden] [ref=f1e58]: ⌃
+            - generic [ref=f1e59]:
+              - button "Supplier Price Evidence" [ref=f1e60] [cursor=pointer]
+              - button "Costing & Pricing" [ref=f1e61] [cursor=pointer]
+          - button "Quotation" [ref=f1e63] [cursor=pointer]
+          - button "Activity" [ref=f1e65] [cursor=pointer]
+    - region "Authenticated account" [ref=f1e66]:
+      - generic [ref=f1e67]: LD
+      - generic [ref=f1e68]:
+        - strong [ref=f1e69]: Local Development User
+        - generic [ref=f1e70]: local@development.invalid
+        - generic [ref=f1e71]: "Administrator · Project: Project Manager"
+        - generic [ref=f1e72]: BD-Shaft Internal Pilot · Organization Owner / Organization Administrator
+      - button "Sign out" [ref=f1e74]
+  - main [ref=f1e75]:
+    - generic [ref=f1e76]:
+      - button "المشروع Project AlMoosa K12 Schools – Fire Alarm ⌄" [ref=f1e77] [cursor=pointer]:
+        - generic [ref=f1e78]:
+          - generic [ref=f1e79]: المشروع
+          - generic [ref=f1e80]: Project
+        - strong [ref=f1e82]: AlMoosa K12 Schools – Fire Alarm
+        - generic [ref=f1e83]: ⌄
+      - generic [ref=f1e84]:
+        - button "Action queue 0 verified actions open" [ref=f1e85] [cursor=pointer]:
+          - text: Action queue
+          - generic [ref=f1e86]: 0 verified actions open
+        - generic [ref=f1e87]:
+          - generic [ref=f1e88]: Currency
+          - combobox "Project currency" [ref=f1e89] [cursor=pointer]:
+            - option "SAR" [selected]
+        - button "⚙ Pricing controls" [ref=f1e90] [cursor=pointer]:
+          - text: ⚙
+          - generic [ref=f1e91]: Pricing controls
+    - generic [ref=f1e92]:
+      - navigation "Project estimation workflow" [ref=f1e93]:
+        - button "1 Set up Not started" [ref=f1e94] [cursor=pointer]:
+          - generic [ref=f1e95]: "1"
+          - strong [ref=f1e96]: Set up
+          - generic [ref=f1e97]: Not started
+        - button "2 Understand tender Not started" [ref=f1e98] [cursor=pointer]:
+          - generic [ref=f1e99]: "2"
+          - strong [ref=f1e100]: Understand tender
+          - generic [ref=f1e101]: Not started
+        - button "3 Confirm scope Not started" [ref=f1e102] [cursor=pointer]:
+          - generic [ref=f1e103]: "3"
+          - strong [ref=f1e104]: Confirm scope
+          - generic [ref=f1e105]: Not started
+        - button "4 Select products Not started" [ref=f1e106] [cursor=pointer]:
+          - generic [ref=f1e107]: "4"
+          - strong [ref=f1e108]: Select products
+          - generic [ref=f1e109]: Not started
+        - button "5 Build price Not started" [ref=f1e110] [cursor=pointer]:
+          - generic [ref=f1e111]: "5"
+          - strong [ref=f1e112]: Build price
+          - generic [ref=f1e113]: Not started
+        - button "6 Review offer Not started" [ref=f1e114] [cursor=pointer]:
+          - generic [ref=f1e115]: "6"
+          - strong [ref=f1e116]: Review offer
+          - generic [ref=f1e117]: Not started
+        - button "7 Issue quotation Not started" [ref=f1e118] [cursor=pointer]:
+          - generic [ref=f1e119]: "7"
+          - strong [ref=f1e120]: Issue quotation
+          - generic [ref=f1e121]: Not started
+      - generic "Current project 2401232" [ref=f1e122]:
+        - generic [ref=f1e123]: PROJECT WORKSPACE
+        - strong [ref=f1e124]: "2401232"
+      - status [ref=f1e125]:
+        - strong [ref=f1e126]: Loading verified project overview…

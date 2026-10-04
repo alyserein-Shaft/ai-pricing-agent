@@ -1,6 +1,10 @@
 "use client";
 
-/* eslint-disable @typescript-eslint/no-explicit-any -- legacy dynamic UI/read-model boundary; strict typing deferred to workspace decomposition */
+/* eslint-disable @typescript-eslint/no-ex  const [productFilter, setProductFilter] = useState("");
+  const [productFamilyFilter, setProductFamilyFilter] = useState("");
+  const [productManufacturerFilter, setProductManufacturerFilter] = useState("");
+  const [productBrandFilter, setProductBrandFilter] = useState("");
+plicit-any -- legacy dynamic UI/read-model boundary; strict typing deferred to workspace decomposition */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createBoqTemplateCsv, parseGenericBoqCsv } from "./boq-csv.mjs";
@@ -59,8 +63,12 @@ import { TechnicalReviewWorkspace } from "./components/workspaces/TechnicalRevie
 import { HistoricalLearningWorkspace } from "./components/workspaces/HistoricalLearningWorkspace";
 import { CaseStudiesWorkspace } from "./components/workspaces/CaseStudiesWorkspace";
 import { KnowledgeLibraryWorkspace } from "./components/workspaces/KnowledgeLibraryWorkspace";
+import { ProductDetail } from "./components/workspaces/ProductDetail";
 import { pricingLineModel } from "./components/workspaces/commercial-models.mjs";
 import { ErrorState, LoadingState } from "./components/shared/WorkspaceStates";
+// SHADOW / SECOND_OPINION / NON_AUTHORITATIVE. Read-only: renders advisory
+// output only and never participates in project, matching, pricing or quotation.
+import { NvidiaDocumentShadowPanel } from "./components/workspaces/NvidiaDocumentShadowPanel";
 
 type CostItem = {
   id: number;
@@ -210,6 +218,7 @@ type ModuleName =
   | "Quotation"
   | "Price Sources"
   | "Reports"
+  | "Document Shadow"
   | "Administration"
   | "Activity";
 type CaseStudySummary = {
@@ -2034,6 +2043,10 @@ const storageKey = "ai-pricing-agent-almoosa-fire-alarm-v1";
 const browserBusinessPersistenceEnabled = false;
 const almoosaBoqSha256 =
   "e7d9e3d15eab9b143a339f21f26dca51e9436fecb904779d4f4de5fa8eb7a82c";
+// Governed normalization auto-authority. Display-only label: the verdict itself is
+// computed deterministically on the server (`BOQ_NORMALIZATION_AUTO_AUTHORITY_V1`) and is
+// only ever read back here.
+const BOQ_NORMALIZATION_POLICY_ID = "BOQ_NORMALIZATION_AUTO_AUTHORITY_V1";
 const honeywellPriceListSha256 =
   "88df340663209e15b3e7b7bca0f8c2ee2cb00b0e5ffb8aee0c1018a825574391";
 const fireAlarmSpecificationSha256 =
@@ -2197,6 +2210,7 @@ export default function Home() {
     "Product Library",
     "Case Studies",
     "Reports",
+    "Document Shadow",
     "Administration",
   ].includes(activeModule);
   const [showNewProject, setShowNewProject] = useState(false);
@@ -2483,6 +2497,10 @@ export default function Home() {
   const [knowledgeFiles, setKnowledgeFiles] = useState<KnowledgeFileRecord[]>(
     [],
   );
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [productFilter, setProductFilter] = useState('');
+  const [productDetailLoading, setProductDetailLoading] = useState(false);
+  const [productDetailError, setProductDetailError] = useState("");
   const [knowledgeSummary, setKnowledgeSummary] = useState<
     Record<string, number>
   >({});
@@ -2667,6 +2685,24 @@ export default function Home() {
     Record<number, string>
   >({});
   const [boqReviewSearch, setBoqReviewSearch] = useState("");
+  // Server-backed normalized BOQ review. The client candidate list is only a VIEW of
+  // the controlled generation; the review id, the per-candidate decisions and the final
+  // Apply are all owned by the server (`worker/boq-normalization-api.mjs`).
+  const [normalizationReviewId, setNormalizationReviewId] = useState<
+    string | null
+  >(null);
+  // Governed auto-authority status for the loaded normalization review. This is a VIEW of
+  // the server's deterministic policy verdict (`BOQ_NORMALIZATION_AUTO_AUTHORITY_V1`); the
+  // client never computes eligibility and never grants authority. It exists so a review
+  // that deterministic evidence already resolves does not require a human to reproduce a
+  // policy-determinable decision just to see it applied.
+  const [normalizationPolicy, setNormalizationPolicy] = useState<{
+    policyId: string;
+    state: "AUTO_APPROVED" | "HUMAN_REVIEW_REQUIRED" | "APPLIED";
+    appliedLines: number | null;
+    deferredCount: number;
+    blockers: string[];
+  } | null>(null);
   const [genericBoqPreview, setGenericBoqPreview] =
     useState<GenericBoqPreview | null>(null);
   const [sourcePreviewFile, setSourcePreviewFile] = useState<string | null>(
@@ -7633,6 +7669,10 @@ export default function Home() {
         setKnowledgeReviewItems(
           Array.isArray(dataPayload.items) ? dataPayload.items : [],
         );
+        // Product detail fetch logic initialized (will be triggered on product selection)
+        setSelectedProductId(null);
+        setProductDetailLoading(false);
+        setProductDetailError("");
       } catch (error) {
         if (!controller.signal.aborted)
           setKnowledgeError(
@@ -9715,11 +9755,141 @@ export default function Home() {
     setActiveModule("Documents");
   };
 
+  // Closing the drawer is a VIEW action, not a decision action: per-line Accept/Exclude
+  // work is preserved in component state AND on the server, so closing, reopening or
+  // refreshing the page resumes the same review instead of destroying it.
   const closeKnownBoqExtraction = () => {
     setBoqPreviewFile(null);
-    setBoqLineDecisions({});
-    setBoqExclusionReasons({});
     setBoqReviewSearch("");
+  };
+
+  // Resume the SERVER-backed review. Candidate ordinals are the controlled
+  // generation's own order, which is what the server persisted, so client index <->
+  // server candidate is stable. Anything the server has not decided stays "Pending":
+  // the server is the authority, never this component's memory.
+  const loadServerNormalizationReview = async (fileName: string) => {
+    try {
+      const response = await fetch(
+        `/api/projects/${encodeURIComponent(projectId)}/boq-normalization/reviews?documentId=${encodeURIComponent(fileName)}`,
+        { method: "GET" },
+      ).catch(() => null);
+      if (!response || !response.ok) return;
+      const payload = await response.json();
+      const review = payload?.review;
+      if (!review?.id) return;
+      setNormalizationReviewId(review.id);
+      const decisions: Record<number, "Pending" | "Accepted" | "Excluded"> = {};
+      const reasons: Record<number, string> = {};
+      for (const candidate of payload.candidates || []) {
+        const item = initialItems[candidate.ordinal - 1];
+        if (!item) continue;
+        decisions[item.id] =
+          candidate.decision === "Accepted" || candidate.decision === "Excluded"
+            ? candidate.decision
+            : "Pending";
+        if (candidate.exclusion_reason) {
+          reasons[item.id] = String(candidate.exclusion_reason);
+        }
+      }
+      setBoqLineDecisions(decisions);
+      setBoqExclusionReasons(reasons);
+
+      // Policy status is read from the server, never inferred locally. An already-applied
+      // generation reports its live line count from the governed scope; an open one is
+      // evaluated against the deterministic policy.
+      setNormalizationPolicy(null);
+      try {
+        if (review.status === "APPLIED") {
+          const scopeResponse = await fetch(
+            `/api/boq-normalization/scope/${encodeURIComponent(projectId)}`,
+            { method: "GET" },
+          ).catch(() => null);
+          const scopeBody = scopeResponse?.ok ? await scopeResponse.json() : null;
+          const lines = Array.isArray(scopeBody?.scope) ? scopeBody.scope.length : null;
+          setNormalizationPolicy({
+            policyId: BOQ_NORMALIZATION_POLICY_ID,
+            state: "APPLIED",
+            appliedLines: lines,
+            deferredCount: 0,
+            blockers: [],
+          });
+        } else {
+          const evaluation = await fetch(
+            `/api/boq-normalization/${encodeURIComponent(review.id)}/evaluate-auto-approval`,
+            { method: "POST" },
+          ).catch(() => null);
+          if (evaluation?.ok) {
+            const verdict = await evaluation.json();
+            setNormalizationPolicy({
+              policyId: BOQ_NORMALIZATION_POLICY_ID,
+              state: verdict.eligible ? "AUTO_APPROVED" : "HUMAN_REVIEW_REQUIRED",
+              appliedLines: null,
+              deferredCount: (verdict.deferredAmbiguities || []).length,
+              blockers: verdict.blockers || [],
+            });
+          }
+        }
+      } catch {
+        // A policy-status read failure must not fabricate a verdict; the drawer simply
+        // shows no banner and falls back to the ordinary human review flow.
+      }
+
+      showToast(
+        `Normalized BOQ review resumed — ${payload.candidates?.length ?? 0} candidates`,
+      );
+    } catch {
+      // A read failure must not fabricate decisions; the drawer simply keeps Pending.
+    }
+  };
+
+  // Persist ONE candidate decision server-side. The server re-derives authority from the
+  // current extraction and records the human actor; this component never decides.
+  const persistCandidateDecision = async (
+    candidateOrdinal: number,
+    decision: "Accepted" | "Excluded",
+    reason = "",
+  ) => {
+    if (!normalizationReviewId) return false;
+    const item = initialItems[candidateOrdinal - 1];
+    if (!item) return false;
+    const response = await fetch(
+      `/api/boq-normalization/${encodeURIComponent(normalizationReviewId)}/candidates/by-ordinal/${candidateOrdinal}/decision`,
+      {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ decision, reason }),
+      },
+    ).catch(() => null);
+    if (!response || !response.ok) {
+      const body = await response?.json().catch(() => null);
+      showToast(
+        `Decision not saved: ${body?.error?.code || "request failed"} — the server is the authority`,
+      );
+      return false;
+    }
+    return true;
+  };
+
+  // The governed reopen path for the CONTROLLED NORMALIZED BOQ review. This is
+  // deliberately NOT a route to `openBoqExtractionReview`, which opens the RAW
+  // extraction review over all extracted rows -- a different workflow with a different
+  // purpose. The normalized review is a controlled, fingerprint-bound normalization of
+  // the same workbook into 21 review candidates with retained source anchors.
+  // Authority is the CANONICAL document SHA-256 returned by the server document
+  // model, never the client-local upload-hash cache. That cache is hydrated only from
+  // localStorage, which the Phase 4 decision disables
+  // (`browserBusinessPersistenceEnabled = false`), so in a fresh browser it is empty
+  // and a filename-keyed gate would hide the button for the one document that needs it.
+  const openNormalizedBoqReview = (document: ManagedDocument) => {
+    const fileName = document.logical_name;
+    if (document.sha256 !== almoosaBoqSha256) {
+      showToast(
+        "Normalized BOQ review blocked — workbook fingerprint is not the controlled one; reconcile the extraction before reviewing",
+      );
+      return;
+    }
+    setBoqPreviewFile(fileName);
+    void loadServerNormalizationReview(fileName);
   };
 
   const applyKnownBoqExtraction = (fileName: string) => {
@@ -9771,6 +9941,57 @@ export default function Home() {
     const excluded = initialItems.filter(
       (item) => boqLineDecisions[item.id] === "Excluded",
     );
+    // APPLY IS A GOVERNED SERVER ACTION. The server re-validates the current
+    // extraction, requires a terminal decision on every candidate, re-derives each
+    // accepted quantity from its own source rows, and records the human actor. This
+    // component MUST NOT treat its own state as the outcome.
+    if (normalizationReviewId) {
+      void (async () => {
+        const response = await fetch(
+          `/api/boq-normalization/${encodeURIComponent(normalizationReviewId)}/apply`,
+          {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({
+              requireDocumentIssue: true,
+              documentIssueConfirmed:
+                documentIssueAllowsScope(fileName) === true,
+            }),
+          },
+        ).catch(() => null);
+        const body = await response?.json().catch(() => null);
+        if (!response || !response.ok) {
+          showToast(
+            `Apply blocked by the server: ${body?.error?.code || "request failed"}`,
+          );
+          return;
+        }
+        showToast(
+          body.idempotent
+            ? "Normalized BOQ already applied — current scope unchanged"
+            : `Normalized BOQ applied — ${body.scopeCount} current lines`,
+        );
+        recordAudit(
+          "Normalized BOQ applied (server-governed)",
+          `${fileName} · review ${normalizationReviewId} · ${body.scopeCount} lines materialized · ${body.idempotent ? "idempotent re-apply" : "new generation"}`,
+        );
+        setItems(
+          accepted.map((item) => ({
+            ...item,
+            supplier: "Awaiting technical selection",
+            unitCost: 0,
+            status: "RFQ Required",
+            specification: "",
+          })),
+        );
+        setAppliedDocumentHashes((current) => [
+          ...new Set([...current, almoosaBoqSha256]),
+        ]);
+        closeKnownBoqExtraction();
+        setActiveModule("BOQ");
+      })();
+      return;
+    }
     setItems(
       accepted.map((item) => ({
         ...item,
@@ -11295,13 +11516,21 @@ export default function Home() {
 
   const moduleContent =
     activeModule === "Overview" && serverProjectDashboard && preSalesWorkflow ? (
-      <OverviewWorkspace
-        dashboard={serverProjectDashboard}
-        workflow={preSalesWorkflow}
-        estimatorReadiness={estimatorReadiness}
-        onOpenRoute={(route) => openDashboardRoute(projectId, route)}
-        money={money}
-      />
+      <>
+        <OverviewWorkspace
+          dashboard={serverProjectDashboard}
+          workflow={preSalesWorkflow}
+          estimatorReadiness={estimatorReadiness}
+          onOpenRoute={(route) => openDashboardRoute(projectId, route)}
+          money={money}
+        />
+        {selectedProductId && (
+          <ProductDetail
+            productId={selectedProductId}
+            onClose={() => setSelectedProductId(null)}
+          />
+        )}
+      </>
     ) : activeModule === "Overview" && serverProjectDashboard && preSalesWorkflow && Boolean(0) ? (
       <section className="module-page operational-project-dashboard">
         <div className="module-heading">
@@ -12304,6 +12533,14 @@ export default function Home() {
                   )}
                   {document.boq_extraction_id && (
                     <>
+                      {document.sha256 === almoosaBoqSha256 && (
+                        <button
+                          className="normalized-boq-review-primary"
+                          onClick={() => openNormalizedBoqReview(document)}
+                        >
+                          Review normalized BOQ
+                        </button>
+                      )}
                       <button
                         onClick={() => void openBoqExtractionReview(document)}
                       >
@@ -14847,6 +15084,22 @@ export default function Home() {
         </section>
         {discoveryLibraryPanel}
       </>
+    ) : activeModule === "Document Shadow" ? (
+      // SHADOW / SECOND_OPINION / NON_AUTHORITATIVE. Takes no project id and
+      // writes nothing: it cannot influence canonical project truth.
+      <section className="module-page">
+        <div className="module-heading">
+          <div>
+            <small>SECOND OPINION · NON-AUTHORITATIVE</small>
+            <h1>Document Shadow</h1>
+            <p>
+              NVIDIA document-intelligence second opinion for a single operator-submitted document.
+              Advisory output only — the native parser remains the extraction authority.
+            </p>
+          </div>
+        </div>
+        <NvidiaDocumentShadowPanel />
+      </section>
     ) : activeModule === "Knowledge Library" ? (
       <KnowledgeLibraryWorkspace
         section={knowledgeSection}
@@ -20313,6 +20566,71 @@ export default function Home() {
                 ×
               </button>
             </header>
+            {normalizationPolicy && (
+              <div
+                className="extraction-proof"
+                role="status"
+                data-testid="normalized-boq-policy-banner"
+              >
+                {normalizationPolicy.state === "APPLIED" ? (
+                  <>
+                    <span>
+                      <small>NORMALIZATION</small>
+                      <strong>Auto-approved by policy</strong>
+                    </span>
+                    <span>
+                      <small>CURRENT NORMALIZED BOQ LINES</small>
+                      <strong>
+                        {normalizationPolicy.appliedLines ?? 0} current normalized BOQ
+                        lines
+                      </strong>
+                    </span>
+                    <span>
+                      <small>AUTHORITY</small>
+                      <strong>{normalizationPolicy.policyId}</strong>
+                    </span>
+                  </>
+                ) : normalizationPolicy.state === "AUTO_APPROVED" ? (
+                  <>
+                    <span>
+                      <small>NORMALIZATION</small>
+                      <strong>Auto-approved by policy</strong>
+                    </span>
+                    <span>
+                      <small>APPLY</small>
+                      <strong>No manual Accept/Apply required</strong>
+                    </span>
+                    {normalizationPolicy.deferredCount > 0 && (
+                      <span>
+                        <small>DEFERRED TO BOQ UNDERSTANDING</small>
+                        <strong>
+                          {normalizationPolicy.deferredCount} terminology ambiguity
+                          {normalizationPolicy.deferredCount === 1 ? "" : "ies"} · no
+                          scope change
+                        </strong>
+                      </span>
+                    )}
+                    <span>
+                      <small>AUTHORITY</small>
+                      <strong>{normalizationPolicy.policyId}</strong>
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span>
+                      <small>NORMALIZATION</small>
+                      <strong>Human review required</strong>
+                    </span>
+                    <span>
+                      <small>MATERIAL BLOCKERS</small>
+                      <strong>
+                        {normalizationPolicy.blockers.join(", ") || "unresolved"}
+                      </strong>
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
             {documentControlEditor(boqPreviewFile)}
             <div className="extraction-proof">
               <span>

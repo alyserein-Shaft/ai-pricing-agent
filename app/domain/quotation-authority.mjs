@@ -63,3 +63,56 @@ export const exportEligibleForQuotationIssue = ({ exportJob, quotation, currentE
   if (quotation.evidence_fingerprint !== currentEvidenceFingerprint || exportJob.evidence_fingerprint !== currentEvidenceFingerprint) return reject("EXPORT_EVIDENCE_STALE");
   return { eligible: true, reasons: [] };
 };
+
+/**
+ * The canonical quotation fingerprint.
+ *
+ * One definition, used by the single writer when it creates a revision and by
+ * the snapshot export loader when it verifies one. The fingerprint binds the
+ * evidence fingerprint, the totals, the VAT basis, the terms AND the immutable
+ * quotation lines -- that last part is what makes a stored revision tamper
+ * evident: if any line's product, pricing lineage, commercial approval or money
+ * changes after approval, recomputing the fingerprint no longer reproduces the
+ * stored value, and the snapshot export loader fails closed instead of exporting
+ * a quotation nobody approved.
+ *
+ * `lineAuthority.lines` (the canonical line reader's output) and the stored
+ * project_quotation_lines rows describe the same facts, so both sides project
+ * them through `quotationLineFingerprintLine` and therefore agree.
+ */
+export const quotationLineFingerprintLine = (line) => ({
+  boqItemId: line.boqItemId ?? line.boq_item_id ?? null,
+  pricingRunId: line.pricingRunId ?? line.pricing_run_id ?? null,
+  pricingRunVersion: Number(line.pricingRunVersion ?? line.pricing_run_version),
+  pricingLineId: line.pricingLineId ?? line.pricing_line_id ?? null,
+  pricingLineVersion: Number(line.pricingLineVersion ?? line.pricing_line_version),
+  commercialApprovalId: line.commercialApprovalId ?? line.commercial_approval_id ?? null,
+  commercialApprovalVersion: Number(line.commercialApprovalVersion ?? line.commercial_approval_version),
+  productId: line.productId ?? line.product_id ?? null,
+  quantity: String(line.quantity ?? ""),
+  netSellingMinor: Number(line.netSellingMinor ?? line.net_selling_minor),
+});
+
+/** The fingerprint payload. Key order is part of the contract: JSON.stringify is the digest input. */
+export const quotationFingerprintInput = ({ evidenceFingerprint, totals, lineAuthority, vatBasisPoints, terms }) => ({
+  evidenceFingerprint,
+  totals: {
+    currency: totals.currency,
+    costMinor: Number(totals.costMinor),
+    subtotalMinor: Number(totals.subtotalMinor),
+    lineCount: Number(totals.lineCount),
+    selectedScenarioId: totals.selectedScenarioId ?? null,
+  },
+  quotationLineAuthority: {
+    version: lineAuthority.authorityVersion,
+    lineCount: lineAuthority.lines.length,
+    lines: lineAuthority.lines.map(quotationLineFingerprintLine),
+  },
+  vatBasisPoints,
+  terms,
+});
+
+export const quotationDigest = async (input) =>
+  [...new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(input))))]
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("");

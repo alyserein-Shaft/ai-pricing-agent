@@ -48,10 +48,21 @@ const newestFirst = (left, right) => {
 export function resolveEffectiveUnderstandingInterpretation(row, interpretations, source, confirmedSpecification = []) {
   const input = currentInputFor(row, source, confirmedSpecification);
   const currentInputFingerprint = interpretationInputFingerprint(input);
+  const newestFirst = (left, right) => Number(right?.versionNumber || 0) - Number(left?.versionNumber || 0) || String(right?.createdAt || "").localeCompare(String(left?.createdAt || "")) || String(right?.interpretationId || "").localeCompare(String(left?.interpretationId || ""));
+
   const currentAttempts = (Array.isArray(interpretations) ? interpretations : [])
     .filter((entry) => entry.inputFingerprint === currentInputFingerprint)
     .sort(newestFirst);
   const latestCurrentAttempt = currentAttempts[0] || null;
+  // The latest usable interpretation regardless of fp match -- for the
+  // review-rebind recovery path.  When the current recomputed fp doesn't
+  // match ANY stored interpretation fp (e.g. the fp was re-hashed after a
+  // schema or confirmed-spec change), the latest usable interpretation is
+  // still the only candidate the human reviewer can bind a decision to.
+  const allUsable = (Array.isArray(interpretations) ? interpretations : [])
+    .filter((entry) => ["COMPLETED", "NEEDS_REVIEW"].includes(entry.status))
+    .sort(newestFirst);
+  const latestUsableInterpretation = allUsable[0] || null;
   const eligible = currentAttempts.flatMap((entry) => {
     if (entry.inputFingerprint !== currentInputFingerprint || !["COMPLETED", "NEEDS_REVIEW"].includes(entry.status)) return [];
     const proposal = sanitizePersistedAiInterpretation(parse(entry.interpretation, null));
@@ -63,6 +74,7 @@ export function resolveEffectiveUnderstandingInterpretation(row, interpretations
     currentInputFingerprint,
     selected: null,
     latestCurrentAttempt,
+    latestUsableInterpretation,
     proposal: null,
     proposalStatus: "UNAVAILABLE",
     classification: null,
@@ -88,6 +100,7 @@ export function resolveEffectiveUnderstandingInterpretation(row, interpretations
     currentInputFingerprint,
     selected,
     latestCurrentAttempt,
+    latestUsableInterpretation,
     proposal: selected.proposal,
     proposalStatus: quality.finalStatus,
     classification,

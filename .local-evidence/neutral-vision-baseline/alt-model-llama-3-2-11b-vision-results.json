@@ -1,0 +1,120 @@
+{
+  "purpose": "Controlled alternative-model comparison against the same neutral-prompt baseline: same 4 saved composite images (sha256-verified), same exact prompt text as the llava-1.5-7b-hf run, one call per image, no retries, no prompt tuning.",
+  "modelAgreementAcceptance": "User explicitly reviewed and authorized acceptance of the Llama 3.2 Community License + Acceptable Use Policy for this Cloudflare account, including the non-EU domicile representation, and explicitly authorized sending the one-time {\"prompt\":\"agree\"} request. That request was sent once; access verified unlocked with a real 200 response before running the 4 comparison calls.",
+  "createdAt": "2026-09-15T16:07:59.560996Z",
+  "isolatedFromApplication": "Written only to .local-evidence/; no drawing_visual_runs row created, no drawing_extraction_proposals rows touched, no review status or candidate applicability changed, application default vision model (@cf/llava-hf/llava-1.5-7b-hf) not changed.",
+  "calls": [
+    {
+      "comparisonId": "smoke",
+      "compositeImageIndex": 22,
+      "sourceRun": "drawingCandidateRun_e0db2e73-d4a9-4556-bed0-5faf6a51b8a7",
+      "model": "@cf/meta/llama-3.2-11b-vision-instruct",
+      "imageSha256": "18c640ae5eec980e096e50af967dcad668c5d0dd2337b026a5bd6507a2426ce5",
+      "httpStatus": 200,
+      "requestShape": "messages: [{role:user, content:[{type:text},{type:image_url,image_url:{url:data-uri}}]}], max_tokens:300",
+      "prompt": "This image shows two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them. Describe LEFT: its outline shape, any letters visible inside it, and any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it). Then describe RIGHT the same way. Then state what is visually similar between LEFT and RIGHT, and what is visually different -- if you see no real difference, say so explicitly rather than inventing one. If any part of either symbol is too small or unclear to read, say exactly which part is unreadable. Do not name or guess what kind of device either symbol represents, and do not use outside knowledge about what these symbols usually mean. Keep the answer under 150 words.",
+      "response": {
+        "result": {
+          "response": "**LEFT Symbol Description**\n\n* Outline shape: A circle with a horizontal line extending from the top-left side.\n* Letters inside: \"S\" inside the circle.\n* Qualifier mark: A small circle with a horizontal line extending from the top-left side, positioned outside the main outline.\n\n**RIGHT Symbol Description**\n\n* Outline shape: A circle with a horizontal line extending from the top-left side.\n* Letters inside: \"S\" inside the circle.\n* Qualifier mark: A small circle with a horizontal line extending from the top-left side, positioned outside the main outline.\n\n**Comparison**\n\n* Visually similar: Both symbols have the same outline shape, letters inside, and qualifier mark.\n* Visually different: None. The symbols are identical.\n\nNote: All parts of both symbols are clearly visible and readable.",
+          "tool_calls": [],
+          "usage": {
+            "prompt_tokens": 3367,
+            "completion_tokens": 165,
+            "total_tokens": 3532,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            },
+            "neurons": 24.996409596375003
+          }
+        },
+        "success": true,
+        "errors": [],
+        "messages": []
+      }
+    },
+    {
+      "comparisonId": "manual-weatherproof",
+      "compositeImageIndex": 24,
+      "sourceRun": "drawingCandidateRun_e0db2e73-d4a9-4556-bed0-5faf6a51b8a7",
+      "model": "@cf/meta/llama-3.2-11b-vision-instruct",
+      "imageSha256": "05079b1579f758b3ddb8ffe609acb2a0fbc7c63ebb600ec706503f29d62b7854",
+      "httpStatus": 200,
+      "requestShape": "messages: [{role:user, content:[{type:text},{type:image_url,image_url:{url:data-uri}}]}], max_tokens:300",
+      "prompt": "This image shows two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them. Describe LEFT: its outline shape, any letters visible inside it, and any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it). Then describe RIGHT the same way. Then state what is visually similar between LEFT and RIGHT, and what is visually different -- if you see no real difference, say so explicitly rather than inventing one. If any part of either symbol is too small or unclear to read, say exactly which part is unreadable. Do not name or guess what kind of device either symbol represents, and do not use outside knowledge about what these symbols usually mean. Keep the answer under 150 words.",
+      "response": {
+        "result": {
+          "response": "**LEFT:**\n\n* Outline shape: A square with two horizontal lines extending from the top, resembling a \"V\" shape.\n* Letters inside: The letter \"F\" is visible inside the square.\n* Qualifier mark: A dashed box surrounds the square.\n\n**RIGHT:**\n\n* Outline shape: A square with two horizontal lines extending from the top, resembling a \"V\" shape.\n* Letters inside: The letter \"F\" is visible inside the square.\n* Qualifier mark: A dashed box surrounds the square.\n\n**Similarities and Differences:**\n\n* Both symbols have the same outline shape and letters inside.\n* Both have a dashed box qualifier mark.\n* There are no visible differences between the two symbols.\n\n**Note:** The image is clear and easy to read, with no parts too small or unclear to decipher.",
+          "tool_calls": [],
+          "usage": {
+            "prompt_tokens": 3367,
+            "completion_tokens": 168,
+            "total_tokens": 3535,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            },
+            "neurons": 25.180889099625002
+          }
+        },
+        "success": true,
+        "errors": [],
+        "messages": []
+      }
+    },
+    {
+      "comparisonId": "control-interface",
+      "compositeImageIndex": 26,
+      "sourceRun": "drawingCandidateRun_e0db2e73-d4a9-4556-bed0-5faf6a51b8a7",
+      "model": "@cf/meta/llama-3.2-11b-vision-instruct",
+      "imageSha256": "a6acb3246c92c499ef2db7bb435bb661b5cda73389113170dee7df5f2db6f8eb",
+      "httpStatus": 200,
+      "requestShape": "messages: [{role:user, content:[{type:text},{type:image_url,image_url:{url:data-uri}}]}], max_tokens:300",
+      "prompt": "This image shows two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them. Describe LEFT: its outline shape, any letters visible inside it, and any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it). Then describe RIGHT the same way. Then state what is visually similar between LEFT and RIGHT, and what is visually different -- if you see no real difference, say so explicitly rather than inventing one. If any part of either symbol is too small or unclear to read, say exactly which part is unreadable. Do not name or guess what kind of device either symbol represents, and do not use outside knowledge about what these symbols usually mean. Keep the answer under 150 words.",
+      "response": {
+        "result": {
+          "response": "The LEFT symbol is a black outline of a capital \"C\" with a horizontal line extending from the left side of its bottom edge, and a vertical line extending from the top of its right side. The letter \"CE\" is inside the \"C\", and a small circle is attached to the bottom of the \"C\", with the letters \"7 Nos\" inside the circle. The RIGHT symbol is a black outline of a capital \"C\" with a circle inside it, containing the letters \"CE\". The letter \"C\" is positioned to the right of the circle.\n\nVisually similar between the LEFT and RIGHT symbols is the capital \"C\" outline and the circle with the letters \"CE\" inside. Visually different is the horizontal and vertical lines extending from the LEFT symbol's \"C\", and the positioning of the letter \"C\" in the RIGHT symbol. The RIGHT symbol's \"C\" is positioned to the right of the circle, while the LEFT symbol's \"C\" does not have this positioning. The LEFT symbol's circle has the letters \"7 Nos\" inside, while the RIGHT symbol's circle does not have any letters inside.",
+          "tool_calls": [],
+          "usage": {
+            "prompt_tokens": 3367,
+            "completion_tokens": 232,
+            "total_tokens": 3599,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            },
+            "neurons": 29.116451835625
+          }
+        },
+        "success": true,
+        "errors": [],
+        "messages": []
+      }
+    },
+    {
+      "comparisonId": "square-s-unmatched",
+      "compositeImageIndex": 28,
+      "sourceRun": "drawingCandidateRun_e0db2e73-d4a9-4556-bed0-5faf6a51b8a7",
+      "model": "@cf/meta/llama-3.2-11b-vision-instruct",
+      "imageSha256": "995fb7a9be81e1276d4e5c176cea1fb45ac22f873c61c83e46e1e2beacd6ee31",
+      "httpStatus": 200,
+      "requestShape": "messages: [{role:user, content:[{type:text},{type:image_url,image_url:{url:data-uri}}]}], max_tokens:300",
+      "prompt": "This image shows two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them. Describe LEFT: its outline shape, any letters visible inside it, and any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it). Then describe RIGHT the same way. Then state what is visually similar between LEFT and RIGHT, and what is visually different -- if you see no real difference, say so explicitly rather than inventing one. If any part of either symbol is too small or unclear to read, say exactly which part is unreadable. Do not name or guess what kind of device either symbol represents, and do not use outside knowledge about what these symbols usually mean. Keep the answer under 150 words.",
+      "response": {
+        "result": {
+          "response": "The LEFT symbol is a square with a line extending from its top edge, and the letter \"S\" inside it. There is a small, solid box attached to the bottom right corner of the square. The RIGHT symbol is a circle with the letter \"S\" inside it. \n\nThere is nothing visually similar between the two symbols. The LEFT symbol is a square, while the RIGHT symbol is a circle. The LEFT symbol has a box attached to its bottom right corner, while the RIGHT symbol does not. The LEFT symbol has a line extending from its top edge, while the RIGHT symbol does not. The LEFT symbol has a solid box, while the RIGHT symbol has a dashed box. The LEFT symbol is a square, while the RIGHT symbol is a circle.",
+          "tool_calls": [],
+          "usage": {
+            "prompt_tokens": 3367,
+            "completion_tokens": 154,
+            "total_tokens": 3521,
+            "prompt_tokens_details": {
+              "cached_tokens": 0
+            },
+            "neurons": 24.319984751125002
+          }
+        },
+        "success": true,
+        "errors": [],
+        "messages": []
+      }
+    }
+  ]
+}

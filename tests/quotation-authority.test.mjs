@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { DatabaseSync } from "node:sqlite";
 import {
   buildQuotationTerms,
@@ -69,12 +69,62 @@ test("draft construction distinguishes request, project and default provenance",
   assert.equal(result.provenance.values.exclusions.provenance, "USER_AUTHORED");
 });
 
+/**
+ * Build a quotation database from the ACTIVE migration chain.
+ *
+ * This used to read drizzle/0045_presales_estimation_workflow.sql and
+ * drizzle/0053_quotation_authority_consolidation.sql. That directory no longer
+ * exists: the chain moved to drizzle-active/, whose head is the schema
+ * production runs. Building the database from the active chain keeps these
+ * assertions meaningful -- they still run against real migrated DDL, including
+ * the real quotation_single_approval_decision_idx and quotation_single_issue_idx
+ * unique constraints -- instead of against a hand-written subset.
+ */
 const migratedQuotationDb = async () => {
   const db = new DatabaseSync(":memory:");
-  db.exec("PRAGMA foreign_keys=ON; CREATE TABLE projects(id TEXT PRIMARY KEY); CREATE TABLE excel_export_jobs(id TEXT PRIMARY KEY,project_id TEXT,status TEXT,export_mode TEXT,cancelled_at TEXT,superseded_by_id TEXT);");
-  db.exec(await readFile(new URL("../drizzle/0045_presales_estimation_workflow.sql", import.meta.url), "utf8"));
-  db.exec(await readFile(new URL("../drizzle/0053_quotation_authority_consolidation.sql", import.meta.url), "utf8"));
-  db.exec("INSERT INTO projects VALUES ('p1'); INSERT INTO presales_workflow_snapshots(id,project_id,model_version,input_fingerprint,status,progress,current_stage_id,stages_json,blockers_json,warnings_json,calculated_by) VALUES ('s1','p1','v','f','Ready',100,'quotation','[]','[]','[]','u1'); INSERT INTO project_quotation_revisions(id,project_id,revision_number,quotation_fingerprint,workflow_snapshot_id,currency,subtotal_minor,vat_basis_points,vat_minor,total_minor,terms_json,source_summary_json,status,created_by,evidence_fingerprint) VALUES ('q1','p1',1,'qf','s1','SAR',100,1500,15,115,'{}','{}','Draft','u1','ef'); INSERT INTO excel_export_jobs(id,project_id,status,export_mode,quotation_revision_id,quotation_fingerprint,evidence_fingerprint) VALUES ('x1','p1','Completed','Approved Cost Sheet','q1','qf','ef');");
+  db.exec("PRAGMA foreign_keys=OFF");
+  const directory = new URL("../drizzle-active/", import.meta.url).pathname;
+  for (const name of (await readdir(directory)).filter((f) => f.endsWith(".sql")).sort()) {
+    for (const statement of (await readFile(`${directory}${name}`, "utf8")).split("--> statement-breakpoint")) {
+      const trimmed = statement.trim();
+      if (trimmed) db.exec(trimmed);
+    }
+  }
+  // Seeded rows stand in for data written before this chain head; referential
+  // integrity of the seed is not what these two assertions are about.
+  db.exec("PRAGMA foreign_keys=OFF");
+  // Seed the minimum the two authorities below need. Columns that carry no
+  // meaning for these assertions and are NOT NULL without a default are filled
+  // with a type-appropriate placeholder; every column under test is explicit.
+  const insert = (sql, ...values) => {
+    const [, table, columns] = /^INSERT\s+INTO\s+(\w+)\s*\(([^)]*)\)/i.exec(sql);
+    const named = columns.split(",").map((c) => c.trim()).filter(Boolean);
+    const supplied = Object.fromEntries(named.map((c, i) => [c, values[i]]));
+    const used = [];
+    const bound = [];
+    for (const column of db.prepare(`PRAGMA table_info(${table})`).all()) {
+      if (column.name in supplied) {
+        used.push(`"${column.name}"`);
+        bound.push(supplied[column.name]);
+      } else if (column.notnull && column.dflt_value === null) {
+        used.push(`"${column.name}"`);
+        bound.push(column.type === "integer" ? 0 : "seed");
+      }
+    }
+    db
+      .prepare(`INSERT INTO "${table}" (${used.join(",")}) VALUES (${used.map(() => "?").join(",")})`)
+      .run(...bound);
+  };
+  insert("INSERT INTO projects (id,organization_id,name,owner_user_id,currency,client,operational_classification) VALUES (?,?,?,?,?,?,?)",
+    "p1", "org1", "Fixture Project", "u1", "SAR", "Client A", "Operational");
+  insert("INSERT INTO presales_workflow_snapshots (id,project_id,model_version,input_fingerprint,status,progress,current_stage_id,stages_json,blockers_json,warnings_json,calculated_by) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+    "s1", "p1", "v", "f", "Ready", 100, "quotation", "[]", "[]", "[]", "u1");
+  insert("INSERT INTO project_quotation_revisions (id,project_id,revision_number,quotation_fingerprint,workflow_snapshot_id,currency,subtotal_minor,vat_basis_points,vat_minor,total_minor,terms_json,source_summary_json,status,created_by,evidence_fingerprint) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+    "q1", "p1", 1, "qf", "s1", "SAR", 100, 1500, 15, 115, "{}", "{}", "Draft", "u1", "ef");
+  insert("INSERT INTO export_templates (id,name,version,status,supported_modes,sheet_configuration,branding,formula_strategy,mapping_version,created_by,organization_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+    "t1", "Approved Cost Sheet", "1.0.0", "Active", '["Approved Cost Sheet"]', "{}", "{}", "none", "1", "u1", "org1");
+  insert("INSERT INTO excel_export_jobs (id,project_id,template_id,status,export_mode,revision,filename,stage,locked_versions,sheet_set,configuration,idempotency_key,requested_by,requested_role,quotation_revision_id,quotation_fingerprint,evidence_fingerprint) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+    "x1", "p1", "t1", "Completed", "Approved Cost Sheet", 1, "cost.xlsx", "Done", "{}", "cost", "{}", "i1", "u1", "Project User", "q1", "qf", "ef");
   return db;
 };
 

@@ -11,6 +11,10 @@ import {
   extractKnowledgeFromBytes,
   KNOWLEDGE_EXTRACTION_VERSION,
 } from "../app/domain/knowledge-library-engine.mjs";
+import {
+  assessResearchFactSubmission,
+  researchFactInsertStatement,
+} from "../app/domain/knowledge-research-fact.mjs";
 
 const json = (body, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -304,6 +308,78 @@ export async function handleKnowledgeLibraryApi(request, env) {
       },
       201,
     );
+  }
+
+  // Governed authoring of web-researched facts. Research EXPANDS evidence,
+  // never authority: every accepted fact lands as Learned/Needs Review
+  // (derived by assessResearchFactSubmission, never caller-controlled) and
+  // still requires the existing review route + promotion path before any
+  // canonical write. The remote document is recorded as a Web Source file
+  // row (object_key carries the URL itself, never an R2 key) so provenance
+  // is queryable without fetching remote content into R2.
+  if (url.pathname === "/api/knowledge/research-facts" && request.method === "POST") {
+    const denied = requireLibraryCapability(actor, "analyze");
+    if (denied) return json({ error: denied }, denied.status);
+    const body = await request.json().catch(() => ({}));
+    const source = body.source || {};
+    const sourceUrl = String(source.url || "").trim();
+    const sourceTitle = String(source.title || "").trim();
+    const retrievedAt = String(source.retrievedAt || "").trim();
+    if (!/^https?:\/\/.{4,2000}$/.test(sourceUrl))
+      return json({ error: { code: "RESEARCH_SOURCE_URL_REQUIRED", message: "Provide the http(s) URL of the researched source document." } }, 422);
+    if (sourceTitle.length < 3)
+      return json({ error: { code: "RESEARCH_SOURCE_TITLE_REQUIRED", message: "Provide the source document title." } }, 422);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(retrievedAt))
+      return json({ error: { code: "RESEARCH_RETRIEVED_AT_REQUIRED", message: "Provide the retrieval date as YYYY-MM-DD." } }, 422);
+    const facts = Array.isArray(body.facts) ? body.facts : [];
+    if (!facts.length || facts.length > 50)
+      return json({ error: { code: "RESEARCH_FACTS_REQUIRED", message: "Provide 1-50 fact payloads." } }, 422);
+    const checksum = await sha256Hex(new TextEncoder().encode(`web-source:${sourceUrl}`));
+    const existingFile = await env.DB
+      .prepare("SELECT * FROM knowledge_files WHERE organization_id=? AND sha256=?")
+      .bind(org.id, checksum)
+      .first();
+    // Assess every payload BEFORE writing anything: a submission whose facts
+    // are all rejected must leave no orphan file row behind.
+    const provisionalFile = existingFile || { id: uid("knowledgeFile"), organization_id: org.id };
+    const accepted = []; const rejected = []; const assessed = [];
+    facts.forEach((payload, index) => {
+      const result = assessResearchFactSubmission({
+        file: provisionalFile, organizationId: org.id,
+        payload: {
+          ...payload,
+          retrievalMethod: payload.retrievalMethod || `first-party manufacturer page, ${new URL(sourceUrl).hostname}`,
+          retrievedAt: payload.retrievedAt || retrievedAt,
+          reason: payload.reason || body.reason || "",
+        },
+      });
+      if (!result.ok) { rejected.push({ index, status: result.status, message: result.message }); return; }
+      assessed.push(result.fact);
+      accepted.push({ index, id: result.fact.id, factType: result.fact.factType, reviewStatus: result.fact.reviewStatus });
+    });
+    if (!accepted.length)
+      return json({ error: { code: "RESEARCH_FACTS_REJECTED", message: "No fact payload was accepted.", rejected } }, 422);
+    if (!existingFile) {
+      await env.DB
+        .prepare(
+          "INSERT OR IGNORE INTO knowledge_files (id,organization_id,file_name,extension,mime_type,byte_size,sha256,object_key,detected_type,secondary_types,classification_confidence,classification_status,processing_status,extraction_method,extraction_version,summary,uploaded_by) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        )
+        .bind(
+          provisionalFile.id, org.id, sourceTitle.slice(0, 200), "", "text/html", 0, checksum, sourceUrl,
+          "Web Source", JSON.stringify([]), 100, "Classified", "Completed", "research-fact-api", "web-source-1",
+          JSON.stringify({ sourceType: "Web Source", url: sourceUrl, publisher: String(source.publisher || ""), documentNumber: String(source.documentNumber || "") }),
+          actor.id,
+        )
+        .run();
+    }
+    const file = existingFile || await env.DB.prepare("SELECT * FROM knowledge_files WHERE id=?").bind(provisionalFile.id).first();
+    const statements = assessed.map((fact) => researchFactInsertStatement(env.DB, fact));
+    await executeChunks(env.DB, statements);
+    await env.DB
+      .prepare("INSERT INTO knowledge_file_events (id,organization_id,knowledge_file_id,event_type,details,actor_user_id) VALUES (?,?,?,?,?,?)")
+      .bind(uid("knowledgeEvent"), org.id, file.id, "Research Facts Authored", JSON.stringify({ accepted: accepted.length, rejected: rejected.length, sourceUrl }), actor.id)
+      .run();
+    return json({ file: { id: file.id, fileName: file.file_name }, accepted, rejected }, 201);
   }
 
   if (url.pathname === "/api/knowledge/files" && request.method === "GET") {

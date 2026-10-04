@@ -1,0 +1,10 @@
+{
+  "changedProposalIds": [
+    "drawingExtractionProposal_bd0e9d54-97c0-403d-94a9-c4d4ae840c2e"
+  ],
+  "allOtherProposalsUnchanged": true,
+  "allRunsUnchanged": true,
+  "reopenedReferenceStatus": "Unresolved",
+  "previousEvidenceRetained": true,
+  "verification": "Fresh HTTP read from localhost:5173 after SQLite transaction; no browser reload performed this pass"
+}

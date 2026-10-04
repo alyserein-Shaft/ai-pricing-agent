@@ -1,0 +1,39 @@
+✔ cross-sheet explicit reference -- an explicit 'refer to DWG NO. X' note is detected with the real drawing number (1.385667ms)
+✔ no global legend propagation -- applicability is scoped to the named system, never 'applies to entire project' (0.651667ms)
+✔ legend applicability -- when no system is named, the reference is scoped only to the current sheet, not resolved as globally applicable (0.140458ms)
+✔ a reference is never auto-resolved to a target document id or auto-verified -- always Needs Review with resolution left to the caller (0.120708ms)
+✔ a sheet's own drawing number restating itself is not treated as a cross-sheet reference (0.082625ms)
+✔ plain text with no reference phrase produces no relationships (0.058083ms)
+✔ evidence preserves the source asset id and the exact note text -- provenance is never dropped (0.092125ms)
+✔ reversed order -- 'DWG NO. X' appearing BEFORE its '...REFER' note, separated by unrelated intervening text, is still detected with the real system and number (0.087042ms)
+✔ a wide reversed-order search does not let an unrelated mention past the trigger word masquerade as the reference's system (0.078375ms)
+✔ resolution preserves DR and discipline segments, including stale resolution cleanup (0.209875ms)
+✔ resolution accepts harmless spacing and case without approving the entry (0.130375ms)
+✔ ambiguous or empty drawing numbers remain unresolved (0.114417ms)
+✔ GOLDEN SET 1/4 (FCC ROOM DETAILS) -- 14/14 schedule rows, safe callout behavior, no FACP/MFACP auto-merge, no false connectivity (4.694ms)
+✔ GOLDEN SET 2/4 (Legend/Notes) -- real symbol/abbreviation proposals with scoped applicability, never global (3.528833ms)
+✔ GOLDEN SET 2/4 (Legend/Notes) -- explicit referenced-sheet behavior: the real FCC reference remains unresolved when the candidate adds DR (0.899584ms)
+✔ GOLDEN SET 3/4 (Riser/Schematic) -- real panel/device/loop/tag candidates, possible connectivity only with semantic evidence, never geometry-only (1.354792ms)
+✔ GOLDEN SET 3/4 (Riser/Schematic) -- no connection candidate is ever produced from geometry/proximity alone, only explicit text (0.513292ms)
+✔ GOLDEN SET 4/4 (Cause & Effect) -- mechanism is real and tested; blank/graphic-only matrix cells never become relationships (0.741ms)
+✔ GOLDEN SET -- full test suite regressions remain intact across all four real sheets simultaneously (2.035125ms)
+✔ no configured AI provider -- reports the specific blocker (503), writes nothing (39.328208ms)
+✔ missing images -- rejected explicitly, never a fabricated/empty-image call to the model (3.042333ms)
+✔ a real two-stage call (vision then structured synthesis) persists proposals reusing the existing table/contract, all Unsupported/Needs Review (33.470834ms)
+✔ the synthesis prompt treats drawing text as EVIDENCE, not instructions -- an imperative-sounding note is placed under the evidence block, and the system prompt says so explicitly (6.704084ms)
+✔ a rerun that finds FEWER circuits than a prior run supersedes prior outputs without changing their review status (9.311ms)
+✔ a rerun never retires a proposal a human has already reviewed, even if the new run does not reproduce it (5.600959ms)
+✔ raw invalid synthesis and its input persist even when parsing fails; existing findings remain current (6.337958ms)
+✔ same reviewed finding is not overwritten or duplicated on an identical rerun (4.915584ms)
+✔ analysis is scoped to requested page and never retires findings on another page (3.88275ms)
+✔ legacy Not Found is preserved with an explicit reconstruction warning, never guessed back to Needs Review (3.120583ms)
+✔ protected run and saved image endpoints verify document ownership (2.829208ms)
+✔ candidate legend comparison persists images and definitions without replacing WLC runs or findings (6.318625ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 204.056583

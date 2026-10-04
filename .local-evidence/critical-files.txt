@@ -1,0 +1,67 @@
+# Explicit critical-file set for quiescence observation.
+#
+# The SAME list is used for every observation, so aggregates are comparable.
+# Scope: the authority, runtime and fixture files whose bytes determine the
+# behaviour this closure certifies (extraction, matching, safety, pricing,
+# costing, quotation, export, governance roles, and the migration chain).
+#
+# One file per line. Blank lines and #-comments ignored. Paths are repo-relative.
+# A file that does not exist makes the observation INVALID (fail closed).
+
+app/page.tsx
+
+# --- current-evidence / specification authority (DOC-R3) ---
+worker/current-evidence-scope.mjs
+
+# --- extraction / understanding / requirements ---
+worker/technical-requirement-api.mjs
+worker/estimator-readiness-api.mjs
+worker/ai-presales-agent-tools.mjs
+worker/primary-selection-authority.mjs
+
+# --- matching / safety ---
+worker/compatibility-auto-confirm.mjs
+
+# --- drawing intelligence ---
+app/domain/drawing-quantity-evidence-engine.mjs
+app/domain/drawing-printed-quantity-contract.mjs
+app/domain/drawing-cross-sheet-references.mjs
+
+# --- R7 panel sizing ---
+worker/fire-alarm-panel-sizing-api.mjs
+app/domain/fire-alarm-panel-sizing-snapshot.mjs
+
+# --- pricing / costing / quotation / export ---
+app/domain/pricing-engine.mjs
+app/domain/cost-buildup-model.mjs
+app/domain/bom-component-model.mjs
+worker/pricing-runtime.mjs
+worker/pricing-api.mjs
+worker/boq-line-cost-api.mjs
+worker/quotation-line-authority.mjs
+worker/quotation-evidence.mjs
+worker/excel-export-api.mjs
+
+# --- governance: roles, review, workflow ---
+worker/project-authority.mjs
+app/domain/project-roles.mjs
+app/domain/review-workflow.mjs
+worker/library-auth.mjs
+worker/application-context.mjs
+worker/presales-workflow-api.mjs
+app/domain/dashboard-workflow-engine.mjs
+worker/engineering-fact-freshness.mjs
+worker/document-api.mjs
+worker/knowledge-library-api.mjs
+worker/quantity-source-decision-api.mjs
+
+# --- pricing UI marker (slice-owned) ---
+app/components/workspaces/PricingWorkspace.tsx
+
+# --- migration chain authority ---
+drizzle-active/meta/_journal.json
+drizzle-active/manifest.json
+drizzle-active/0007_project_calendar_evidence_repair.sql
+
+# --- test fixture authority ---
+tests/fixtures/active-chain-fixture.mjs

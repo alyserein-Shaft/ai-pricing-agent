@@ -26,8 +26,28 @@ export const requiredFieldAssessment = ({ item, profile }) => {
 };
 
 export const confidenceComponents = ({ item, profile, candidate, provenance, prices = [] }) => {
-  const comparisonRows = candidate?.comparisons || []; const standardRows = candidate?.standards || []; const compatibilityRows = candidate?.compatibility || []; const accessoryRows = candidate?.accessories || []; const assessment = requiredFieldAssessment({ item, profile }); const identityVerified = Boolean(candidate?.product?.id && candidate?.product?.partNumber && /reviewed|verified/i.test(candidate.product.reviewStatus || candidate.product.sourceReliability || "")); const passed = (rows) => rows.length ? Math.round(rows.filter((entry) => entry.pass).length / rows.length * 100) : 0; const currentPrices = prices.filter((price) => price.approvalStatus === "Approved" && price.validUntil && new Date(price.validUntil) >= new Date());
-  return { documentClassification: clamp(provenance?.documentClassificationConfidence), boqExtraction: clamp(item.extractionConfidence), specificationExtraction: clamp(provenance?.specificationExtractionConfidence), requirementApplicability: clamp(profile?.confidence?.applicability), attributeCompleteness: assessment.complete ? 100 : clamp(100 - (assessment.missing.length + assessment.categoryMissing.length) * 15), productIdentity: identityVerified ? 100 : candidate?.product?.partNumber ? 60 : 0, technicalComparison: passed(comparisonRows), standardsEvidence: standardRows.length ? passed(standardRows) : profile?.standards?.length ? 0 : 100, compatibility: compatibilityRows.length ? passed(compatibilityRows) : profile?.compatibility?.length ? 0 : 100, accessoryCompleteness: accessoryRows.length ? passed(accessoryRows) : profile?.accessories?.length ? 0 : 100, lifecycle: candidate?.lifecycle?.result === "Pass" ? 100 : candidate?.lifecycle?.result === "Warning" ? 50 : 0, priceSource: currentPrices.length ? 100 : prices.length ? 30 : 0, provenance: provenance?.complete ? 100 : clamp(provenance?.confidence) };
+  const comparisonRows = candidate?.comparisons || []; const standardRows = candidate?.standards || []; // GOVERNED LISTING / CERTIFICATION EVIDENCE.
+  //
+  // `standardsEvidence` used to count ONLY numbered Standard comparison rows, so a
+  // project requirement to be UL LISTED -- which names an authority and no number
+  // -- could contribute nothing, ever: the numbered gate correctly refuses an
+  // unnumbered citation, so no Standard row could exist and the component sat at 0
+  // with `overall = MIN(critical components)`. That is how a genuinely UL-listed
+  // panel was reported as "Unknown" confidence and blocked from technical
+  // approval. Listing Authority rows (product-matching-engine.mjs
+  // `evaluateListingRequirements`) are now counted alongside them.
+  //
+  // Three properties this deliberately preserves:
+  //   * A product's certifications NEVER raise compliance on their own. They are
+  //     only ever counted through a row that exists because the PROJECT demanded
+  //     that authority. With no listing requirement there are no rows, the
+  //     denominator is empty, and the fallback below applies exactly as before.
+  //   * A requirement with no satisfied evidence scores 0 here, so a missing
+  //     listing still drags `overall` down. It can never be a free pass.
+  //   * Numbered standards are unchanged: evaluateStandards still decides them,
+  //     and its rows simply join the same denominator.
+  const listingRows = candidate?.listingRequirements || []; const evidenceRows = [...standardRows, ...listingRows]; const compatibilityRows = candidate?.compatibility || []; const accessoryRows = candidate?.accessories || []; const assessment = requiredFieldAssessment({ item, profile }); const identityVerified = Boolean(candidate?.product?.id && candidate?.product?.partNumber && /reviewed|verified/i.test(candidate.product.reviewStatus || candidate.product.sourceReliability || "")); const passed = (rows) => rows.length ? Math.round(rows.filter((entry) => entry.pass).length / rows.length * 100) : 0; const currentPrices = prices.filter((price) => price.approvalStatus === "Approved" && price.validUntil && new Date(price.validUntil) >= new Date());
+  return { documentClassification: clamp(provenance?.documentClassificationConfidence), boqExtraction: clamp(item.extractionConfidence), specificationExtraction: clamp(provenance?.specificationExtractionConfidence), requirementApplicability: clamp(profile?.confidence?.applicability), attributeCompleteness: assessment.complete ? 100 : clamp(100 - (assessment.missing.length + assessment.categoryMissing.length) * 15), productIdentity: identityVerified ? 100 : candidate?.product?.partNumber ? 60 : 0, technicalComparison: passed(comparisonRows), standardsEvidence: evidenceRows.length ? passed(evidenceRows) : profile?.standards?.length || profile?.listingRequirements?.length ? 0 : 100, compatibility: compatibilityRows.length ? passed(compatibilityRows) : profile?.compatibility?.length ? 0 : 100, accessoryCompleteness: accessoryRows.length ? passed(accessoryRows) : profile?.accessories?.length ? 0 : 100, lifecycle: candidate?.lifecycle?.result === "Pass" ? 100 : candidate?.lifecycle?.result === "Warning" ? 50 : 0, priceSource: currentPrices.length ? 100 : prices.length ? 30 : 0, provenance: provenance?.complete ? 100 : clamp(provenance?.confidence) };
 };
 
 const confidenceLevel = (score, forcedDiscovery, failed) => failed ? "Failed" : forcedDiscovery ? "Discovery Only" : score >= 95 ? "Verified" : score >= 80 ? "High Confidence" : score >= 60 ? "Medium Confidence" : score > 0 ? "Low Confidence" : "Unknown";

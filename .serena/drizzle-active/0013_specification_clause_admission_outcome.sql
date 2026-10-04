@@ -1,0 +1,46 @@
+-- MVP-CLOSE-11 -- specification clause admission outcome.
+--
+-- Why this migration exists
+-- -----------------------
+-- segmentSpecification() already produces one clause row per detected source
+-- clause unit, and those rows are persisted faithfully. The loss MVP-CLOSE-10
+-- proved is DOWNSTREAM of that: extractSpecificationPages' admission predicate
+-- (app/domain/specification-extractor.mjs) `continue`s past a segmented clause
+-- when it is not requirement-like, so the clause left NO trace anywhere -- no
+-- requirement row, no count, no audit event, and no reconciliation. On the
+-- governing 28 46 00 extraction this silently discarded 193 of 457 segmented
+-- clause units, including genuinely binding technical clauses.
+--
+-- Design
+-- ------
+-- * The outcome is recorded on specification_clauses, NOT on
+--   technical_requirements. That placement is the entire safety argument: a
+--   clause the admission policy rejected is audit evidence, and must never
+--   reach the downstream technical requirement set, the requirement review
+--   queue, link candidates, understanding fingerprints, or any authority gate.
+--   technical_requirements is deliberately left untouched by this migration.
+-- * specification_clauses is already 1:1 with segmented clause units, so no
+--   new table and no new rows are introduced.
+-- * admission_status is 'ADMITTED_REQUIREMENT' when the clause emitted >=1
+--   technical requirement row, otherwise 'NOT_ADMITTED'. non_admission_reason
+--   is populated only for NOT_ADMITTED clauses and is derived entirely from the
+--   pre-existing gate expression (NOT_REQUIREMENT_LIKE / EXCLUDED_PATTERN /
+--   NO_CANDIDATE_SENTENCE); no new reason taxonomy is invented here.
+-- * All three columns are NULLABLE with NO default, deliberately:
+--     - historical extraction rows keep reading as NULL, meaning "outcome not
+--       recorded", so NO historical rewrite or backfill is required and no old
+--       run is mutated by this migration;
+--     - NULL is fail-safe -- it can never be mistaken for an admitted clause.
+--   This migration therefore does not change the meaning of any stored row.
+--
+-- What this migration explicitly does NOT do
+-- -----------------------------------------
+-- It does not change the admission policy, does not admit any previously
+-- rejected clause, and does not repair hierarchical addressing, clause_id
+-- resolution or degenerate page spans (each recorded separately in
+-- docs/MVP-CLOSE-10-SPEC-EXTRACTION-COMPLETENESS-AUDIT.md section 9).
+--
+ALTER TABLE `specification_clauses` ADD `admission_status` text;--> statement-breakpoint
+ALTER TABLE `specification_clauses` ADD `admitted_requirement_count` integer;--> statement-breakpoint
+ALTER TABLE `specification_clauses` ADD `non_admission_reason` text;--> statement-breakpoint
+CREATE INDEX `spec_clauses_admission_status_idx` ON `specification_clauses` (`extraction_version_id`,`admission_status`);

@@ -1,0 +1,30 @@
+-- MVP-CLOSE-13 -- specification clause requirement-candidate mechanism.
+--
+-- Why this migration exists
+-- -----------------------
+-- MVP-CLOSE-12 measured the rejected clause corpus and found 64 of 193
+-- post-segmentation clause units were genuine technical requirements the
+-- admission gate discarded, decomposed into four deterministic grammatical
+-- mechanisms. MVP-CLOSE-13 records those clauses as a THIRD admission state --
+-- REQUIREMENT_CANDIDATE -- so they can be reviewed, WITHOUT admitting them as
+-- technical requirements.
+--
+-- Design
+-- ------
+-- * One nullable text column, no default, no index. It is populated only for
+--   clauses the extractor classified as candidates, and only with the
+--   mechanism that matched. Historical rows keep reading NULL, meaning "never
+--   analysed for a mechanism", which can never be mistaken for a candidate.
+-- * No CHECK constraint: admission_status already carries the state machine,
+--   and candidate_mechanism is descriptive rather than authoritative. Adding a
+--   CHECK would risk rejecting a future mechanism without a migration.
+-- * No index: the existing (extraction_version_id, admission_status) index
+--   already serves the primary candidate query, and the clause corpus is small.
+--
+-- What this migration explicitly does NOT do
+-- -----------------------------------------
+-- It does not change the requirementLike predicate, does not admit any clause as
+-- a technical requirement, and does not touch segmentation, addressing,
+-- clause_id resolution or page spans. A candidate is a review signal only.
+--
+ALTER TABLE `specification_clauses` ADD `candidate_mechanism` text;

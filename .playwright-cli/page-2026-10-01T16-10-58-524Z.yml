@@ -1,0 +1,11 @@
+- generic [ref=f2e3]:
+  - generic [ref=f2e4]: "Transform failed with 2 errors: [PARSE_ERROR] Invalid Unicode escape sequence ╭─[ worker/boq-understanding-provider.mjs:272:27 ] │ 272 │ 'Authorization': \\`Bearer \\${apiKey}\\` │ ┬ │ ╰── ─────╯ [PARSE_ERROR] Invalid Unicode escape sequence ╭─[ worker/boq-understanding-provider.mjs:272:36 ] │ 272 │ 'Authorization': \\`Bearer \\${apiKey}\\` │ ┬ │ ╰── ─────╯"
+  - generic [ref=f2e5]: at runInRunnerObject (workers/runner-worker/index.js:107:3) at getWorkerEntryExport (workers/runner-worker/index.js:235:17) at null.<anonymous> (workers/runner-worker/index.js:354:24) at maybeCaptureError (workers/runner-worker/index.js:51:10)
+  - generic [ref=f2e6]:
+    - text: Click outside, press Esc key, or fix the code to dismiss.You can also disable this overlay by setting
+    - code [ref=f2e7]: server.hmr.overlay
+    - text: to
+    - code [ref=f2e8]: "false"
+    - text: in
+    - code [ref=f2e9]: vite.config.ts
+    - text: .

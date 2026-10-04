@@ -84,6 +84,30 @@ const FIRE_ALARM_FAMILY_TO_EQUIPMENT_LABEL = Object.freeze({
   "Strobe": "Strobe",
   "Monitor Module": "Monitor Module",
   "Interface Module": "Monitor Module",
+  // "Relay Module" was the most conspicuous absence in this map: the family
+  // exists in the taxonomy with real phrases, but without a label entry every
+  // relay requirement and every relay-family BOQ row scored Unknown, so
+  // voltage-free-contact HVAC clauses and accept-and-provide BMS clauses
+  // could never surface for the interface rows they govern. Other
+  // module families (Control/Input/Output/Isolator/Zone) remain unmapped --
+  // status quo, not a judgment -- because no lane has yet needed them.
+  "Relay Module": "Relay Module",
+  // The telephone jack is a passive endpoint, not a module: it gets its own
+  // label (never Relay/Monitor) so jack clauses match jack rows (+48) and
+  // nothing else does. A jack row versus a module requirement still fails
+  // closed exactly as before.
+  "Fireman Telephone Jack": "Fireman Telephone Jack",
+  // A combined monitor/relay unit genuinely provides relay outputs, so for
+  // SUGGESTION-RANKING ONLY it shares the Relay Module label: this lets an
+  // accept-and-provide-contacts clause (req_235-class) and a voltage-free
+  // output clause (req_427-class) both surface for it. Deliberate trade-off,
+  // documented not hidden: a pure monitor-input clause will now score a
+  // cross-equipment mismatch against a combined unit even though the unit
+  // physically has monitor inputs. The scorer is a suggestion heuristic
+  // feeding human review, never authority -- a human still confirms -- and
+  // the alternative (no label) left every combined-module row with zero
+  // equipment signal at all.
+  "Combined Monitor/Relay Module": "Relay Module",
 });
 const equipmentType = (text = "") => {
   const value = String(text).toLowerCase();
@@ -114,7 +138,20 @@ export const scoreRequirementLink = ({ boqItem, requirement }) => {
   const evidence = []; let score = 0;
   const itemText = `${boqItem.description || ""} ${boqItem.system || ""} ${boqItem.category || ""}`.toLowerCase();
   const requirementText = `${requirement.originalText || ""} ${requirement.source?.originalClauseText || ""} ${requirement.system || ""} ${requirement.category || ""}`.toLowerCase();
-  const itemEquipment = equipmentType(itemText); const requirementEquipment = equipmentType(requirementText);
+  let itemEquipment = equipmentType(itemText); const requirementEquipment = equipmentType(requirementText);
+  // Real Al Mousa gap: interface-row BOQ text ("Control of HVAC equipment...",
+  // "Signals to elevators...") never names its own module type, so text-only
+  // recognition stays Unknown and genuinely applicable clauses (voltage-free
+  // HVAC outputs, accept-and-provide BMS contacts) score system-only points
+  // and never surface. When -- and only when -- text recognition fails, fall
+  // back to the row's own GOVERNED family (BOQ subcategory), which a human
+  // already classified. This never overrides a text resolution (so an
+  // explicit mismatch still penalizes exactly as before) and never invents a
+  // label (families without a registered equipment label stay Unknown).
+  if (itemEquipment === "Unknown" && boqItem.family) {
+    const familyLabel = FIRE_ALARM_FAMILY_TO_EQUIPMENT_LABEL[boqItem.family];
+    if (familyLabel) { itemEquipment = familyLabel; evidence.push(`Governed family: ${boqItem.family} (+0, recognition only)`); }
+  }
   if (boqItem.system && requirement.system && boqItem.system === requirement.system) { score += 8; evidence.push("Same engineering system (+8)"); }
   if (itemEquipment !== "Unknown" && requirementEquipment !== "Unknown") {
     if (itemEquipment === requirementEquipment || (itemEquipment === "Sounder Strobe" && ["Sounder", "Strobe"].includes(requirementEquipment))) { score += 48; evidence.push(`Equipment type: ${itemEquipment} (+48)`); }

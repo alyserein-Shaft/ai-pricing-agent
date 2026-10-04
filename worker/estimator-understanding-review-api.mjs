@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { resolveApplicationContext } from "./application-context.mjs";
+import { requireHumanActor } from "./human-actor.mjs";
 import { currentBoqEvidenceFrom, currentBoqItemPredicate, currentBoqEvidenceCounts } from "./current-evidence-scope.mjs";
 import { sanitizePilotSourceLocation } from "../app/domain/boq-understanding-pilot.mjs";
 import { resolveEffectiveUnderstandingInterpretation } from "./effective-understanding-interpretation.mjs";
@@ -10,6 +11,7 @@ import {
   buildUnderstandingReviewActionPolicy, buildUnderstandingReviewLayers, evaluateUnderstandingAuthority, sanitizeReviewedInterpretation,
   summarizeUnderstandingReviewItems, understandingReviewRequestFingerprint,
   validateUnderstandingForApproval, validateUnderstandingReviewCommand,
+  sanitizePersistedAiInterpretation,
 } from "../app/domain/estimator-understanding-review.mjs";
 
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
@@ -59,22 +61,29 @@ export const safeUnderstandingReviewItem = (row, { actorAuthorized = true } = {}
   const quality = row.effective?.quality || null;
   const reviewMatchesEffective = Boolean(row.reviewVersionId && row.interpretationId && row.reviewInterpretationId === row.interpretationId && row.reviewInputFingerprint === row.effective?.currentInputFingerprint);
   const latestAttempt = row.effective?.latestCurrentAttempt || null;
-  // Sprint 1.9 -- an item that was genuinely APPROVED at some point (a real
-  // governed decision is on record: row.reviewVersionId exists and its
-  // review_status is "APPROVED") but whose approval no longer matches the
-  // current effective interpretation (e.g. a new confirmed specification
-  // link was added afterwards, shifting the recomputed fingerprint) is a
-  // fundamentally different situation from an item that was never analyzed
-  // at all. Collapsing both into "NOT_ANALYZED" (the previous behavior)
-  // silently downgraded a real approval to "never touched" with no trace of
-  // it having existed. REVALIDATION_REQUIRED preserves that distinction --
-  // it still blocks every review action (see buildUnderstandingReviewActionPolicy;
-  // nothing is approved without a fresh, current, governed decision -- no
-  // check is weakened), it only changes how the stale state is REPORTED.
   const previouslyApproved = Boolean(row.reviewVersionId) && row.reviewStatus === "APPROVED";
   const reviewStatus = row.effective?.state === "AVAILABLE"
     ? (reviewMatchesEffective ? row.reviewStatus : "AWAITING_REVIEW")
     : latestAttempt?.status === "FAILED" ? "FAILED"
+    // NEW: CURRENT_INTERPRETATION_REVIEW_REQUIRED -- the prior review was
+    // APPROVED but is now stale (its interpretation_id no longer matches the
+    // latest interpretation).  The latest interpretation still has a usable
+    // status (COMPLETED or NEEDS_REVIEW), so the reconstruction of the
+    // current interpretation is a real, valid candidate.  Source inputs have
+    // NOT changed enough to require a fresh AI run -- treat this as REVIEWABLE
+    // through the normal human decision path, NOT as REVALIDATION_REQUIRED.
+    // This is the REVIEW-REBIND recovery path.  It is allowed only when all
+    // conditions are true:
+    //   (i)   a previously-APPROVED review exists on record,
+    //   (ii)  the effective state is not AVAILABLE (fingerprint mismatch),
+    //   (iii) the latest usable interpretation exists (COMPLETED/NEEDS_REVIEW),
+    //   (iv)  the review's interpretation_id differs from the latest
+    //         interpretation's id.
+    // If the latest interpretation itself is invalid (FAILED, or there is NO
+    // usable interpretation at all), fall through to REVALIDATION_REQUIRED,
+    // which correctly demands a fresh model run.
+    : previouslyApproved && row.effective?.latestUsableInterpretation && row.reviewInterpretationId && row.effective.latestUsableInterpretation.interpretationId && row.reviewInterpretationId !== row.effective.latestUsableInterpretation.interpretationId
+      ? "CURRENT_INTERPRETATION_REVIEW_REQUIRED"
     : previouslyApproved ? "REVALIDATION_REQUIRED"
     : "NOT_ANALYZED";
   const source = sanitizePilotSourceLocation(parse(row.sourceLocation, {}));
@@ -84,8 +93,9 @@ export const safeUnderstandingReviewItem = (row, { actorAuthorized = true } = {}
     { hasVersion: reviewMatchesEffective, status: reviewStatus, version: Number(row.reviewVersion || 0) },
   );
   const proposalClassification = row.effective?.classification || layers.proposalClassification;
-  const proposalState = row.effective?.state === "AVAILABLE" ? "AVAILABLE" : reviewStatus === "FAILED" ? "FAILED" : "UNAVAILABLE_OR_STALE";
-  const authority = evaluateUnderstandingAuthority({ interpretation: row.effective?.proposal, reviewStatus, taxonomyValid: taxonomyValidFor(row) });
+  const proposalState = row.effective?.state === "AVAILABLE" ? "AVAILABLE" : reviewStatus === "FAILED" ? "FAILED" : reviewStatus === "CURRENT_INTERPRETATION_REVIEW_REQUIRED" ? "AVAILABLE" : "UNAVAILABLE_OR_STALE";
+  const proposalForAuthority = row.effective?.proposal || (row.effective?.latestUsableInterpretation ? sanitizePersistedAiInterpretation(parse(row.effective.latestUsableInterpretation.interpretation, null)) : null);
+  const authority = evaluateUnderstandingAuthority({ interpretation: proposalForAuthority, reviewStatus, taxonomyValid: row.effective?.state === "AVAILABLE" ? taxonomyValidFor(row) : (proposalForAuthority ? (!hasGovernedTaxonomy(proposalForAuthority.system?.value) || row.effective?.taxonomy?.acceptedCandidate !== false) : false) });
   // Phase 5 workflow-continuity fix -- the individual pieces this needs
   // (per-field origin/confidence, governed taxonomy acceptance, engineer
   // review status, sanitized source evidence) already existed on this row;
@@ -222,8 +232,9 @@ export const mutateUnderstandingReview = async (db, context, projectId, row, com
     status: 409,
     missing: currentItem.classificationBlockers.map((entry) => entry.field),
   };
-  const sourceInterpretation = row.effective?.proposal || null;
+  const sourceInterpretation = row.effective?.proposal || (row.effective?.latestUsableInterpretation ? sanitizePersistedAiInterpretation(parse(row.effective.latestUsableInterpretation.interpretation, null)) : null);
   const candidate = command.action === "EDIT_AND_APPROVE" ? command.canonicalInterpretation
+    : currentItem.review.status === "CURRENT_INTERPRETATION_REVIEW_REQUIRED" ? sourceInterpretation
     : parse(row.canonicalInterpretation, null) || sourceInterpretation;
   if (["APPROVE_INTERPRETATION", "EDIT_AND_APPROVE"].includes(command.action)) {
     const valid = validateUnderstandingForApproval(candidate);
@@ -285,11 +296,17 @@ export async function handleEstimatorUnderstandingReviewApi(request, env, ctx) {
   if (!validated.ok) return json({ error: { code: validated.code, message: "The understanding review request is invalid." } }, 400);
   const currentRow = await resolveCurrent(env.DB, projectId, decodeURIComponent(itemMatch[2]));
   if (!currentRow) return json({ error: { code: "CURRENT_BOQ_ITEM_NOT_FOUND", message: "Current BOQ item not found." } }, 404);
-  const result = await mutateUnderstandingReview(env.DB, resolved.context, projectId, currentRow, validated.value);
+  // Human-authority mutation: classifications and approvals are recorded under
+  // the server-configured R1 human identity (CONV-2026-10-01-3e17), never the
+  // synthetic development user. Reads and system automation are unaffected.
+  const human = requireHumanActor(env);
+  if (human.error) return json({ error: { code: human.error, message: human.message } }, 403);
+  const humanContext = { ...resolved.context, userId: human.actor.id };
+  const result = await mutateUnderstandingReview(env.DB, humanContext, projectId, currentRow, validated.value);
   if (result.error) return json({ error: { code: result.error, message: "The understanding review could not be recorded." }, missing: result.missing || [] }, result.status);
   const shouldCascade = !result.idempotent && CASCADE_TRIGGERING_ACTIONS.has(validated.value.action);
   if (shouldCascade && ctx?.waitUntil) {
-    ctx.waitUntil(cascadeUnderstandingApproval(env, { projectId, itemId: currentRow.boqItemId, userId: resolved.context.userId, trigger: `Understanding ${validated.value.action}` }).catch(() => undefined));
+    ctx.waitUntil(cascadeUnderstandingApproval(env, { projectId, itemId: currentRow.boqItemId, userId: humanContext.userId, trigger: `Understanding ${validated.value.action}` }).catch(() => undefined));
   }
   return json({ ...result, cascade: { triggered: shouldCascade, status: shouldCascade ? "Queued" : "Not Applicable" } });
 }

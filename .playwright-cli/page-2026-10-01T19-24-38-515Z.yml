@@ -1,0 +1,42 @@
+- dialog "Runtime Error" [ref=f1e3764]:
+  - banner [ref=f1e3766]:
+    - generic [ref=f1e3767]: Runtime Error
+    - button "Minimize" [ref=f1e3769] [cursor=pointer]: –
+    - button "Dismiss" [ref=f1e3770] [cursor=pointer]: ×
+  - generic [ref=f1e3771]:
+    - heading "Cannot read properties of undefined (reading 'length')" [level=2] [ref=f1e3772]
+    - list [ref=f1e3773]:
+      - listitem [ref=f1e3774]:
+        - generic [ref=f1e3775]: "TypeError: Cannot read properties of undefined (reading 'length')"
+      - listitem [ref=f1e3776]:
+        - generic [ref=f1e3777]: TechnicalRequirementsWorkspace
+        - generic [ref=f1e3778]: http://localhost:4183/app/components/workspaces/TechnicalRequirementsWorkspace.tsx?t=1790874523582:40:27
+      - listitem [ref=f1e3779]:
+        - generic [ref=f1e3780]: Object.react_stack_bottom_frame
+        - generic [ref=f1e3781]: http://localhost:4183/node_modules/.vite/deps/react-dom_client.js?v=5be93861:12868:12
+      - listitem [ref=f1e3782]:
+        - generic [ref=f1e3783]: renderWithHooks
+        - generic [ref=f1e3784]: http://localhost:4183/node_modules/.vite/deps/react-dom_client.js?v=5be93861:4213:19
+      - listitem [ref=f1e3785]:
+        - generic [ref=f1e3786]: updateFunctionComponent
+        - generic [ref=f1e3787]: http://localhost:4183/node_modules/.vite/deps/react-dom_client.js?v=5be93861:5569:16
+      - listitem [ref=f1e3788]:
+        - generic [ref=f1e3789]: beginWork
+        - generic [ref=f1e3790]: http://localhost:4183/node_modules/.vite/deps/react-dom_client.js?v=5be93861:6140:20
+      - listitem [ref=f1e3791]:
+        - generic [ref=f1e3792]: runWithFiberInDEV
+        - generic [ref=f1e3793]: http://localhost:4183/node_modules/.vite/deps/react-dom_client.js?v=5be93861:851:66
+      - listitem [ref=f1e3794]:
+        - generic [ref=f1e3795]: performUnitOfWork
+        - generic [ref=f1e3796]: http://localhost:4183/node_modules/.vite/deps/react-dom_client.js?v=5be93861:8429:92
+      - listitem [ref=f1e3797]:
+        - generic [ref=f1e3798]: workLoopSync
+        - generic [ref=f1e3799]: http://localhost:4183/node_modules/.vite/deps/react-dom_client.js?v=5be93861:8325:37
+      - listitem [ref=f1e3800]:
+        - generic [ref=f1e3801]: renderRootSync
+        - generic [ref=f1e3802]: http://localhost:4183/node_modules/.vite/deps/react-dom_client.js?v=5be93861:8309:6
+      - listitem [ref=f1e3803]:
+        - generic [ref=f1e3804]: performWorkOnRoot
+        - generic [ref=f1e3805]: http://localhost:4183/node_modules/.vite/deps/react-dom_client.js?v=5be93861:7994:27
+    - group [ref=f1e3806]:
+      - generic "Component stack" [ref=f1e3807] [cursor=pointer]

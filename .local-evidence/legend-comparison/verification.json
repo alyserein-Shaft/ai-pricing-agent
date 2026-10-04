@@ -1,0 +1,154 @@
+{
+  "wlcProposalsUnchanged": true,
+  "previousUnderstandingRunsUnchanged": true,
+  "candidateDefinitions": 20,
+  "candidateRuns": 3,
+  "rawModelResponsesUnchangedAfterAssistantInspection": true,
+  "imageChecks": [
+    {
+      "index": 0,
+      "sha256": "965cd4d61a06475e4aaac3c5244bc79c69e6b13356bb58563fd605e83930c4c8",
+      "verified": true
+    },
+    {
+      "index": 1,
+      "sha256": "82fa92c8f994fbb0b9125de73ff801a70eab79b46487588ee78e42e9499315c9",
+      "verified": true
+    },
+    {
+      "index": 2,
+      "sha256": "1e344a7b5de8f9b8e289a93b99bf04bc848839371bc5a5fb5a3c7d61c18b02ce",
+      "verified": true
+    },
+    {
+      "index": 3,
+      "sha256": "27cca8097230e22ea6e6bb96616720279a1cb55c516dc732cb167fbda91b6c63",
+      "verified": true
+    },
+    {
+      "index": 4,
+      "sha256": "c99d01f5740a6cdd56623909752bb73e14ad6a90a2148325cac0c0deb65c38ea",
+      "verified": true
+    },
+    {
+      "index": 5,
+      "sha256": "8f435c9f96a090959457035ce0693725d2d15faaa14ff655fef10204cea5bc59",
+      "verified": true
+    },
+    {
+      "index": 6,
+      "sha256": "73138598da6f8258d747eab615179e719b90c3d938c098382a7d65c927066b0a",
+      "verified": true
+    },
+    {
+      "index": 7,
+      "sha256": "0d270a7932430ee1295cdd05397e5a17fbe77eb57f70bb14696ad4a83a2dc9db",
+      "verified": true
+    },
+    {
+      "index": 8,
+      "sha256": "b352327bf9fe65a15385f427d7d381b45b9011e297ded36fc7dae93a388e6990",
+      "verified": true
+    },
+    {
+      "index": 9,
+      "sha256": "775f3c9ed406c7ca5421a98950e5dd0e215606e048024ec7c5bce0279d22e163",
+      "verified": true
+    },
+    {
+      "index": 10,
+      "sha256": "28593dca4591b5f56352a095f5632dfa01b83c48ff9e379571b86792767b01f1",
+      "verified": true
+    },
+    {
+      "index": 11,
+      "sha256": "309eb6799ac68cfe424f7904d6c49a482cbf7e6e98a5a7dd12ec376053dd450d",
+      "verified": true
+    },
+    {
+      "index": 12,
+      "sha256": "883d3ed2769700b58ab42a3bb2e248a018acd878f31834bbaeaa5c6afeeb7187",
+      "verified": true
+    },
+    {
+      "index": 13,
+      "sha256": "ce25756e61379c864930a165e96b7a4324dd9f003759949f416aa609368d98e7",
+      "verified": true
+    },
+    {
+      "index": 14,
+      "sha256": "401c9d973a771a7284e2a07bb86abf048073f5230c9586f9a78966eb39cdada3",
+      "verified": true
+    },
+    {
+      "index": 15,
+      "sha256": "10d4a4425afd6dbfada6340a5923a6281e8e1dd13d05637804afb527ba858637",
+      "verified": true
+    },
+    {
+      "index": 16,
+      "sha256": "eafccaa19635b9867c0b23a875e0ad2b9b0eb7aa72662a433915cbce13b40ae3",
+      "verified": true
+    },
+    {
+      "index": 17,
+      "sha256": "15a8ff7256cc1342787b50a4b6a734a3f2f4bf4debc75fc1b239dd1a9d0ca47d",
+      "verified": true
+    },
+    {
+      "index": 18,
+      "sha256": "627c82aa26ce4a7a3e4e23e9a360dedb361152bc58f26ee1fa4e4eb9c52e6c17",
+      "verified": true
+    },
+    {
+      "index": 19,
+      "sha256": "8bafa606bea19867a6a14ac510796761095e1ca4a615ae52efaf18b2a7860e32",
+      "verified": true
+    },
+    {
+      "index": 20,
+      "sha256": "f29c49540446056ec3c1548f2b5e13846d49b5c5c705fe56968ff49f6953ad5a",
+      "verified": true
+    },
+    {
+      "index": 21,
+      "sha256": "8ddace5aca75cfc20b53eea9883aa70ec4b492ec62c898da087075d491bd9284",
+      "verified": true
+    },
+    {
+      "index": 22,
+      "sha256": "18c640ae5eec980e096e50af967dcad668c5d0dd2337b026a5bd6507a2426ce5",
+      "verified": true
+    },
+    {
+      "index": 23,
+      "sha256": "da685f316f69c15c8c6dadb7fbb9fab711553e33518d6ae17583a234b0770417",
+      "verified": true
+    },
+    {
+      "index": 24,
+      "sha256": "05079b1579f758b3ddb8ffe609acb2a0fbc7c63ebb600ec706503f29d62b7854",
+      "verified": true
+    },
+    {
+      "index": 25,
+      "sha256": "e1f53f99129e8dc9ef99f40b09560229819baf5bd997d799c8c97f1e7fcde7ba",
+      "verified": true
+    },
+    {
+      "index": 26,
+      "sha256": "a6acb3246c92c499ef2db7bb435bb661b5cda73389113170dee7df5f2db6f8eb",
+      "verified": true
+    },
+    {
+      "index": 27,
+      "sha256": "9b622b23a3025393973ff54c21fe9a6939a5b2e03dd5b8505341c471fa1c47d0",
+      "verified": true
+    },
+    {
+      "index": 28,
+      "sha256": "995fb7a9be81e1276d4e5c176cea1fb45ac22f873c61c83e46e1e2beacd6ee31",
+      "verified": true
+    }
+  ]
+}

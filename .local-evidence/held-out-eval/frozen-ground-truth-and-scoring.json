@@ -1,0 +1,175 @@
+{
+  "frozenAt": "2026-09-15T16:44:37.127067Z",
+  "purpose": "Held-out symbol evaluation, 12 new pairs never used in any prior evaluation this session, same WLC document (doc_3f857096-3152-408f-9c86-9296e4142ced) and candidate AMS ELV legend (doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0) already established as the source pair.",
+  "secondSheetLimitation": "No second real drawing sheet with comparable, already-verified device-symbol evidence was available within this bounded pass. The candidate document (2401232-PC-AMS-DR-T-00-ZZZ-002) is a single combined ELV legend sheet covering multiple systems (Fire Alarm, PA/Voice Alarm, IT/Telecom, Access Control, Video Surveillance, Audiovisual, Disabled Toilet Alarm) on one page -- it is not a second document. WLC is specifically a fire-alarm schematic and has no visible access-control/CCTV/audiovisual symbols to pair against those other legend tables. Rather than fabricate a pairing, all 12 pairs use the same WLC/AMS-legend source pair, drawing on previously-unused symbol occurrences and legend rows (verified directly against the source raster and against each individual legend-row image before any pair was built).",
+  "sourceCrops": "All WLC crops taken directly from .local-evidence/legend-comparison/wlc-devices.png (the same already-validated raster used for the prior benchmark's WLC crops), at 8 new pixel rects distinct from the 4 already used. All legend crops reused directly from the 20 already-rendered .local-evidence/legend-comparison/legend-row-NN.png files (same rendering pipeline already reconciled against the app's coordinate math in an earlier pass). These are externally prepared crops (Python/PIL), the same as every prior comparison in this evaluation thread -- no automatic in-app crop generation was used or is being claimed.",
+  "pairs": {
+    "M1": {
+      "left": {
+        "outline": "circle",
+        "letters": "H",
+        "qualifier": null
+      },
+      "right": {
+        "outline": "circle",
+        "letters": "H",
+        "qualifier": null
+      },
+      "expectedRelationship": "same outline, same letter, no qualifier either side"
+    },
+    "M2": {
+      "left": {
+        "outline": "circle",
+        "letters": "S",
+        "qualifier": "external D, lower-right"
+      },
+      "right": {
+        "outline": "circle",
+        "letters": "S",
+        "qualifier": "external D, lower-right"
+      },
+      "expectedRelationship": "same outline, same letter, same external qualifier (D)"
+    },
+    "M3": {
+      "left": {
+        "outline": "circle",
+        "letters": "S",
+        "qualifier": "external H, lower-right"
+      },
+      "right": {
+        "outline": "circle",
+        "letters": "S",
+        "qualifier": "external H, lower-right"
+      },
+      "expectedRelationship": "same outline, same letter, same external qualifier (H)"
+    },
+    "M4": {
+      "left": {
+        "outline": "square",
+        "letters": "F",
+        "qualifier": null
+      },
+      "right": {
+        "outline": "square",
+        "letters": "F",
+        "qualifier": null
+      },
+      "expectedRelationship": "same outline, same letter, neither has a dashed enclosure"
+    },
+    "M5": {
+      "left": {
+        "outline": "circle",
+        "letters": "CE",
+        "qualifier": "external M, lower-right"
+      },
+      "right": {
+        "outline": "circle",
+        "letters": "CE",
+        "qualifier": "external M, lower-right"
+      },
+      "expectedRelationship": "same outline, same letters, same external qualifier (M)"
+    },
+    "M6": {
+      "left": {
+        "outline": "circle",
+        "letters": "S",
+        "qualifier": null
+      },
+      "right": {
+        "outline": "circle",
+        "letters": "S",
+        "qualifier": null
+      },
+      "expectedRelationship": "same outline, same letter, no qualifier either side"
+    },
+    "D1": {
+      "left": {
+        "outline": "circle",
+        "letters": "CE",
+        "qualifier": "external M"
+      },
+      "right": {
+        "outline": "circle",
+        "letters": "CE",
+        "qualifier": "external C"
+      },
+      "expectedRelationship": "same outline and inner letters, DIFFERENT external qualifier (M vs C) -- a real difference"
+    },
+    "D2": {
+      "left": {
+        "outline": "circle",
+        "letters": "S",
+        "qualifier": "external D"
+      },
+      "right": {
+        "outline": "circle",
+        "letters": "S",
+        "qualifier": "external H"
+      },
+      "expectedRelationship": "same outline and inner letter, DIFFERENT external qualifier (D vs H) -- a real difference"
+    },
+    "D3": {
+      "left": {
+        "outline": "square, solid enclosure only",
+        "letters": "F",
+        "qualifier": null
+      },
+      "right": {
+        "outline": "square, dashed outer enclosure",
+        "letters": "F",
+        "qualifier": null
+      },
+      "expectedRelationship": "same inner shape and letter, DIFFERENT enclosure (left has no dashed box, right does) -- a real difference"
+    },
+    "D4": {
+      "left": {
+        "outline": "circle",
+        "letters": "H",
+        "qualifier": null
+      },
+      "right": {
+        "outline": "circle",
+        "letters": "DC",
+        "qualifier": null
+      },
+      "expectedRelationship": "same outline, DIFFERENT inner letters (H vs DC) -- a real difference"
+    },
+    "D5": {
+      "left": {
+        "outline": "square",
+        "letters": "F",
+        "qualifier": null
+      },
+      "right": {
+        "outline": "circle",
+        "letters": "S",
+        "qualifier": null
+      },
+      "expectedRelationship": "DIFFERENT outline (square vs circle) and different letter -- a real, unambiguous difference"
+    },
+    "D6": {
+      "left": {
+        "outline": "circle",
+        "letters": "S",
+        "qualifier": null
+      },
+      "right": {
+        "outline": "circle",
+        "letters": "CE",
+        "qualifier": "external M"
+      },
+      "expectedRelationship": "same outer outline (circle) but different inner letters and an added external qualifier on the right -- a real difference"
+    }
+  },
+  "scoringRules": {
+    "outlineRecognition": "Integer count of pairs (out of 12) where the response's stated outline shape for BOTH left and right matches ground truth exactly (circle/circle, square/square, or correctly notes square vs circle for D5).",
+    "letterTranscription": "Per-symbol integer count (out of 24 = 12 pairs x 2 sides) where the transcribed letter(s) exactly match ground truth. An unreadable/uncertain call on a symbol whose letters ARE legible per ground truth counts as incorrect, not partial.",
+    "qualifierPresenceDetection": "Integer count (out of the real qualifier-bearing sides only, denominator stated per case) where the response correctly states a qualifier IS present when ground truth has one, and correctly states NONE is present when ground truth has none. Both directions count.",
+    "qualifierTranscription": "Integer count (out of the sides where a qualifier is actually present AND was detected as present) where the specific qualifier letter is correctly transcribed. An explicitly-flagged-unreadable qualifier is NOT counted as correctly transcribed, per instruction, even if detection was correct.",
+    "missedFeatures": "Integer count of real ground-truth features (outline, letter, or qualifier) the response omitted entirely.",
+    "inventedFeatures": "Integer count of features the response stated that ground truth does not support (e.g. a qualifier, enclosure, or letter that is not actually present on that side).",
+    "incorrectAgreementOnDifferentPairs": "For the 6 D-pairs only: integer count where the response's own 'similar/different' statement claims no real difference exists, or fails to state the specific documented difference, when ground truth requires one.",
+    "explicitUncertainty": "Integer count of pairs where the response explicitly flags a detail as unreadable/unclear, tracked separately from correctness scoring.",
+    "incompleteResponses": "Integer count of calls that did not finish (truncated, error, or missing one of the required sections)."
+  }
+}

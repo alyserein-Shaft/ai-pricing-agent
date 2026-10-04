@@ -168,7 +168,18 @@ export function buildUnderstandingReviewActionPolicy({
   // this only replaces a misleading generic denial reason with an accurate
   // one. The real fix is to submit a fresh interpretation through the normal
   // governed pipeline and re-approve it, not to unblock the stale one.
-  else if (proposalState !== "AVAILABLE") stateReason = proposalState === "FAILED" ? "AI_ATTEMPT_FAILED" : reviewStatus === "REVALIDATION_REQUIRED" ? "REVALIDATION_REQUIRED" : "INTERPRETATION_NOT_REVIEWABLE";
+  else if (proposalState !== "AVAILABLE" && reviewStatus !== "CURRENT_INTERPRETATION_REVIEW_REQUIRED") stateReason = proposalState === "FAILED" ? "AI_ATTEMPT_FAILED" : reviewStatus === "REVALIDATION_REQUIRED" ? "REVALIDATION_REQUIRED" : "INTERPRETATION_NOT_REVIEWABLE";
+  else if (reviewStatus === "CURRENT_INTERPRETATION_REVIEW_REQUIRED") {
+    // CURRENT_INTERPRETATION_REVIEW_REQUIRED -- the prior approval is stale
+    // but the current interpretation is still valid and CAN be reviewed.
+    // Allow approval just like an AWAITING_REVIEW item.  The reviewer binds
+    // a NEW governed decision to the current interpretation, never the old
+    // one.  No APPROVAL_CARRY_FORWARD: the old review stays immutable and
+    // this creates a fresh one.
+    allowedActions.push("EDIT_AND_APPROVE", "REJECT_INTERPRETATION");
+    if (taxonomyValid && blockers.length === 0) allowedActions.unshift("APPROVE_INTERPRETATION");
+    else stateReason = !taxonomyValid ? "TAXONOMY_INVALID" : "BLOCKING_FIELDS_UNRESOLVED";
+  }
   else if (!authorityValid) stateReason = "CURRENT_AUTHORITY_INVALID";
   else if (reviewStatus === "AWAITING_REVIEW") {
     allowedActions.push("EDIT_AND_APPROVE", "REJECT_INTERPRETATION");

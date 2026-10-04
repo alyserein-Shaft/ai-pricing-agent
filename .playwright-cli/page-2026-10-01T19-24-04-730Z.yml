@@ -1,0 +1,156 @@
+- generic [ref=f1e2]:
+  - complementary "Primary navigation" [ref=f1e3]:
+    - generic [ref=f1e9]:
+      - strong [ref=f1e10]: AI Pricing Agent
+      - generic [ref=f1e11]: وكيل التسعير الذكي
+    - generic [ref=f1e12]:
+      - navigation "Global navigation" [ref=f1e13]:
+        - button "Home" [ref=f1e15] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e16]: ⌂
+          - text: Home
+        - button "Projects" [ref=f1e18] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e19]: ▦
+          - text: Projects
+        - button "Knowledge" [ref=f1e21] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e22]: ▤
+          - text: Knowledge
+          - generic [aria-hidden] [ref=f1e23]: ⌄
+        - button "Reports" [ref=f1e25] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e26]: ▥
+          - text: Reports
+        - button "Administration" [ref=f1e28] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e29]: ⚙
+          - text: Administration
+      - region "Project navigation" [ref=f1e103]:
+        - generic [ref=f1e104]:
+          - generic [ref=f1e105]: CURRENT PROJECT
+          - strong [ref=f1e106]: Al Mousa School — Clean Golden Run
+          - generic [ref=f1e107]: Active · Requirement intelligence and classification
+        - navigation "Current project workspaces" [ref=f1e108]:
+          - button "Overview" [ref=f1e110] [cursor=pointer]
+          - generic [ref=f1e111]:
+            - button "Tender" [expanded] [ref=f1e112] [cursor=pointer]:
+              - text: Tender
+              - generic [aria-hidden] [ref=f1e113]: ⌃
+            - generic [ref=f1e114]:
+              - button "Documents" [ref=f1e115] [cursor=pointer]
+              - button "BOQ" [ref=f1e116] [cursor=pointer]
+              - button "AI Understanding Review" [ref=f1e117] [cursor=pointer]
+              - button "Requirements" [active] [ref=f1e118] [cursor=pointer]
+          - button "Strategy" [ref=f1e120] [cursor=pointer]:
+            - text: Strategy
+            - generic [aria-hidden] [ref=f1e121]: ⌄
+          - button "Product Selection" [ref=f1e123] [cursor=pointer]
+          - button "Engineering" [ref=f1e125] [cursor=pointer]:
+            - text: Engineering
+            - generic [aria-hidden] [ref=f1e126]: ⌄
+          - button "Review & Handoff" [ref=f1e128] [cursor=pointer]
+          - generic [ref=f1e129]:
+            - button "Pricing" [expanded] [ref=f1e130] [cursor=pointer]:
+              - text: Pricing
+              - generic [aria-hidden] [ref=f1e131]: ⌃
+            - generic [ref=f1e132]:
+              - button "Supplier Price Evidence" [ref=f1e133] [cursor=pointer]
+              - button "Costing & Pricing" [ref=f1e134] [cursor=pointer]
+          - button "Quotation" [ref=f1e136] [cursor=pointer]
+          - button "Activity" [ref=f1e138] [cursor=pointer]
+    - region "Authenticated account" [ref=f1e30]:
+      - generic [ref=f1e31]: LD
+      - generic [ref=f1e32]:
+        - strong [ref=f1e33]: Development session
+        - generic [ref=f1e34]: local@development.invalid
+        - generic [ref=f1e35]: "Administrator · Project: Project Manager · Development session (no human actor configured)"
+        - generic [ref=f1e36]: BD-Shaft Internal Pilot · Organization Owner / Organization Administrator
+      - button "Sign out" [ref=f1e38]
+  - main [ref=f1e39]:
+    - generic [ref=f1e40]:
+      - button "المشروع Project Al Mousa School — Clean Golden Run ⌄" [ref=f1e139] [cursor=pointer]:
+        - generic [ref=f1e140]:
+          - generic [ref=f1e141]: المشروع
+          - generic [ref=f1e142]: Project
+        - strong [ref=f1e144]: Al Mousa School — Clean Golden Run
+        - generic [ref=f1e145]: ⌄
+      - generic [ref=f1e146]:
+        - button "Action queue 3 verified actions open" [ref=f1e147] [cursor=pointer]:
+          - text: Action queue
+          - generic [ref=f1e148]: 3 verified actions open
+        - generic [ref=f1e149]:
+          - generic [ref=f1e150]: Currency
+          - combobox "Project currency" [ref=f1e151] [cursor=pointer]:
+            - option "SAR" [selected]
+        - button "⚙ Pricing controls" [ref=f1e152] [cursor=pointer]:
+          - text: ⚙
+          - generic [ref=f1e153]: Pricing controls
+    - generic [ref=f1e46]:
+      - navigation "Project estimation workflow" [ref=f1e154]:
+        - button "1 Set up Complete" [ref=f1e155] [cursor=pointer]:
+          - generic [ref=f1e156]: "1"
+          - strong [ref=f1e157]: Set up
+          - generic [ref=f1e158]: Complete
+        - button "2 Documents Complete" [ref=f1e159] [cursor=pointer]:
+          - generic [ref=f1e160]: "2"
+          - strong [ref=f1e161]: Documents
+          - generic [ref=f1e162]: Complete
+        - button "3 BOQ Complete" [ref=f1e163] [cursor=pointer]:
+          - generic [ref=f1e164]: "3"
+          - strong [ref=f1e165]: BOQ
+          - generic [ref=f1e166]: Complete
+        - button "4 Understanding Not tracked" [ref=f1e167] [cursor=pointer]:
+          - generic [ref=f1e168]: "4"
+          - strong [ref=f1e169]: Understanding
+          - generic [ref=f1e170]: Not tracked
+        - button "5 Requirements In progress" [ref=f1e171] [cursor=pointer]:
+          - generic [ref=f1e172]: "5"
+          - strong [ref=f1e173]: Requirements
+          - generic [ref=f1e174]: In progress
+        - button "6 Strategy Not tracked" [ref=f1e175] [cursor=pointer]:
+          - generic [ref=f1e176]: "6"
+          - strong [ref=f1e177]: Strategy
+          - generic [ref=f1e178]: Not tracked
+        - button "7 Product Selection Not started" [ref=f1e179] [cursor=pointer]:
+          - generic [ref=f1e180]: "7"
+          - strong [ref=f1e181]: Product Selection
+          - generic [ref=f1e182]: Not started
+        - button "8 Engineer Decision Not tracked" [ref=f1e183] [cursor=pointer]:
+          - generic [ref=f1e184]: "8"
+          - strong [ref=f1e185]: Engineer Decision
+          - generic [ref=f1e186]: Not tracked
+        - button "9 Sizing Not tracked" [ref=f1e187] [cursor=pointer]:
+          - generic [ref=f1e188]: "9"
+          - strong [ref=f1e189]: Sizing
+          - generic [ref=f1e190]: Not tracked
+        - button "10 BOM Not tracked" [ref=f1e191] [cursor=pointer]:
+          - generic [ref=f1e192]: "10"
+          - strong [ref=f1e193]: BOM
+          - generic [ref=f1e194]: Not tracked
+        - button "11 Review & Handoff Not tracked" [ref=f1e195] [cursor=pointer]:
+          - generic [ref=f1e196]: "11"
+          - strong [ref=f1e197]: Review & Handoff
+          - generic [ref=f1e198]: Not tracked
+        - button "12 Pricing Not started" [ref=f1e199] [cursor=pointer]:
+          - generic [ref=f1e200]: "12"
+          - strong [ref=f1e201]: Pricing
+          - generic [ref=f1e202]: Not started
+        - button "13 Commercial Review Not started" [ref=f1e203] [cursor=pointer]:
+          - generic [ref=f1e204]: "13"
+          - strong [ref=f1e205]: Commercial Review
+          - generic [ref=f1e206]: Not started
+        - button "14 Quotation Not started" [ref=f1e207] [cursor=pointer]:
+          - generic [ref=f1e208]: "14"
+          - strong [ref=f1e209]: Quotation
+          - generic [ref=f1e210]: Not started
+        - button "15 Activity Not started" [ref=f1e211] [cursor=pointer]:
+          - generic [ref=f1e212]: "15"
+          - strong [ref=f1e213]: Activity
+          - generic [ref=f1e214]: Not started
+      - generic "Current project BP450-CLEAN-01" [ref=f1e215]:
+        - generic [ref=f1e216]: PROJECT WORKSPACE
+        - strong [ref=f1e217]: BP450-CLEAN-01
+  - generic [ref=f1e3755]:
+    - generic [ref=f1e3757]:
+      - text: TENDER · REQUIREMENTS
+      - heading "Requirements" [level=1] [ref=f1e3758]
+      - paragraph [ref=f1e3759]: Open a specification document to review its extracted requirements with source evidence.
+    - article [ref=f1e3760]:
+      - strong [ref=f1e3761]: 28 46 00 - Fire Detection and Alarm System - Rev 1 (1).pdf
+      - button "Open review →" [ref=f1e3762]

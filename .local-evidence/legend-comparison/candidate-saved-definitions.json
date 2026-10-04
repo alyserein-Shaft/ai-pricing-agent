@@ -1,0 +1,1862 @@
+[
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:0",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:0",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "S",
+    "normalizedValue": "SMOKE DETECTOR",
+    "boundingBox": {
+      "x": 556.0500000000001,
+      "y": 897.9177777777778,
+      "width": 19.096666666666668,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 1,
+      "rawLabel": "S",
+      "rawDescription": "SMOKE DETECTOR",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 556.0500000000001,
+        "y": 897.9177777777778,
+        "width": 19.096666666666668,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 556.0500000000001,
+        "y": 943.6,
+        "width": 19.096666666666668,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-01",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 556.0500000000001,
+          "y": 897.9177777777778,
+          "width": 19.096666666666668,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 0,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-0.png",
+        "sha256": "965cd4d61a06475e4aaac3c5244bc79c69e6b13356bb58563fd605e83930c4c8"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-01"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:1",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:1",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "H",
+    "normalizedValue": "HEAT DETECTOR",
+    "boundingBox": {
+      "x": 575.8955555555556,
+      "y": 897.9177777777778,
+      "width": 19.096666666666668,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 2,
+      "rawLabel": "H",
+      "rawDescription": "HEAT DETECTOR",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 575.8955555555556,
+        "y": 897.9177777777778,
+        "width": 19.096666666666668,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 575.8955555555556,
+        "y": 943.6,
+        "width": 19.096666666666668,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-02",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 575.8955555555556,
+          "y": 897.9177777777778,
+          "width": 19.096666666666668,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 1,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-1.png",
+        "sha256": "82fa92c8f994fbb0b9125de73ff801a70eab79b46487588ee78e42e9499315c9"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-02"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:10",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:10",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "T",
+    "normalizedValue": "FIREMAN TELEPHONE JACK",
+    "boundingBox": {
+      "x": 760.4966666666667,
+      "y": 897.9177777777778,
+      "width": 21.71777777777778,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 11,
+      "rawLabel": "T",
+      "rawDescription": "FIREMAN TELEPHONE JACK",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 760.4966666666667,
+        "y": 897.9177777777778,
+        "width": 21.71777777777778,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 760.4966666666667,
+        "y": 943.6,
+        "width": 21.71777777777778,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-11",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 760.4966666666667,
+          "y": 897.9177777777778,
+          "width": 21.71777777777778,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 10,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-10.png",
+        "sha256": "28593dca4591b5f56352a095f5632dfa01b83c48ff9e379571b86792767b01f1"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-11"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:11",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:11",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "SPEAKER CEILING MOUNTED",
+    "normalizedValue": "SPEAKER CEILING MOUNTED",
+    "boundingBox": {
+      "x": 782.9633333333334,
+      "y": 897.9177777777778,
+      "width": 22.092222222222222,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 12,
+      "rawLabel": "",
+      "rawDescription": "SPEAKER CEILING MOUNTED",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "CEILING MOUNTED",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 782.9633333333334,
+        "y": 897.9177777777778,
+        "width": 22.092222222222222,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 782.9633333333334,
+        "y": 943.6,
+        "width": 22.092222222222222,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-12",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 782.9633333333334,
+          "y": 897.9177777777778,
+          "width": 22.092222222222222,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 11,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-11.png",
+        "sha256": "309eb6799ac68cfe424f7904d6c49a482cbf7e6e98a5a7dd12ec376053dd450d"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-12"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:12",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:12",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "SPEAKER WALL MOUNTED",
+    "normalizedValue": "SPEAKER WALL MOUNTED",
+    "boundingBox": {
+      "x": 805.8044444444445,
+      "y": 897.9177777777778,
+      "width": 21.71777777777778,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 13,
+      "rawLabel": "",
+      "rawDescription": "SPEAKER WALL MOUNTED",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "WALL MOUNTED",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 805.8044444444445,
+        "y": 897.9177777777778,
+        "width": 21.71777777777778,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 805.8044444444445,
+        "y": 943.6,
+        "width": 21.71777777777778,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-13",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 805.8044444444445,
+          "y": 897.9177777777778,
+          "width": 21.71777777777778,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 12,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-12.png",
+        "sha256": "883d3ed2769700b58ab42a3bb2e248a018acd878f31834bbaeaa5c6afeeb7187"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-13"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:13",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:13",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "ZIM",
+    "normalizedValue": "ZONE INTERFACE MODULE",
+    "boundingBox": {
+      "x": 828.2711111111112,
+      "y": 897.9177777777778,
+      "width": 19.096666666666668,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 14,
+      "rawLabel": "ZIM",
+      "rawDescription": "ZONE INTERFACE MODULE",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 828.2711111111112,
+        "y": 897.9177777777778,
+        "width": 19.096666666666668,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 828.2711111111112,
+        "y": 943.6,
+        "width": 19.096666666666668,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-14",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 828.2711111111112,
+          "y": 897.9177777777778,
+          "width": 19.096666666666668,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 13,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-13.png",
+        "sha256": "ce25756e61379c864930a165e96b7a4324dd9f003759949f416aa609368d98e7"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-14"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:14",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:14",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "FTCP",
+    "normalizedValue": "FIREMAN TELEPHONE CONTROL PANEL",
+    "boundingBox": {
+      "x": 848.1166666666667,
+      "y": 897.9177777777778,
+      "width": 21.71777777777778,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 15,
+      "rawLabel": "FTCP",
+      "rawDescription": "FIREMAN TELEPHONE CONTROL PANEL",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 848.1166666666667,
+        "y": 897.9177777777778,
+        "width": 21.71777777777778,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 848.1166666666667,
+        "y": 943.6,
+        "width": 21.71777777777778,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-15",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 848.1166666666667,
+          "y": 897.9177777777778,
+          "width": 21.71777777777778,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 14,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-14.png",
+        "sha256": "401c9d973a771a7284e2a07bb86abf048073f5230c9586f9a78966eb39cdada3"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-15"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:15",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:15",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "FARP",
+    "normalizedValue": "FIRE ALARM REPEATER PANEL",
+    "boundingBox": {
+      "x": 870.5833333333334,
+      "y": 897.9177777777778,
+      "width": 22.092222222222222,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 16,
+      "rawLabel": "FARP",
+      "rawDescription": "FIRE ALARM REPEATER PANEL",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 870.5833333333334,
+        "y": 897.9177777777778,
+        "width": 22.092222222222222,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 870.5833333333334,
+        "y": 943.6,
+        "width": 22.092222222222222,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-16",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 870.5833333333334,
+          "y": 897.9177777777778,
+          "width": 22.092222222222222,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 15,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-15.png",
+        "sha256": "10d4a4425afd6dbfada6340a5923a6281e8e1dd13d05637804afb527ba858637"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-16"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:16",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:16",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "MFACP",
+    "normalizedValue": "MAIN FIRE ALARM CONTROL PANEL",
+    "boundingBox": {
+      "x": 893.4244444444445,
+      "y": 897.9177777777778,
+      "width": 21.71777777777778,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 17,
+      "rawLabel": "MFACP",
+      "rawDescription": "MAIN FIRE ALARM CONTROL PANEL",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 893.4244444444445,
+        "y": 897.9177777777778,
+        "width": 21.71777777777778,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 893.4244444444445,
+        "y": 943.6,
+        "width": 21.71777777777778,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-17",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 893.4244444444445,
+          "y": 897.9177777777778,
+          "width": 21.71777777777778,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 16,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-16.png",
+        "sha256": "eafccaa19635b9867c0b23a875e0ad2b9b0eb7aa72662a433915cbce13b40ae3"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-17"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:17",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:17",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "CE + C",
+    "normalizedValue": "INTERFACE MODULE CONTROL",
+    "boundingBox": {
+      "x": 915.8911111111112,
+      "y": 897.9177777777778,
+      "width": 19.096666666666668,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 18,
+      "rawLabel": "CE + C",
+      "rawDescription": "INTERFACE MODULE CONTROL",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 915.8911111111112,
+        "y": 897.9177777777778,
+        "width": 19.096666666666668,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 915.8911111111112,
+        "y": 943.6,
+        "width": 19.096666666666668,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-18",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 915.8911111111112,
+          "y": 897.9177777777778,
+          "width": 19.096666666666668,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 17,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-17.png",
+        "sha256": "15a8ff7256cc1342787b50a4b6a734a3f2f4bf4debc75fc1b239dd1a9d0ca47d"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-18"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:18",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:18",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "CE + M",
+    "normalizedValue": "INTERFACE MODULE MONITORING",
+    "boundingBox": {
+      "x": 935.7366666666667,
+      "y": 897.9177777777778,
+      "width": 19.096666666666668,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 19,
+      "rawLabel": "CE + M",
+      "rawDescription": "INTERFACE MODULE MONITORING",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 935.7366666666667,
+        "y": 897.9177777777778,
+        "width": 19.096666666666668,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 935.7366666666667,
+        "y": 943.6,
+        "width": 19.096666666666668,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-19",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 935.7366666666667,
+          "y": 897.9177777777778,
+          "width": 19.096666666666668,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 18,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-18.png",
+        "sha256": "627c82aa26ce4a7a3e4e23e9a360dedb361152bc58f26ee1fa4e4eb9c52e6c17"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-19"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:19",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:19",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "DC",
+    "normalizedValue": "DOOR CONTACT",
+    "boundingBox": {
+      "x": 955.5822222222223,
+      "y": 897.9177777777778,
+      "width": 19.471111111111114,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 20,
+      "rawLabel": "DC",
+      "rawDescription": "DOOR CONTACT",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 955.5822222222223,
+        "y": 897.9177777777778,
+        "width": 19.471111111111114,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 955.5822222222223,
+        "y": 943.6,
+        "width": 19.471111111111114,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-20",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 955.5822222222223,
+          "y": 897.9177777777778,
+          "width": 19.471111111111114,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 19,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-19.png",
+        "sha256": "8bafa606bea19867a6a14ac510796761095e1ca4a615ae52efaf18b2a7860e32"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-20"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:2",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:2",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "S + D",
+    "normalizedValue": "DUCT DETECTOR",
+    "boundingBox": {
+      "x": 595.7411111111112,
+      "y": 897.9177777777778,
+      "width": 19.096666666666668,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 3,
+      "rawLabel": "S + D",
+      "rawDescription": "DUCT DETECTOR",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 595.7411111111112,
+        "y": 897.9177777777778,
+        "width": 19.096666666666668,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 595.7411111111112,
+        "y": 943.6,
+        "width": 19.096666666666668,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-03",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 595.7411111111112,
+          "y": 897.9177777777778,
+          "width": 19.096666666666668,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 2,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-2.png",
+        "sha256": "1e344a7b5de8f9b8e289a93b99bf04bc848839371bc5a5fb5a3c7d61c18b02ce"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-03"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:3",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:3",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "S + H",
+    "normalizedValue": "SMOKE AND HEAT COMBINED DETECTOR",
+    "boundingBox": {
+      "x": 615.5866666666667,
+      "y": 897.9177777777778,
+      "width": 19.096666666666668,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 4,
+      "rawLabel": "S + H",
+      "rawDescription": "SMOKE AND HEAT COMBINED DETECTOR",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 615.5866666666667,
+        "y": 897.9177777777778,
+        "width": 19.096666666666668,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 615.5866666666667,
+        "y": 943.6,
+        "width": 19.096666666666668,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-04",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 615.5866666666667,
+          "y": 897.9177777777778,
+          "width": 19.096666666666668,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 3,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-3.png",
+        "sha256": "27cca8097230e22ea6e6bb96616720279a1cb55c516dc732cb167fbda91b6c63"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-04"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:4",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:4",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "F",
+    "normalizedValue": "FIRE ALARM MANUAL STATION",
+    "boundingBox": {
+      "x": 635.4322222222222,
+      "y": 897.9177777777778,
+      "width": 19.471111111111114,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 5,
+      "rawLabel": "F",
+      "rawDescription": "FIRE ALARM MANUAL STATION",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 635.4322222222222,
+        "y": 897.9177777777778,
+        "width": 19.471111111111114,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 635.4322222222222,
+        "y": 943.6,
+        "width": 19.471111111111114,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-05",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 635.4322222222222,
+          "y": 897.9177777777778,
+          "width": 19.471111111111114,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 4,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-4.png",
+        "sha256": "c99d01f5740a6cdd56623909752bb73e14ad6a90a2148325cac0c0deb65c38ea"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-05"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:5",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:5",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "F (dashed enclosure)",
+    "normalizedValue": "FIRE ALARM MANUAL STATION (WEATHER PROOF)",
+    "boundingBox": {
+      "x": 655.6522222222222,
+      "y": 897.9177777777778,
+      "width": 17.59888888888889,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 6,
+      "rawLabel": "F (dashed enclosure)",
+      "rawDescription": "FIRE ALARM MANUAL STATION (WEATHER PROOF)",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "(WEATHER PROOF)",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 655.6522222222222,
+        "y": 897.9177777777778,
+        "width": 17.59888888888889,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 655.6522222222222,
+        "y": 943.6,
+        "width": 17.59888888888889,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-06",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 655.6522222222222,
+          "y": 897.9177777777778,
+          "width": 17.59888888888889,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 5,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-5.png",
+        "sha256": "8f435c9f96a090959457035ce0693725d2d15faaa14ff655fef10204cea5bc59"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-06"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:6",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:6",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "LOOP POWERED STROBE",
+    "normalizedValue": "LOOP POWERED STROBE",
+    "boundingBox": {
+      "x": 674,
+      "y": 897.9177777777778,
+      "width": 20.594444444444445,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 7,
+      "rawLabel": "",
+      "rawDescription": "LOOP POWERED STROBE",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 674,
+        "y": 897.9177777777778,
+        "width": 20.594444444444445,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 674,
+        "y": 943.6,
+        "width": 20.594444444444445,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-07",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 674,
+          "y": 897.9177777777778,
+          "width": 20.594444444444445,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 6,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-6.png",
+        "sha256": "73138598da6f8258d747eab615179e719b90c3d938c098382a7d65c927066b0a"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-07"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:7",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:7",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "LOOP POWERED STROBE WITH SOUNDER",
+    "normalizedValue": "LOOP POWERED STROBE WITH SOUNDER",
+    "boundingBox": {
+      "x": 695.3433333333334,
+      "y": 897.9177777777778,
+      "width": 18.722222222222225,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 8,
+      "rawLabel": "",
+      "rawDescription": "LOOP POWERED STROBE WITH SOUNDER",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 695.3433333333334,
+        "y": 897.9177777777778,
+        "width": 18.722222222222225,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 695.3433333333334,
+        "y": 943.6,
+        "width": 18.722222222222225,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-08",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 695.3433333333334,
+          "y": 897.9177777777778,
+          "width": 18.722222222222225,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 7,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-7.png",
+        "sha256": "0d270a7932430ee1295cdd05397e5a17fbe77eb57f70bb14696ad4a83a2dc9db"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-08"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:8",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:8",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "WP",
+    "normalizedValue": "LOOP POWERED STROBE WITH SOUNDER (WEATHER PROOF TYPE)",
+    "boundingBox": {
+      "x": 714.8144444444445,
+      "y": 897.9177777777778,
+      "width": 21.71777777777778,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 9,
+      "rawLabel": "WP",
+      "rawDescription": "LOOP POWERED STROBE WITH SOUNDER (WEATHER PROOF TYPE)",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "(WEATHER PROOF TYPE)",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 714.8144444444445,
+        "y": 897.9177777777778,
+        "width": 21.71777777777778,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 714.8144444444445,
+        "y": 943.6,
+        "width": 21.71777777777778,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-09",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 714.8144444444445,
+          "y": 897.9177777777778,
+          "width": 21.71777777777778,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 8,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-8.png",
+        "sha256": "b352327bf9fe65a15385f427d7d381b45b9011e297ded36fc7dae93a388e6990"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-09"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  },
+  {
+    "id": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:9",
+    "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+    "supersededAt": null,
+    "historyWarning": null,
+    "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+    "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+    "pageNumber": 1,
+    "proposalKey": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210:legend:9",
+    "proposalType": "LegendDefinition",
+    "rawLabel": "WP + C",
+    "normalizedValue": "CEILING MOUNTED LOOP POWERED STROBE WITH SOUNDER (WEATHER PROOF TYPE)",
+    "boundingBox": {
+      "x": 737.2811111111112,
+      "y": 897.9177777777778,
+      "width": 22.46666666666667,
+      "height": 366.2066666666667,
+      "pageWidth": 2384,
+      "pageHeight": 3370
+    },
+    "confidence": null,
+    "authorityRole": "Primary",
+    "governedStatus": "Needs Review",
+    "hardReviewReasons": [
+      "Visual legend transcription requires human review; cross-sheet applicability is not established."
+    ],
+    "evidence": {
+      "sequence": 10,
+      "rawLabel": "WP + C",
+      "rawDescription": "CEILING MOUNTED LOOP POWERED STROBE WITH SOUNDER (WEATHER PROOF TYPE)",
+      "section": "FIRE ALARM SYSTEM",
+      "qualifiers": "(WEATHER PROOF TYPE)",
+      "sourceDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+      "boundingBox": {
+        "x": 737.2811111111112,
+        "y": 897.9177777777778,
+        "width": 22.46666666666667,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 737.2811111111112,
+        "y": 943.6,
+        "width": 22.46666666666667,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "imageProvenance": {
+        "name": "legend-row-10",
+        "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+        "documentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+        "pageNumber": 1,
+        "boundingBox": {
+          "x": 737.2811111111112,
+          "y": 897.9177777777778,
+          "width": 22.46666666666667,
+          "height": 366.2066666666667,
+          "pageWidth": 2384,
+          "pageHeight": 3370
+        },
+        "kind": "source",
+        "index": 9,
+        "objectKey": "projects/project_c0123d91-c30b-4956-87cb-e473ef53f89d/documents/doc_3f857096-3152-408f-9c86-9296e4142ced/visual-runs/drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210/image-9.png",
+        "sha256": "775f3c9ed406c7ca5421a98950e5dd0e215606e048024ec7c5bce0279d22e163"
+      },
+      "registerRevision": null,
+      "visuallyExtractedRevision": {
+        "value": "1",
+        "source": "Visual title-block transcription; not register confirmation",
+        "pageNumber": 1
+      },
+      "visualRunId": "drawingCandidateRun_70cc7176-8fee-4e04-ac8e-2ca6204df210",
+      "applicableSystem": "Fire Alarm",
+      "sourceDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "runOwnerDocumentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "approvedForTakeoff": false,
+      "approvedForPricing": false
+    },
+    "sourceReferences": [
+      "fa-row-10"
+    ],
+    "extractionMethod": "Visual Fire Alarm legend row transcription",
+    "extractionVersion": "candidate-legend-visual-1",
+    "reviewStatus": "Needs Review",
+    "reviewedBy": null,
+    "reviewedAt": null,
+    "reviewReason": null,
+    "correctedValue": null,
+    "createdAt": "2026-09-15T14:35:17.948Z",
+    "updatedAt": "2026-09-15T14:35:17.948Z"
+  }
+]

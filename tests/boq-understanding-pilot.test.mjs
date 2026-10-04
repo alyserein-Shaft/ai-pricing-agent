@@ -289,7 +289,11 @@ test("Sprint 1.11 -- a newly-confirmed specification link changes an item's real
 
   const buildDb = (confirmedLinks) => ({ prepare(sql) {
     return { bind() { return this; }, all() {
-      if (/boq_requirement_links/.test(sql)) return { results: confirmedLinks };
+      // The single UNION ALL read now also returns project-scoped approved
+      // clauses, discriminated by `scope`. This stub supplies only Confirmed
+      // item links, so it must label them ITEM or the reader cannot tell which
+      // half of the query a row came from.
+      if (/boq_requirement_links/.test(sql)) return { results: confirmedLinks.map((link) => ({ ...link, scope: "ITEM" })) };
       return { results: [{ ...boqRow, interpretationFingerprints: priorFingerprint }] };
     } };
   } });

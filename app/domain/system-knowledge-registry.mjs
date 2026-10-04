@@ -13,6 +13,7 @@ import {
   buildFireAlarmTaxonomyContext,
   fireAlarmRequiresDetectorBase,
   fireAlarmRequiresPanelCompatibility,
+  assessFireAlarmFamilySupport,
   isCanonicalFireAlarmPair,
   isFireAlarmAccessoryFamily,
   isFireAlarmFamilySynonym,
@@ -40,6 +41,7 @@ const SYSTEM_PACKS = new Map([
     isAccessoryFamily: (family) => isFireAlarmAccessoryFamily(family),
     familiesAreSynonyms: (a, b) => isFireAlarmFamilySynonym(a, b),
     validateAttributeValue: (name, value) => validateFireAlarmAttributeValue(name, value),
+    assessFamilyNameClaimSupport: (family, evidenceText, options) => assessFireAlarmFamilySupport(family, evidenceText, options),
     requiresPanelCompatibility: (category, family) => fireAlarmRequiresPanelCompatibility(category, family),
     requiresDetectorBase: (family) => fireAlarmRequiresDetectorBase(family),
   })],
@@ -140,6 +142,18 @@ export function normalizeCategoryFamily(system, category, family) {
   const pack = system && SYSTEM_PACKS.get(system);
   if (!pack) return { category: null, family: null };
   return { category: pack.normalizeCategory(category), family: pack.normalizeFamily(family) };
+}
+
+// Does this governed FAMILY NAME's own embedded claim (e.g. the "Addressable" in
+// "Addressable Smoke Detector") hold against the supplied evidence? A pack with
+// no declared claim support is always supported -- this never invents a rule for
+// a system that has not declared one. Defaulting to supported is the fail-SAFE
+// direction here: the caller only ever downgrades a result to Needs Review, and
+// no unregistered pack can be silently made stricter.
+export function assessFamilyNameClaimSupport(system, family, evidenceText, options) {
+  const pack = system && SYSTEM_PACKS.get(system);
+  if (!pack?.assessFamilyNameClaimSupport) return { family, claims: [], supported: true, unsupported: [] };
+  return pack.assessFamilyNameClaimSupport(family, evidenceText, options);
 }
 
 export function normalizeAttributeName(system, rawName, family) {

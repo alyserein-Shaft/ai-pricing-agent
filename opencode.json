@@ -1,0 +1,24 @@
+{
+  "mcp": {
+    "servers": {
+      "graphify": {
+        "type": "remote",
+        "url": "https://api.graphify.net/mcp",
+        "headers": {
+          "Authorization": "Bearer {env:GRAPHIFY_API_KEY}"
+        },
+        "oauth": false
+      },
+      "serena": {
+        "type": "local",
+        "command": [
+          "serena",
+          "start-mcp-server",
+          "--context",
+          "ide",
+          "--project-from-cwd"
+        ]
+      }
+    }
+  }
+}

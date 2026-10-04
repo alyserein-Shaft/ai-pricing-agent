@@ -1,0 +1,450 @@
+- generic [ref=e7]:
+  - complementary "Primary navigation" [ref=e8]:
+    - generic [ref=e14]:
+      - strong [ref=e15]: AI Pricing Agent
+      - generic [ref=e16]: وكيل التسعير الذكي
+    - generic [ref=e17]:
+      - navigation "Global navigation" [ref=e18]:
+        - button "Home" [ref=e20] [cursor=pointer]:
+          - generic [aria-hidden] [ref=e21]: ⌂
+          - text: Home
+        - button "Projects" [ref=e23] [cursor=pointer]:
+          - generic [aria-hidden] [ref=e24]: ▦
+          - text: Projects
+        - button "Knowledge" [ref=e26] [cursor=pointer]:
+          - generic [aria-hidden] [ref=e27]: ▤
+          - text: Knowledge
+          - generic [aria-hidden] [ref=e28]: ⌄
+        - button "Reports" [ref=e30] [cursor=pointer]:
+          - generic [aria-hidden] [ref=e31]: ▥
+          - text: Reports
+        - button "Administration" [ref=e33] [cursor=pointer]:
+          - generic [aria-hidden] [ref=e34]: ⚙
+          - text: Administration
+      - region "Project navigation" [ref=e103]:
+        - generic [ref=e104]:
+          - generic [ref=e105]: CURRENT PROJECT
+          - strong [ref=e106]: Al Mousa School — Clean Golden Run
+          - generic [ref=e107]: Active · BOQ and specification extraction
+        - navigation "Current project workspaces" [ref=e108]:
+          - button "Overview" [ref=e110] [cursor=pointer]
+          - generic [ref=e111]:
+            - button "Tender" [expanded] [ref=e112] [cursor=pointer]:
+              - text: Tender
+              - generic [aria-hidden] [ref=e113]: ⌃
+            - generic [ref=e114]:
+              - button "Documents" [ref=e115] [cursor=pointer]
+              - button "BOQ" [ref=e116] [cursor=pointer]
+              - button "AI Understanding Review" [ref=e117] [cursor=pointer]
+              - button "Requirements" [ref=e118] [cursor=pointer]
+          - button "Product Selection" [ref=e120] [cursor=pointer]
+          - generic [ref=e121]:
+            - button "Pricing" [expanded] [ref=e122] [cursor=pointer]:
+              - text: Pricing
+              - generic [aria-hidden] [ref=e123]: ⌃
+            - generic [ref=e124]:
+              - button "Supplier Price Evidence" [ref=e125] [cursor=pointer]
+              - button "Costing & Pricing" [ref=e126] [cursor=pointer]
+          - button "Quotation" [ref=e128] [cursor=pointer]
+          - button "Activity" [ref=e130] [cursor=pointer]
+    - region "Authenticated account" [ref=e35]:
+      - generic [ref=e36]: LD
+      - generic [ref=e37]:
+        - strong [ref=e38]: Local Development User
+        - generic [ref=e39]: local@development.invalid
+        - generic [ref=e40]: "Administrator · Project: Project Manager"
+        - generic [ref=e41]: BD-Shaft Internal Pilot · Organization Owner / Organization Administrator
+      - link "Sign out" [ref=e42] [cursor=pointer]:
+        - /url: /signout-with-chatgpt?return_to=/
+  - main [ref=e43]:
+    - generic [ref=e44]:
+      - button "المشروع Project Al Mousa School — Clean Golden Run ⌄" [ref=e131] [cursor=pointer]:
+        - generic [ref=e132]:
+          - generic [ref=e133]: المشروع
+          - generic [ref=e134]: Project
+        - strong [ref=e136]: Al Mousa School — Clean Golden Run
+        - generic [ref=e137]: ⌄
+      - generic [ref=e138]:
+        - button "Action queue 2 verified actions open" [ref=e139] [cursor=pointer]:
+          - text: Action queue
+          - generic [ref=e140]: 2 verified actions open
+        - generic [ref=e141]:
+          - generic [ref=e142]: Currency
+          - combobox "Project currency" [ref=e143] [cursor=pointer]:
+            - option "SAR" [selected]
+        - button "⚙ Pricing controls" [ref=e144] [cursor=pointer]:
+          - text: ⚙
+          - generic [ref=e145]: Pricing controls
+    - generic [ref=e50]:
+      - navigation "Project estimation workflow" [ref=e146]:
+        - button "1 Set up Complete" [ref=e147] [cursor=pointer]:
+          - generic [ref=e148]: "1"
+          - strong [ref=e149]: Set up
+          - generic [ref=e150]: Complete
+        - button "2 Understand tender Needs attention" [ref=e151] [cursor=pointer]:
+          - generic [ref=e152]: "2"
+          - strong [ref=e153]: Understand tender
+          - generic [ref=e154]: Needs attention
+        - button "3 Confirm scope Not started" [ref=e155] [cursor=pointer]:
+          - generic [ref=e156]: "3"
+          - strong [ref=e157]: Confirm scope
+          - generic [ref=e158]: Not started
+        - button "4 Select products Not started" [ref=e159] [cursor=pointer]:
+          - generic [ref=e160]: "4"
+          - strong [ref=e161]: Select products
+          - generic [ref=e162]: Not started
+        - button "5 Build price Not started" [ref=e163] [cursor=pointer]:
+          - generic [ref=e164]: "5"
+          - strong [ref=e165]: Build price
+          - generic [ref=e166]: Not started
+        - button "6 Review offer Not started" [ref=e167] [cursor=pointer]:
+          - generic [ref=e168]: "6"
+          - strong [ref=e169]: Review offer
+          - generic [ref=e170]: Not started
+        - button "7 Issue quotation Not started" [ref=e171] [cursor=pointer]:
+          - generic [ref=e172]: "7"
+          - strong [ref=e173]: Issue quotation
+          - generic [ref=e174]: Not started
+      - generic "Current project BP450-CLEAN-01" [ref=e175]:
+        - generic [ref=e176]: PROJECT WORKSPACE
+        - strong [ref=e177]: BP450-CLEAN-01
+      - generic [ref=e178]:
+        - generic [ref=e180]:
+          - text: STEP 02 · EXTRACTION REVIEW
+          - heading "Bill of quantities" [level=1] [ref=e181]
+          - paragraph [ref=e182]: Review the persisted, source-traceable extraction before it can be used in later workflow steps.
+        - navigation "Project workflow stages" [ref=e183]:
+          - button "Documents" [ref=e184] [cursor=pointer]
+          - generic [aria-hidden] [ref=e185]: →
+          - button "BOQ 9" [ref=e186] [cursor=pointer]:
+            - text: BOQ
+            - generic [ref=e187]: "9"
+          - generic [aria-hidden] [ref=e188]: →
+          - button "AI Understanding 3" [ref=e189] [cursor=pointer]:
+            - text: AI Understanding
+            - generic [ref=e190]: "3"
+          - generic [aria-hidden] [ref=e191]: →
+          - button "Requirements 1" [ref=e192] [cursor=pointer]:
+            - text: Requirements
+            - generic [ref=e193]: "1"
+          - generic [aria-hidden] [ref=e194]: →
+          - button "Technical Matching" [ref=e195] [cursor=pointer]
+          - generic [aria-hidden] [ref=e196]: →
+          - button "Costing 90" [ref=e197] [cursor=pointer]:
+            - text: Costing
+            - generic [ref=e198]: "90"
+          - generic [aria-hidden] [ref=e199]: →
+          - button "Commercial Review" [ref=e200] [cursor=pointer]
+          - generic [aria-hidden] [ref=e201]: →
+          - button "Quotation" [ref=e202] [cursor=pointer]
+        - region "BOQ review action center" [ref=e203]:
+          - generic [ref=e204]:
+            - generic [ref=e205]:
+              - generic [ref=e206]: NEXT ACTION
+              - strong [ref=e207]: 9 BOQ extraction items require review
+              - paragraph [ref=e208]: Confirm or correct these rows before they are used in AI Understanding, Requirements or Matching.
+            - button "Review 9 items" [ref=e209] [cursor=pointer]
+          - generic [ref=e210]:
+            - button "Resolve 9 possible duplicates" [active] [ref=e211] [cursor=pointer]
+            - button "Continue to AI Understanding · 3 need review" [ref=e212] [cursor=pointer]
+            - button "Review Requirements · 1 need attention" [ref=e213] [cursor=pointer]
+        - generic [ref=e214]:
+          - generic [ref=e215]:
+            - generic [ref=e216]: BOQ ITEMS
+            - strong [ref=e217]: "90"
+          - generic [ref=e218]:
+            - generic [ref=e219]: BOQ ITEMS NEEDING REVIEW
+            - strong [ref=e220]: "9"
+          - generic [ref=e221]:
+            - generic [ref=e222]: SECTION / HEADER RECORDS
+            - strong [ref=e223]: "18"
+          - generic [ref=e224]:
+            - generic [ref=e225]: POSSIBLE DUPLICATES
+            - strong [ref=e226]: "9"
+        - generic [ref=e227]:
+          - generic [ref=e228]: 90 current BOQ items
+          - strong [ref=e229]: BOQ Extraction · 9 items need review
+        - tablist "Filter BOQ items by review status" [ref=e230]:
+          - tab "All (90)" [ref=e231] [cursor=pointer]
+          - tab "Needs Review (9)" [ref=e232] [cursor=pointer]
+          - tab "Possible Duplicates (9)" [selected] [ref=e233] [cursor=pointer]
+          - tab "Verified (81)" [ref=e234] [cursor=pointer]
+        - generic [ref=e235]: NEXT WORKFLOW STAGES
+        - generic [ref=e236]:
+          - generic "AI Understanding status" [ref=e237]:
+            - strong [ref=e238]: AI Understanding
+            - generic [ref=e239]: Needs attention
+            - paragraph [ref=e240]: 3 need review · 0 failed from last run
+            - button "Open AI Understanding" [ref=e241] [cursor=pointer]
+          - generic "Requirements status" [ref=e242]:
+            - strong [ref=e243]: Requirements
+            - generic [ref=e244]: Needs attention
+            - paragraph [ref=e245]: 1 requirement profile need attention
+            - button "Open Requirements" [ref=e246] [cursor=pointer]
+        - table [ref=e248]:
+          - rowgroup [ref=e249]:
+            - row [ref=e250]:
+              - columnheader [ref=e251]:
+                - checkbox "Select all visible BOQ items" [ref=e252]
+              - columnheader "Item" [ref=e253]
+              - columnheader "Description" [ref=e254]
+              - columnheader "Section" [ref=e255]
+              - columnheader "Unit" [ref=e256]
+              - columnheader "Qty" [ref=e257]
+              - columnheader "Extraction" [ref=e258]
+              - columnheader "Understanding" [ref=e259]
+              - columnheader "Actions" [ref=e260]
+          - rowgroup [ref=e261]:
+            - row [ref=e1190]:
+              - cell [ref=e1191]:
+                - checkbox "Select BOQ item D" [ref=e1192]
+              - cell "D Possible duplicate · review required" [ref=e1193]:
+                - strong [ref=e1194]: D
+                - generic [ref=e1195]: Possible duplicate · review required
+              - cell "Smoke detectors (above ceiling) BOQ.xlsx · MECH RFQ · row 103 View source" [ref=e1196]:
+                - strong [ref=e1197]: Smoke detectors (above ceiling)
+                - generic [ref=e1198]:
+                  - generic [ref=e1199]: BOQ.xlsx · MECH RFQ · row 103
+                  - button "View source" [ref=e1200] [cursor=pointer]
+              - cell "Supply, install and connect fire alarm detection and alarm system complete including wiring, conduits, accessories, complete as required for proper operation, all as specified and as shown on the drawings" [ref=e1201]
+              - cell "No" [ref=e1202]
+              - cell "192" [ref=e1203]
+              - cell [ref=e1204]:
+                - text: Needs Review
+                - generic "Review reasons for D" [ref=e1205]:
+                  - generic [ref=e1206]: Review reasons
+                  - list [ref=e1207]:
+                    - listitem [ref=e1208]: Possible Duplicate
+                    - listitem [ref=e1209]: Low Extraction Confidence
+              - cell "Pending" [ref=e1210]
+              - cell [ref=e1211]:
+                - generic [ref=e1212]:
+                  - button "Review" [ref=e1213] [cursor=pointer]
+                  - group [ref=e1214]:
+                    - generic "More actions for D" [ref=e1215] [cursor=pointer]: More
+            - row [ref=e1216]:
+              - cell [ref=e1217]:
+                - checkbox "Select BOQ item E" [ref=e1218]
+              - cell "E Possible duplicate · review required" [ref=e1219]:
+                - strong [ref=e1220]: E
+                - generic [ref=e1221]: Possible duplicate · review required
+              - cell "Smoke detectors (below ceiling) BOQ.xlsx · MECH RFQ · row 105 View source" [ref=e1222]:
+                - strong [ref=e1223]: Smoke detectors (below ceiling)
+                - generic [ref=e1224]:
+                  - generic [ref=e1225]: BOQ.xlsx · MECH RFQ · row 105
+                  - button "View source" [ref=e1226] [cursor=pointer]
+              - cell "Supply, install and connect fire alarm detection and alarm system complete including wiring, conduits, accessories, complete as required for proper operation, all as specified and as shown on the drawings" [ref=e1227]
+              - cell "No" [ref=e1228]
+              - cell "243" [ref=e1229]
+              - cell [ref=e1230]:
+                - text: Needs Review
+                - generic "Review reasons for E" [ref=e1231]:
+                  - generic [ref=e1232]: Review reasons
+                  - list [ref=e1233]:
+                    - listitem [ref=e1234]: Possible Duplicate
+                    - listitem [ref=e1235]: Low Extraction Confidence
+              - cell "Pending" [ref=e1236]
+              - cell [ref=e1237]:
+                - generic [ref=e1238]:
+                  - button "Review" [ref=e1239] [cursor=pointer]
+                  - group [ref=e1240]:
+                    - generic "More actions for E" [ref=e1241] [cursor=pointer]: More
+            - row [ref=e1263]:
+              - cell [ref=e1264]:
+                - checkbox "Select BOQ item G" [ref=e1265]
+              - cell "G Possible duplicate · review required" [ref=e1266]:
+                - strong [ref=e1267]: G
+                - generic [ref=e1268]: Possible duplicate · review required
+              - cell "Combined smoke and heat sensor BOQ.xlsx · MECH RFQ · row 109 View source" [ref=e1269]:
+                - strong [ref=e1270]: Combined smoke and heat sensor
+                - generic [ref=e1271]:
+                  - generic [ref=e1272]: BOQ.xlsx · MECH RFQ · row 109
+                  - button "View source" [ref=e1273] [cursor=pointer]
+              - cell "Supply, install and connect fire alarm detection and alarm system complete including wiring, conduits, accessories, complete as required for proper operation, all as specified and as shown on the drawings" [ref=e1274]
+              - cell "No" [ref=e1275]
+              - cell "10" [ref=e1276]
+              - cell [ref=e1277]:
+                - text: Needs Review
+                - generic "Review reasons for G" [ref=e1278]:
+                  - generic [ref=e1279]: Review reasons
+                  - list [ref=e1280]:
+                    - listitem [ref=e1281]: Possible Duplicate
+                    - listitem [ref=e1282]: Low Extraction Confidence
+              - cell [ref=e1283]:
+                - generic "AI Interpretation" [ref=e1284]:
+                  - generic [ref=e1285]: AI Interpretation · MEDIUM
+                  - strong [ref=e1286]: Fire Alarm
+                  - generic [ref=e1287]: "Attributes: Smoke and Heat"
+                  - generic [ref=e1288]: Not a verified product specification
+              - cell [ref=e1289]:
+                - generic [ref=e1290]:
+                  - button "Review" [ref=e1291] [cursor=pointer]
+                  - group [ref=e1292]:
+                    - generic "More actions for G" [ref=e1293] [cursor=pointer]: More
+            - row [ref=e1294]:
+              - cell [ref=e1295]:
+                - checkbox "Select BOQ item H" [ref=e1296]
+              - cell "H Possible duplicate · review required" [ref=e1297]:
+                - strong [ref=e1298]: H
+                - generic [ref=e1299]: Possible duplicate · review required
+              - cell "Door contact BOQ.xlsx · MECH RFQ · row 111 View source" [ref=e1300]:
+                - strong [ref=e1301]: Door contact
+                - generic [ref=e1302]:
+                  - generic [ref=e1303]: BOQ.xlsx · MECH RFQ · row 111
+                  - button "View source" [ref=e1304] [cursor=pointer]
+              - cell "Supply, install and connect fire alarm detection and alarm system complete including wiring, conduits, accessories, complete as required for proper operation, all as specified and as shown on the drawings" [ref=e1305]
+              - cell "No" [ref=e1306]
+              - cell "24" [ref=e1307]
+              - cell [ref=e1308]:
+                - text: Needs Review
+                - generic "Review reasons for H" [ref=e1309]:
+                  - generic [ref=e1310]: Review reasons
+                  - list [ref=e1311]:
+                    - listitem [ref=e1312]: Possible Duplicate
+                    - listitem [ref=e1313]: Low Extraction Confidence
+              - cell "Pending" [ref=e1314]
+              - cell [ref=e1315]:
+                - generic [ref=e1316]:
+                  - button "Review" [ref=e1317] [cursor=pointer]
+                  - group [ref=e1318]:
+                    - generic "More actions for H" [ref=e1319] [cursor=pointer]: More
+            - row [ref=e1320]:
+              - cell [ref=e1321]:
+                - checkbox "Select BOQ item J" [ref=e1322]
+              - cell "J Possible duplicate · review required" [ref=e1323]:
+                - strong [ref=e1324]: J
+                - generic [ref=e1325]: Possible duplicate · review required
+              - cell "Duct detector BOQ.xlsx · MECH RFQ · row 113 View source" [ref=e1326]:
+                - strong [ref=e1327]: Duct detector
+                - generic [ref=e1328]:
+                  - generic [ref=e1329]: BOQ.xlsx · MECH RFQ · row 113
+                  - button "View source" [ref=e1330] [cursor=pointer]
+              - cell "Supply, install and connect fire alarm detection and alarm system complete including wiring, conduits, accessories, complete as required for proper operation, all as specified and as shown on the drawings" [ref=e1331]
+              - cell "No" [ref=e1332]
+              - cell "13" [ref=e1333]
+              - cell [ref=e1334]:
+                - text: Needs Review
+                - generic "Review reasons for J" [ref=e1335]:
+                  - generic [ref=e1336]: Review reasons
+                  - list [ref=e1337]:
+                    - listitem [ref=e1338]: Possible Duplicate
+                    - listitem [ref=e1339]: Low Extraction Confidence
+              - cell "Pending" [ref=e1340]
+              - cell [ref=e1341]:
+                - generic [ref=e1342]:
+                  - button "Review" [ref=e1343] [cursor=pointer]
+                  - group [ref=e1344]:
+                    - generic "More actions for J" [ref=e1345] [cursor=pointer]: More
+            - row [ref=e1346]:
+              - cell [ref=e1347]:
+                - checkbox "Select BOQ item K" [ref=e1348]
+              - cell "K Possible duplicate · review required" [ref=e1349]:
+                - strong [ref=e1350]: K
+                - generic [ref=e1351]: Possible duplicate · review required
+              - cell "Fire alarm control panel with all accessories BOQ.xlsx · MECH RFQ · row 115 View source" [ref=e1352]:
+                - strong [ref=e1353]: Fire alarm control panel with all accessories
+                - generic [ref=e1354]:
+                  - generic [ref=e1355]: BOQ.xlsx · MECH RFQ · row 115
+                  - button "View source" [ref=e1356] [cursor=pointer]
+              - cell "Supply, install and connect fire alarm detection and alarm system complete including wiring, conduits, accessories, complete as required for proper operation, all as specified and as shown on the drawings" [ref=e1357]
+              - cell "No" [ref=e1358]
+              - cell "1" [ref=e1359]
+              - cell [ref=e1360]:
+                - text: Needs Review
+                - generic "Review reasons for K" [ref=e1361]:
+                  - generic [ref=e1362]: Review reasons
+                  - list [ref=e1363]:
+                    - listitem [ref=e1364]: Possible Duplicate
+                    - listitem [ref=e1365]: Low Extraction Confidence
+              - cell "Pending" [ref=e1366]
+              - cell [ref=e1367]:
+                - generic [ref=e1368]:
+                  - button "Review" [ref=e1369] [cursor=pointer]
+                  - group [ref=e1370]:
+                    - generic "More actions for K" [ref=e1371] [cursor=pointer]: More
+            - row [ref=e1372]:
+              - cell [ref=e1373]:
+                - checkbox "Select BOQ item L" [ref=e1374]
+              - cell "L Possible duplicate · review required" [ref=e1375]:
+                - strong [ref=e1376]: L
+                - generic [ref=e1377]: Possible duplicate · review required
+              - cell "Fire alarm manual station BOQ.xlsx · MECH RFQ · row 117 View source" [ref=e1378]:
+                - strong [ref=e1379]: Fire alarm manual station
+                - generic [ref=e1380]:
+                  - generic [ref=e1381]: BOQ.xlsx · MECH RFQ · row 117
+                  - button "View source" [ref=e1382] [cursor=pointer]
+              - cell "Supply, install and connect fire alarm detection and alarm system complete including wiring, conduits, accessories, complete as required for proper operation, all as specified and as shown on the drawings" [ref=e1383]
+              - cell "No" [ref=e1384]
+              - cell "33" [ref=e1385]
+              - cell [ref=e1386]:
+                - text: Needs Review
+                - generic "Review reasons for L" [ref=e1387]:
+                  - generic [ref=e1388]: Review reasons
+                  - list [ref=e1389]:
+                    - listitem [ref=e1390]: Possible Duplicate
+                    - listitem [ref=e1391]: Low Extraction Confidence
+              - cell "Pending" [ref=e1392]
+              - cell [ref=e1393]:
+                - generic [ref=e1394]:
+                  - button "Review" [ref=e1395] [cursor=pointer]
+                  - group [ref=e1396]:
+                    - generic "More actions for L" [ref=e1397] [cursor=pointer]: More
+            - row [ref=e1398]:
+              - cell [ref=e1399]:
+                - checkbox "Select BOQ item M" [ref=e1400]
+              - cell "M Possible duplicate · review required" [ref=e1401]:
+                - strong [ref=e1402]: M
+                - generic [ref=e1403]: Possible duplicate · review required
+              - cell "Fire alarm manual station (weather proof) BOQ.xlsx · MECH RFQ · row 119 View source" [ref=e1404]:
+                - strong [ref=e1405]: Fire alarm manual station (weather proof)
+                - generic [ref=e1406]:
+                  - generic [ref=e1407]: BOQ.xlsx · MECH RFQ · row 119
+                  - button "View source" [ref=e1408] [cursor=pointer]
+              - cell "Supply, install and connect fire alarm detection and alarm system complete including wiring, conduits, accessories, complete as required for proper operation, all as specified and as shown on the drawings" [ref=e1409]
+              - cell "No" [ref=e1410]
+              - cell "8" [ref=e1411]
+              - cell [ref=e1412]:
+                - text: Needs Review
+                - generic "Review reasons for M" [ref=e1413]:
+                  - generic [ref=e1414]: Review reasons
+                  - list [ref=e1415]:
+                    - listitem [ref=e1416]: Possible Duplicate
+                    - listitem [ref=e1417]: Low Extraction Confidence
+              - cell "Pending" [ref=e1418]
+              - cell [ref=e1419]:
+                - generic [ref=e1420]:
+                  - button "Review" [ref=e1421] [cursor=pointer]
+                  - group [ref=e1422]:
+                    - generic "More actions for M" [ref=e1423] [cursor=pointer]: More
+            - row [ref=e1739]:
+              - cell [ref=e1740]:
+                - checkbox "Select BOQ item K" [ref=e1741]
+              - cell "K Possible duplicate · review required" [ref=e1742]:
+                - strong [ref=e1743]: K
+                - generic [ref=e1744]: Possible duplicate · review required
+              - cell "Fire alarm control panel with all accessories BOQ.xlsx · MECH RFQ · row 156 View source" [ref=e1745]:
+                - strong [ref=e1746]: Fire alarm control panel with all accessories
+                - generic [ref=e1747]:
+                  - generic [ref=e1748]: BOQ.xlsx · MECH RFQ · row 156
+                  - button "View source" [ref=e1749] [cursor=pointer]
+              - cell "Supply, install and connect fire alarm detection and alarm system complete including wiring, conduits, accessories, complete as required for proper operation, all as specified and as shown on the drawings" [ref=e1750]
+              - cell "No" [ref=e1751]
+              - cell "1" [ref=e1752]
+              - cell [ref=e1753]:
+                - text: Needs Review
+                - generic "Review reasons for K" [ref=e1754]:
+                  - generic [ref=e1755]: Review reasons
+                  - list [ref=e1756]:
+                    - listitem [ref=e1757]: Possible Duplicate
+                    - listitem [ref=e1758]: Low Extraction Confidence
+              - cell "Pending" [ref=e1759]
+              - cell [ref=e1760]:
+                - generic [ref=e1761]:
+                  - button "Review" [ref=e1762] [cursor=pointer]
+                  - group [ref=e1763]:
+                    - generic "More actions for K" [ref=e1764] [cursor=pointer]: More
+  - generic "Technical review tools" [ref=e2332]:
+    - complementary "Bulk BOQ review and export" [ref=e2333]:
+      - strong [ref=e2334]: Bulk review & export
+      - generic [ref=e2335]: Range-select rows for bulk approve/reject, or export a source's extraction to CSV.
+      - button "BOQ.xlsx" [ref=e2336]

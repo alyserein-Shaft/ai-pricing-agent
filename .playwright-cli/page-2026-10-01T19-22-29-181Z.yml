@@ -1,0 +1,539 @@
+- generic [ref=f1e2]:
+  - complementary "Primary navigation" [ref=f1e3]:
+    - generic [ref=f1e9]:
+      - strong [ref=f1e10]: AI Pricing Agent
+      - generic [ref=f1e11]: وكيل التسعير الذكي
+    - generic [ref=f1e12]:
+      - navigation "Global navigation" [ref=f1e13]:
+        - button "Home" [ref=f1e15] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e16]: ⌂
+          - text: Home
+        - button "Projects" [ref=f1e18] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e19]: ▦
+          - text: Projects
+        - button "Knowledge" [ref=f1e21] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e22]: ▤
+          - text: Knowledge
+          - generic [aria-hidden] [ref=f1e23]: ⌄
+        - button "Reports" [ref=f1e25] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e26]: ▥
+          - text: Reports
+        - button "Administration" [ref=f1e28] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f1e29]: ⚙
+          - text: Administration
+      - region "Project navigation" [ref=f1e103]:
+        - generic [ref=f1e104]:
+          - generic [ref=f1e105]: CURRENT PROJECT
+          - strong [ref=f1e106]: Al Mousa School — Clean Golden Run
+          - generic [ref=f1e107]: Active · Requirement intelligence and classification
+        - navigation "Current project workspaces" [ref=f1e108]:
+          - button "Overview" [ref=f1e110] [cursor=pointer]
+          - generic [ref=f1e111]:
+            - button "Tender" [expanded] [ref=f1e112] [cursor=pointer]:
+              - text: Tender
+              - generic [aria-hidden] [ref=f1e113]: ⌃
+            - generic [ref=f1e114]:
+              - button "Documents" [active] [ref=f1e115] [cursor=pointer]
+              - button "BOQ" [ref=f1e116] [cursor=pointer]
+              - button "AI Understanding Review" [ref=f1e117] [cursor=pointer]
+              - button "Requirements" [ref=f1e118] [cursor=pointer]
+          - button "Strategy" [ref=f1e120] [cursor=pointer]:
+            - text: Strategy
+            - generic [aria-hidden] [ref=f1e121]: ⌄
+          - button "Product Selection" [ref=f1e123] [cursor=pointer]
+          - button "Engineering" [ref=f1e125] [cursor=pointer]:
+            - text: Engineering
+            - generic [aria-hidden] [ref=f1e126]: ⌄
+          - button "Review & Handoff" [ref=f1e128] [cursor=pointer]
+          - generic [ref=f1e129]:
+            - button "Pricing" [expanded] [ref=f1e130] [cursor=pointer]:
+              - text: Pricing
+              - generic [aria-hidden] [ref=f1e131]: ⌃
+            - generic [ref=f1e132]:
+              - button "Supplier Price Evidence" [ref=f1e133] [cursor=pointer]
+              - button "Costing & Pricing" [ref=f1e134] [cursor=pointer]
+          - button "Quotation" [ref=f1e136] [cursor=pointer]
+          - button "Activity" [ref=f1e138] [cursor=pointer]
+    - region "Authenticated account" [ref=f1e30]:
+      - generic [ref=f1e31]: LD
+      - generic [ref=f1e32]:
+        - strong [ref=f1e33]: Development session
+        - generic [ref=f1e34]: local@development.invalid
+        - generic [ref=f1e35]: "Administrator · Project: Project Manager · Development session (no human actor configured)"
+        - generic [ref=f1e36]: BD-Shaft Internal Pilot · Organization Owner / Organization Administrator
+      - button "Sign out" [ref=f1e38]
+  - main [ref=f1e39]:
+    - generic [ref=f1e40]:
+      - button "المشروع Project Al Mousa School — Clean Golden Run ⌄" [ref=f1e139] [cursor=pointer]:
+        - generic [ref=f1e140]:
+          - generic [ref=f1e141]: المشروع
+          - generic [ref=f1e142]: Project
+        - strong [ref=f1e144]: Al Mousa School — Clean Golden Run
+        - generic [ref=f1e145]: ⌄
+      - generic [ref=f1e146]:
+        - button "Action queue 3 verified actions open" [ref=f1e147] [cursor=pointer]:
+          - text: Action queue
+          - generic [ref=f1e148]: 3 verified actions open
+        - generic [ref=f1e149]:
+          - generic [ref=f1e150]: Currency
+          - combobox "Project currency" [ref=f1e151] [cursor=pointer]:
+            - option "SAR" [selected]
+        - button "⚙ Pricing controls" [ref=f1e152] [cursor=pointer]:
+          - text: ⚙
+          - generic [ref=f1e153]: Pricing controls
+    - generic [ref=f1e46]:
+      - navigation "Project estimation workflow" [ref=f1e154]:
+        - button "1 Set up Complete" [ref=f1e155] [cursor=pointer]:
+          - generic [ref=f1e156]: "1"
+          - strong [ref=f1e157]: Set up
+          - generic [ref=f1e158]: Complete
+        - button "2 Documents Complete" [ref=f1e159] [cursor=pointer]:
+          - generic [ref=f1e160]: "2"
+          - strong [ref=f1e161]: Documents
+          - generic [ref=f1e162]: Complete
+        - button "3 BOQ Complete" [ref=f1e163] [cursor=pointer]:
+          - generic [ref=f1e164]: "3"
+          - strong [ref=f1e165]: BOQ
+          - generic [ref=f1e166]: Complete
+        - button "4 Understanding Not tracked" [ref=f1e167] [cursor=pointer]:
+          - generic [ref=f1e168]: "4"
+          - strong [ref=f1e169]: Understanding
+          - generic [ref=f1e170]: Not tracked
+        - button "5 Requirements In progress" [ref=f1e171] [cursor=pointer]:
+          - generic [ref=f1e172]: "5"
+          - strong [ref=f1e173]: Requirements
+          - generic [ref=f1e174]: In progress
+        - button "6 Strategy Not tracked" [ref=f1e175] [cursor=pointer]:
+          - generic [ref=f1e176]: "6"
+          - strong [ref=f1e177]: Strategy
+          - generic [ref=f1e178]: Not tracked
+        - button "7 Product Selection Not started" [ref=f1e179] [cursor=pointer]:
+          - generic [ref=f1e180]: "7"
+          - strong [ref=f1e181]: Product Selection
+          - generic [ref=f1e182]: Not started
+        - button "8 Engineer Decision Not tracked" [ref=f1e183] [cursor=pointer]:
+          - generic [ref=f1e184]: "8"
+          - strong [ref=f1e185]: Engineer Decision
+          - generic [ref=f1e186]: Not tracked
+        - button "9 Sizing Not tracked" [ref=f1e187] [cursor=pointer]:
+          - generic [ref=f1e188]: "9"
+          - strong [ref=f1e189]: Sizing
+          - generic [ref=f1e190]: Not tracked
+        - button "10 BOM Not tracked" [ref=f1e191] [cursor=pointer]:
+          - generic [ref=f1e192]: "10"
+          - strong [ref=f1e193]: BOM
+          - generic [ref=f1e194]: Not tracked
+        - button "11 Review & Handoff Not tracked" [ref=f1e195] [cursor=pointer]:
+          - generic [ref=f1e196]: "11"
+          - strong [ref=f1e197]: Review & Handoff
+          - generic [ref=f1e198]: Not tracked
+        - button "12 Pricing Not started" [ref=f1e199] [cursor=pointer]:
+          - generic [ref=f1e200]: "12"
+          - strong [ref=f1e201]: Pricing
+          - generic [ref=f1e202]: Not started
+        - button "13 Commercial Review Not started" [ref=f1e203] [cursor=pointer]:
+          - generic [ref=f1e204]: "13"
+          - strong [ref=f1e205]: Commercial Review
+          - generic [ref=f1e206]: Not started
+        - button "14 Quotation Not started" [ref=f1e207] [cursor=pointer]:
+          - generic [ref=f1e208]: "14"
+          - strong [ref=f1e209]: Quotation
+          - generic [ref=f1e210]: Not started
+        - button "15 Activity Not started" [ref=f1e211] [cursor=pointer]:
+          - generic [ref=f1e212]: "15"
+          - strong [ref=f1e213]: Activity
+          - generic [ref=f1e214]: Not started
+      - generic "Current project BP450-CLEAN-01" [ref=f1e215]:
+        - generic [ref=f1e216]: PROJECT WORKSPACE
+        - strong [ref=f1e217]: BP450-CLEAN-01
+      - generic [ref=f1e322]:
+        - generic [ref=f1e323]:
+          - generic [ref=f1e324]:
+            - text: STEP 01 · DOCUMENT INTAKE
+            - heading "Project documents" [level=1] [ref=f1e325]
+            - paragraph [ref=f1e326]: Upload, classify and route the authoritative files for this project. Detailed engineering review happens in BOQ, Requirements and the Drawing workspace.
+          - generic [ref=f1e327]:
+            - button "Open BOQ workspace" [ref=f1e328] [cursor=pointer]
+            - button "⇧ Upload documents" [ref=f1e329] [cursor=pointer]
+        - generic [ref=f1e331]:
+          - strong [ref=f1e332]: Document intake complete
+          - paragraph [ref=f1e333]: Continue to BOQ, Requirements or Drawing review for detailed engineering evidence.
+        - generic [ref=f1e334]:
+          - generic [ref=f1e335]: DOCUMENT CONTROL
+          - generic [ref=f1e336]:
+            - strong [ref=f1e337]: Current tender baseline active
+            - paragraph [ref=f1e338]: No previous issue supplied · revision comparison unavailable.
+          - generic [ref=f1e339]: Active baseline
+        - group [ref=f1e340]:
+          - generic "TENDER EVIDENCE MAP What this pricing workspace can actually prove 6 evidence groups · Presence is not completeness View evidence map" [ref=f1e341] [cursor=pointer]:
+            - generic [ref=f1e342]:
+              - generic [ref=f1e343]: TENDER EVIDENCE MAP
+              - strong [ref=f1e344]: What this pricing workspace can actually prove
+              - emphasis [ref=f1e345]: 6 evidence groups · Presence is not completeness
+            - generic [ref=f1e346]: View evidence map
+        - region [ref=f1e347]:
+          - generic [ref=f1e348]:
+            - generic [ref=f1e349]:
+              - generic [ref=f1e350]: PERSISTED DOCUMENT REGISTER
+              - strong [ref=f1e351]: 15 durable documents
+            - generic [ref=f1e352]: Project database + protected file storage
+          - article [ref=f1e353]:
+            - generic [ref=f1e354]:
+              - generic [ref=f1e355]:
+                - generic [ref=f1e356]: DRAWING
+                - strong [ref=f1e357]: 2401232-PC-AMS-DR-T-93-ZZZ-002.pdf
+              - paragraph [ref=f1e358]: Drawing · v1 · 317 KB · uploaded 9/22/2026, 10:32:27 PM
+              - generic [ref=f1e359]:
+                - generic [ref=f1e360]:
+                  - generic [ref=f1e361]: Classification
+                  - strong [ref=f1e362]: "Confirmed: Drawing"
+                - generic [ref=f1e363]:
+                  - generic [ref=f1e364]: Analysis
+                  - strong [ref=f1e365]: Completed
+                - generic [ref=f1e366]:
+                  - generic [ref=f1e367]: Review
+                  - strong [ref=f1e368]: Needs Review
+                - generic [ref=f1e369]:
+                  - generic [ref=f1e370]: Route
+                  - strong [ref=f1e371]: Drawing Analysis
+            - generic [ref=f1e372]:
+              - text: FILE ACTIONS
+              - button "Open drawing workspace" [ref=f1e374] [cursor=pointer]
+              - group [ref=f1e375]:
+                - generic "More file controls" [ref=f1e376] [cursor=pointer]
+          - article [ref=f1e377]:
+            - generic [ref=f1e378]:
+              - generic [ref=f1e379]:
+                - generic [ref=f1e380]: DRAWING
+                - strong [ref=f1e381]: 2401232-PC-AMS-DR-T-94-ZZZ-001.pdf
+              - paragraph [ref=f1e382]: Drawing · v1 · 1.4 MB · uploaded 9/22/2026, 10:32:27 PM
+              - generic [ref=f1e383]:
+                - generic [ref=f1e384]:
+                  - generic [ref=f1e385]: Classification
+                  - strong [ref=f1e386]: "Confirmed: Drawing"
+                - generic [ref=f1e387]:
+                  - generic [ref=f1e388]: Analysis
+                  - strong [ref=f1e389]: Not Started
+                - generic [ref=f1e390]:
+                  - generic [ref=f1e391]: Review
+                  - strong [ref=f1e392]: Not Applicable
+                - generic [ref=f1e393]:
+                  - generic [ref=f1e394]: Route
+                  - strong [ref=f1e395]: Drawing Analysis
+            - generic [ref=f1e396]:
+              - text: FILE ACTIONS
+              - button "Open drawing workspace" [ref=f1e398] [cursor=pointer]
+              - group [ref=f1e399]:
+                - generic "More file controls" [ref=f1e400] [cursor=pointer]
+          - article [ref=f1e401]:
+            - generic [ref=f1e402]:
+              - generic [ref=f1e403]:
+                - generic [ref=f1e404]: DRAWING
+                - strong [ref=f1e405]: 2401232-PC-AMS-DR-T-93-ZZZ-001 (1).pdf
+              - paragraph [ref=f1e406]: Drawing · v1 · 313 KB · uploaded 9/22/2026, 10:32:27 PM
+              - generic [ref=f1e407]:
+                - generic [ref=f1e408]:
+                  - generic [ref=f1e409]: Classification
+                  - strong [ref=f1e410]: "Confirmed: Drawing"
+                - generic [ref=f1e411]:
+                  - generic [ref=f1e412]: Analysis
+                  - strong [ref=f1e413]: Completed
+                - generic [ref=f1e414]:
+                  - generic [ref=f1e415]: Review
+                  - strong [ref=f1e416]: Needs Review
+                - generic [ref=f1e417]:
+                  - generic [ref=f1e418]: Route
+                  - strong [ref=f1e419]: Drawing Analysis
+            - generic [ref=f1e420]:
+              - text: FILE ACTIONS
+              - button "Open drawing workspace" [ref=f1e422] [cursor=pointer]
+              - group [ref=f1e423]:
+                - generic "More file controls" [ref=f1e424] [cursor=pointer]
+          - article [ref=f1e425]:
+            - generic [ref=f1e426]:
+              - generic [ref=f1e427]:
+                - generic [ref=f1e428]: DRAWING
+                - strong [ref=f1e429]: 2401232-PC-AMS-DR-T-00-ZZZ-002.pdf
+              - paragraph [ref=f1e430]: Drawing · v1 · 338 KB · uploaded 9/22/2026, 10:32:27 PM
+              - generic [ref=f1e431]:
+                - generic [ref=f1e432]:
+                  - generic [ref=f1e433]: Classification
+                  - strong [ref=f1e434]: "Confirmed: Drawing"
+                - generic [ref=f1e435]:
+                  - generic [ref=f1e436]: Analysis
+                  - strong [ref=f1e437]: Completed
+                - generic [ref=f1e438]:
+                  - generic [ref=f1e439]: Review
+                  - strong [ref=f1e440]: Needs Review
+                - generic [ref=f1e441]:
+                  - generic [ref=f1e442]: Route
+                  - strong [ref=f1e443]: Drawing Analysis
+            - generic [ref=f1e444]:
+              - text: FILE ACTIONS
+              - button "Open drawing workspace" [ref=f1e446] [cursor=pointer]
+              - group [ref=f1e447]:
+                - generic "More file controls" [ref=f1e448] [cursor=pointer]
+          - article [ref=f1e449]:
+            - generic [ref=f1e450]:
+              - generic [ref=f1e451]:
+                - generic [ref=f1e452]: DRAWING
+                - strong [ref=f1e453]: 2401232-PC-AMS-DR-E-00-ZZZ-002.pdf
+              - paragraph [ref=f1e454]: Drawing · v1 · 373 KB · uploaded 9/22/2026, 10:29:44 PM
+              - generic [ref=f1e455]:
+                - generic [ref=f1e456]:
+                  - generic [ref=f1e457]: Classification
+                  - strong [ref=f1e458]: "Confirmed: Drawing"
+                - generic [ref=f1e459]:
+                  - generic [ref=f1e460]: Analysis
+                  - strong [ref=f1e461]: Completed
+                - generic [ref=f1e462]:
+                  - generic [ref=f1e463]: Review
+                  - strong [ref=f1e464]: Needs Review
+                - generic [ref=f1e465]:
+                  - generic [ref=f1e466]: Route
+                  - strong [ref=f1e467]: Drawing Analysis
+            - generic [ref=f1e468]:
+              - text: FILE ACTIONS
+              - button "Open drawing workspace" [ref=f1e470] [cursor=pointer]
+              - group [ref=f1e471]:
+                - generic "More file controls" [ref=f1e472] [cursor=pointer]
+          - article [ref=f1e473]:
+            - generic [ref=f1e474]:
+              - generic [ref=f1e475]:
+                - generic [ref=f1e476]: DRAWING
+                - strong [ref=f1e477]: 2401232-PC-BOS-DR-T-93-ZZZ-005.pdf
+              - paragraph [ref=f1e478]: Drawing · v1 · 544 KB · uploaded 9/22/2026, 10:32:28 PM
+              - generic [ref=f1e479]:
+                - generic [ref=f1e480]:
+                  - generic [ref=f1e481]: Classification
+                  - strong [ref=f1e482]: "Confirmed: Drawing"
+                - generic [ref=f1e483]:
+                  - generic [ref=f1e484]: Analysis
+                  - strong [ref=f1e485]: Completed
+                - generic [ref=f1e486]:
+                  - generic [ref=f1e487]: Review
+                  - strong [ref=f1e488]: Needs Review
+                - generic [ref=f1e489]:
+                  - generic [ref=f1e490]: Route
+                  - strong [ref=f1e491]: Drawing Analysis
+            - generic [ref=f1e492]:
+              - text: FILE ACTIONS
+              - button "Open drawing workspace" [ref=f1e494] [cursor=pointer]
+              - group [ref=f1e495]:
+                - generic "More file controls" [ref=f1e496] [cursor=pointer]
+          - article [ref=f1e497]:
+            - generic [ref=f1e498]:
+              - generic [ref=f1e499]:
+                - generic [ref=f1e500]: DRAWING
+                - strong [ref=f1e501]: 2401232-PC-BOS-DR-T-94-ZZZ-001.pdf
+              - paragraph [ref=f1e502]: Drawing · v1 · 3.4 MB · uploaded 9/22/2026, 10:32:28 PM
+              - generic [ref=f1e503]:
+                - generic [ref=f1e504]:
+                  - generic [ref=f1e505]: Classification
+                  - strong [ref=f1e506]: "Confirmed: Drawing"
+                - generic [ref=f1e507]:
+                  - generic [ref=f1e508]: Analysis
+                  - strong [ref=f1e509]: Not Started
+                - generic [ref=f1e510]:
+                  - generic [ref=f1e511]: Review
+                  - strong [ref=f1e512]: Not Applicable
+                - generic [ref=f1e513]:
+                  - generic [ref=f1e514]: Route
+                  - strong [ref=f1e515]: Drawing Analysis
+            - generic [ref=f1e516]:
+              - text: FILE ACTIONS
+              - button "Open drawing workspace" [ref=f1e518] [cursor=pointer]
+              - group [ref=f1e519]:
+                - generic "More file controls" [ref=f1e520] [cursor=pointer]
+          - article [ref=f1e521]:
+            - generic [ref=f1e522]:
+              - generic [ref=f1e523]:
+                - generic [ref=f1e524]: DRAWING
+                - strong [ref=f1e525]: 2401232-PC-GRS-DR-T-93-ZZZ-005.pdf
+              - paragraph [ref=f1e526]: Drawing · v1 · 544 KB · uploaded 9/22/2026, 10:32:28 PM
+              - generic [ref=f1e527]:
+                - generic [ref=f1e528]:
+                  - generic [ref=f1e529]: Classification
+                  - strong [ref=f1e530]: "Confirmed: Drawing"
+                - generic [ref=f1e531]:
+                  - generic [ref=f1e532]: Analysis
+                  - strong [ref=f1e533]: Not Started
+                - generic [ref=f1e534]:
+                  - generic [ref=f1e535]: Review
+                  - strong [ref=f1e536]: Not Applicable
+                - generic [ref=f1e537]:
+                  - generic [ref=f1e538]: Route
+                  - strong [ref=f1e539]: Drawing Analysis
+            - generic [ref=f1e540]:
+              - text: FILE ACTIONS
+              - button "Open drawing workspace" [ref=f1e542] [cursor=pointer]
+              - group [ref=f1e543]:
+                - generic "More file controls" [ref=f1e544] [cursor=pointer]
+          - article [ref=f1e545]:
+            - generic [ref=f1e546]:
+              - generic [ref=f1e547]:
+                - generic [ref=f1e548]: DRAWING
+                - strong [ref=f1e549]: 2401232-PC-GRS-DR-T-94-ZZZ-001.pdf
+              - paragraph [ref=f1e550]: Drawing · v1 · 3.4 MB · uploaded 9/22/2026, 10:32:28 PM
+              - generic [ref=f1e551]:
+                - generic [ref=f1e552]:
+                  - generic [ref=f1e553]: Classification
+                  - strong [ref=f1e554]: "Confirmed: Drawing"
+                - generic [ref=f1e555]:
+                  - generic [ref=f1e556]: Analysis
+                  - strong [ref=f1e557]: Not Started
+                - generic [ref=f1e558]:
+                  - generic [ref=f1e559]: Review
+                  - strong [ref=f1e560]: Not Applicable
+                - generic [ref=f1e561]:
+                  - generic [ref=f1e562]: Route
+                  - strong [ref=f1e563]: Drawing Analysis
+            - generic [ref=f1e564]:
+              - text: FILE ACTIONS
+              - button "Open drawing workspace" [ref=f1e566] [cursor=pointer]
+              - group [ref=f1e567]:
+                - generic "More file controls" [ref=f1e568] [cursor=pointer]
+          - article [ref=f1e569]:
+            - generic [ref=f1e570]:
+              - generic [ref=f1e571]:
+                - generic [ref=f1e572]: DRAWING
+                - strong [ref=f1e573]: 2401232-PC-KGS-DR-T-91-ZZZ-002 (1).pdf
+              - paragraph [ref=f1e574]: Drawing · v1 · 505 KB · uploaded 9/22/2026, 10:32:28 PM
+              - generic [ref=f1e575]:
+                - generic [ref=f1e576]:
+                  - generic [ref=f1e577]: Classification
+                  - strong [ref=f1e578]: "Confirmed: Drawing"
+                - generic [ref=f1e579]:
+                  - generic [ref=f1e580]: Analysis
+                  - strong [ref=f1e581]: Not Started
+                - generic [ref=f1e582]:
+                  - generic [ref=f1e583]: Review
+                  - strong [ref=f1e584]: Not Applicable
+                - generic [ref=f1e585]:
+                  - generic [ref=f1e586]: Route
+                  - strong [ref=f1e587]: Drawing Analysis
+            - generic [ref=f1e588]:
+              - text: FILE ACTIONS
+              - button "Open drawing workspace" [ref=f1e590] [cursor=pointer]
+              - group [ref=f1e591]:
+                - generic "More file controls" [ref=f1e592] [cursor=pointer]
+          - article [ref=f1e593]:
+            - generic [ref=f1e594]:
+              - generic [ref=f1e595]:
+                - generic [ref=f1e596]: DRAWING
+                - strong [ref=f1e597]: 2401232-PC-KGS-DR-T-93-ZZZ-005 (1).pdf
+              - paragraph [ref=f1e598]: Drawing · v1 · 540 KB · uploaded 9/22/2026, 10:32:28 PM
+              - generic [ref=f1e599]:
+                - generic [ref=f1e600]:
+                  - generic [ref=f1e601]: Classification
+                  - strong [ref=f1e602]: "Confirmed: Drawing"
+                - generic [ref=f1e603]:
+                  - generic [ref=f1e604]: Analysis
+                  - strong [ref=f1e605]: Not Started
+                - generic [ref=f1e606]:
+                  - generic [ref=f1e607]: Review
+                  - strong [ref=f1e608]: Not Applicable
+                - generic [ref=f1e609]:
+                  - generic [ref=f1e610]: Route
+                  - strong [ref=f1e611]: Drawing Analysis
+            - generic [ref=f1e612]:
+              - text: FILE ACTIONS
+              - button "Open drawing workspace" [ref=f1e614] [cursor=pointer]
+              - group [ref=f1e615]:
+                - generic "More file controls" [ref=f1e616] [cursor=pointer]
+          - article [ref=f1e617]:
+            - generic [ref=f1e618]:
+              - generic [ref=f1e619]:
+                - generic [ref=f1e620]: DRAWING
+                - strong [ref=f1e621]: 2401232-PC-WLC-DR-T-93-ZZZ-005 (3).pdf
+              - paragraph [ref=f1e622]: Drawing · v1 · 326 KB · uploaded 9/22/2026, 10:32:28 PM
+              - generic [ref=f1e623]:
+                - generic [ref=f1e624]:
+                  - generic [ref=f1e625]: Classification
+                  - strong [ref=f1e626]: "Confirmed: Drawing"
+                - generic [ref=f1e627]:
+                  - generic [ref=f1e628]: Analysis
+                  - strong [ref=f1e629]: Completed
+                - generic [ref=f1e630]:
+                  - generic [ref=f1e631]: Review
+                  - strong [ref=f1e632]: Needs Review
+                - generic [ref=f1e633]:
+                  - generic [ref=f1e634]: Route
+                  - strong [ref=f1e635]: Drawing Analysis
+            - generic [ref=f1e636]:
+              - text: FILE ACTIONS
+              - button "Open drawing workspace" [ref=f1e638] [cursor=pointer]
+              - group [ref=f1e639]:
+                - generic "More file controls" [ref=f1e640] [cursor=pointer]
+          - article [ref=f1e641]:
+            - generic [ref=f1e642]:
+              - generic [ref=f1e643]:
+                - generic [ref=f1e644]: DRAWING
+                - strong [ref=f1e645]: 2401232-PC-WLC-DR-T-94-ZZZ-001 (1).pdf
+              - paragraph [ref=f1e646]: Drawing · v1 · 1.5 MB · uploaded 9/22/2026, 10:32:29 PM
+              - generic [ref=f1e647]:
+                - generic [ref=f1e648]:
+                  - generic [ref=f1e649]: Classification
+                  - strong [ref=f1e650]: "Confirmed: Drawing"
+                - generic [ref=f1e651]:
+                  - generic [ref=f1e652]: Analysis
+                  - strong [ref=f1e653]: Not Started
+                - generic [ref=f1e654]:
+                  - generic [ref=f1e655]: Review
+                  - strong [ref=f1e656]: Not Applicable
+                - generic [ref=f1e657]:
+                  - generic [ref=f1e658]: Route
+                  - strong [ref=f1e659]: Drawing Analysis
+            - generic [ref=f1e660]:
+              - text: FILE ACTIONS
+              - button "Open drawing workspace" [ref=f1e662] [cursor=pointer]
+              - group [ref=f1e663]:
+                - generic "More file controls" [ref=f1e664] [cursor=pointer]
+          - article [ref=f1e665]:
+            - generic [ref=f1e666]:
+              - generic [ref=f1e667]:
+                - generic [ref=f1e668]: SPEC
+                - strong [ref=f1e669]: 28 46 00 - Fire Detection and Alarm System - Rev 1 (1).pdf
+              - paragraph [ref=f1e670]: Technical Specification · v1 · 412 KB · uploaded 9/22/2026, 10:29:43 PM
+              - generic [ref=f1e671]:
+                - generic [ref=f1e672]:
+                  - generic [ref=f1e673]: Classification
+                  - strong [ref=f1e674]: "Confirmed: Technical Specification"
+                - generic [ref=f1e675]:
+                  - generic [ref=f1e676]: Extraction
+                  - strong [ref=f1e677]: Completed
+                - generic [ref=f1e678]:
+                  - generic [ref=f1e679]: Requirements
+                  - strong [ref=f1e680]: "516"
+                - generic [ref=f1e681]:
+                  - generic [ref=f1e682]: Review
+                  - strong [ref=f1e683]: Review required
+            - generic [ref=f1e684]:
+              - text: FILE ACTIONS
+              - button "Review requirements" [ref=f1e686] [cursor=pointer]
+              - group [ref=f1e687]:
+                - generic "More file controls" [ref=f1e688] [cursor=pointer]
+          - article [ref=f1e689]:
+            - generic [ref=f1e690]:
+              - generic [ref=f1e691]:
+                - generic [ref=f1e692]: BOQ
+                - strong [ref=f1e693]: BOQ.xlsx
+              - paragraph [ref=f1e694]: BOQ · v1 · 163 KB · uploaded 9/22/2026, 10:27:32 PM
+              - generic [ref=f1e695]:
+                - generic [ref=f1e696]:
+                  - generic [ref=f1e697]: Classification
+                  - strong [ref=f1e698]: "Confirmed: BOQ"
+                - generic [ref=f1e699]:
+                  - generic [ref=f1e700]: Extraction
+                  - strong [ref=f1e701]: Completed
+                - generic [ref=f1e702]:
+                  - generic [ref=f1e703]: BOQ items
+                  - strong [ref=f1e704]: "90"
+                - generic [ref=f1e705]:
+                  - generic [ref=f1e706]: Review
+                  - strong [ref=f1e707]: 66 auto-verified · 16 human approved
+            - generic [ref=f1e708]:
+              - text: FILE ACTIONS
+              - button "Open BOQ workspace" [ref=f1e710] [cursor=pointer]
+              - group [ref=f1e711]:
+                - generic "More file controls" [ref=f1e712] [cursor=pointer]

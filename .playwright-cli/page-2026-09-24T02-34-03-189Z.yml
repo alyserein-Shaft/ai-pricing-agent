@@ -1,0 +1,70 @@
+- generic [ref=e7]:
+  - complementary "Primary navigation" [ref=e8]:
+    - generic [ref=e14]:
+      - strong [ref=e15]: AI Pricing Agent
+      - generic [ref=e16]: وكيل التسعير الذكي
+    - navigation "Global navigation" [ref=e18]:
+      - button "Home" [ref=e20] [cursor=pointer]:
+        - generic [aria-hidden] [ref=e21]: ⌂
+        - text: Home
+      - button "Projects" [ref=e23] [cursor=pointer]:
+        - generic [aria-hidden] [ref=e24]: ▦
+        - text: Projects
+      - generic [ref=e25]:
+        - button "Knowledge" [expanded] [ref=e26] [cursor=pointer]:
+          - generic [aria-hidden] [ref=e27]: ▤
+          - text: Knowledge
+          - generic [aria-hidden] [ref=e28]: ⌃
+        - generic [ref=e103]:
+          - button "Files" [ref=e104] [cursor=pointer]
+          - button "Products" [ref=e105] [cursor=pointer]
+          - button "Manufacturers" [ref=e106] [cursor=pointer]
+          - button "Standards" [active] [ref=e107] [cursor=pointer]
+          - button "Search" [ref=e108] [cursor=pointer]
+          - button "Product Identities" [ref=e109] [cursor=pointer]
+          - button "Prices" [ref=e110] [cursor=pointer]
+          - button "Case Studies" [ref=e111] [cursor=pointer]
+          - button "Fire Alarm" [ref=e112] [cursor=pointer]
+          - button "CCTV" [ref=e113] [cursor=pointer]
+      - button "Reports" [ref=e30] [cursor=pointer]:
+        - generic [aria-hidden] [ref=e31]: ▥
+        - text: Reports
+      - button "Administration" [ref=e33] [cursor=pointer]:
+        - generic [aria-hidden] [ref=e34]: ⚙
+        - text: Administration
+    - region "Authenticated account" [ref=e35]:
+      - generic [ref=e36]: LD
+      - generic [ref=e37]:
+        - strong [ref=e38]: Local Development User
+        - generic [ref=e39]: local@development.invalid
+        - generic [ref=e40]: Administrator
+        - generic [ref=e41]: BD-Shaft Internal Pilot · Organization Owner / Organization Administrator
+      - link "Sign out" [ref=e42] [cursor=pointer]:
+        - /url: /signout-with-chatgpt?return_to=/
+  - main [ref=e43]:
+    - generic [ref=e45]:
+      - generic [aria-hidden] [ref=e46]: ▤
+      - generic [ref=e47]:
+        - generic [ref=e48]: ORGANIZATION KNOWLEDGE
+        - strong [ref=e49]: Knowledge
+    - generic [ref=e114]:
+      - generic [ref=e115]:
+        - generic [ref=e116]:
+          - text: KNOWLEDGE · UPLOAD → LEARN → ORGANIZE → USE
+          - heading "Standards" [level=1] [ref=e305]
+          - paragraph [ref=e118]: Searchable, source-backed company engineering knowledge.
+        - generic [ref=e119]: ＋ Upload knowledge
+      - generic [ref=e120]:
+        - strong [ref=e121]: No automatic promotion
+        - generic [ref=e122]: Historical evidence, reusable knowledge, product approval, and price approval remain separate.
+      - generic [ref=e123]:
+        - generic [ref=e124]:
+          - generic [ref=e125]: FILES
+          - strong [ref=e126]: "0"
+        - generic [ref=e306]:
+          - generic [ref=e307]: RESULTS
+          - strong [ref=e308]: "0"
+      - generic [ref=e127]:
+        - generic [ref=e128]: Search standards
+        - textbox "Search standards" [ref=e309]
+      - generic [ref=e130]: No standards found.

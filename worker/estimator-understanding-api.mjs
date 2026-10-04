@@ -12,6 +12,8 @@ import { resolveApplicationContext } from "./application-context.mjs";
 import { boqUnderstandingProviderReadiness, createConfiguredBoqUnderstandingProvider } from "./boq-understanding-provider.mjs";
 import { currentBoqEvidenceFrom, currentBoqItemPredicate } from "./current-evidence-scope.mjs";
 import { authorizeControlledPilotSelection, buildBoqUnderstandingPilotManifest, validateControlledPilotRequest } from "../app/domain/boq-understanding-pilot.mjs";
+import { resolveUnderstandingCurrentness, USABLE_INTERPRETATION_STATUSES } from "../app/domain/boq-understanding-currentness.mjs";
+import { resolveSystemNameFromText } from "../app/domain/system-knowledge-registry.mjs";
 
 const json = (value, status = 200) => new Response(JSON.stringify(value), { status, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const id = (prefix) => `${prefix}_${crypto.randomUUID()}`;
@@ -311,7 +313,10 @@ export const activeRows = async (db, projectId, itemId = null) => {
   // covered" is judged against exactly the same attempt the approval
   // lifecycle itself treats as authoritative, never an arbitrary older one.
   const result = await db.prepare(`SELECT b.id boqItemId,b.item_number itemNumber,b.sequence,b.row_type rowType,b.description,b.numeric_quantity numericQuantity,b.original_quantity originalQuantity,b.normalized_unit normalizedUnit,b.original_unit originalUnit,b.system_value system,b.category,b.subcategory,b.manufacturer,b.model,b.part_number partNumber,b.source_document_id sourceDocumentId,b.evidence_document_version_id evidenceDocumentVersionId,b.evidence_extraction_version evidenceExtractionVersion,b.current_values currentValues,b.source_location sourceLocation,
-    (SELECT i.input_fingerprint || ':' || i.config_fingerprint FROM estimator_item_interpretations i WHERE i.boq_item_id=b.id ORDER BY i.version_number DESC LIMIT 1) interpretationFingerprints
+    (SELECT i.input_fingerprint || ':' || i.config_fingerprint FROM estimator_item_interpretations i WHERE i.boq_item_id=b.id ORDER BY i.version_number DESC LIMIT 1) interpretationFingerprints,
+    (SELECT i.status FROM estimator_item_interpretations i WHERE i.boq_item_id=b.id ORDER BY i.version_number DESC LIMIT 1) interpretationStatus,
+    (SELECT r.review_status FROM estimator_understanding_review_versions r WHERE r.boq_item_id=b.id ORDER BY r.version_number DESC LIMIT 1) latestReviewStatus,
+    (SELECT r.source_input_fingerprint FROM estimator_understanding_review_versions r WHERE r.boq_item_id=b.id ORDER BY r.version_number DESC LIMIT 1) latestReviewInputFingerprint
     FROM ${currentBoqEvidenceFrom("b")}
     WHERE b.project_id=? AND ${currentBoqItemPredicate("b")} ${itemId ? "AND b.id=?" : ""} ORDER BY b.sequence,b.id`).bind(...(itemId ? [projectId, itemId] : [projectId])).all();
   return (result.results || []).map((row) => ({ ...row, currentValues: parse(row.currentValues, {}), sourceLocation: parse(row.sourceLocation, null), interpretationFingerprints: String(row.interpretationFingerprints || "").split(",").filter(Boolean) }));
@@ -352,17 +357,65 @@ export const activeRows = async (db, projectId, itemId = null) => {
 // attempt still counts as covered exactly as before, and the manifest's own
 // primary/exploratory caps are completely unchanged.
 const alreadyInterpretedItemIds = (rows, confirmedSpecificationByItem, currentConfigFingerprint = null) => new Set(rows.filter((row) => {
+  // SPRINT 1.9 FOLLOW-THROUGH (Al Mousa). This predicate used to answer
+  // "already interpreted" from input-fingerprint + config-fingerprint equality
+  // ALONE, while the review layer answered the same question with that
+  // equality PLUS a usability rule. The two disagreed, and a row whose only
+  // fingerprint-matching attempt was unusable satisfied this predicate (so the
+  // manifest declared it covered and never queued it) while failing the review
+  // layer's predicate (so every review action was blocked with
+  // REVALIDATION_REQUIRED). Neither surface could advance the row: a
+  // structurally unreachable state. `boq-understanding-currentness.mjs` is the
+  // single authority for this question and BOTH consumers must call it; this
+  // one was still reconstructing the logic. See
+  // tests/boq-understanding-currentness.test.mjs ("both real consumers
+  // delegate to the canonical resolver").
   const currentFingerprint = interpretationInputFingerprint(prepareBoqUnderstandingInput(row, confirmedSpecificationByItem[row.boqItemId] || []));
-  return row.interpretationFingerprints.some((latestAttempt) => {
-    const separator = latestAttempt.indexOf(":");
-    const inputFingerprint = separator === -1 ? latestAttempt : latestAttempt.slice(0, separator);
-    const configFingerprint = separator === -1 ? null : latestAttempt.slice(separator + 1);
-    return inputFingerprint === currentFingerprint && (currentConfigFingerprint == null || configFingerprint == null || configFingerprint === currentConfigFingerprint);
+  const attempts = row.interpretationFingerprints.map((entry) => {
+    const separator = entry.indexOf(":");
+    return {
+      inputFingerprint: separator === -1 ? entry : entry.slice(0, separator),
+      configFingerprint: separator === -1 ? null : entry.slice(separator + 1),
+      status: row.interpretationStatus || null,
+    };
   });
+  const currentness = resolveUnderstandingCurrentness({ currentInputFingerprint: currentFingerprint, attempts, currentConfigFingerprint });
+  if (currentness.requiresRevalidation) return false;
+
+  // A governed approval whose recorded source_input_fingerprint no longer
+  // matches the item's CURRENT governed input is exactly what the review layer
+  // reports as REVALIDATION_REQUIRED (that state is DERIVED by comparing the
+  // two, never stored -- the row still says review_status='APPROVED', which is
+  // why reading the stored status alone never fires). Such an approval can
+  // never be used and every review action on it is denied, so the item can
+  // never advance. That is precisely the state the fresh-attempt path exists to
+  // clear, so it must stay selectable even when its stored interpretation is
+  // otherwise current.
+  //
+  // Deliberately NARROW: it reads fingerprints only. It never edits or
+  // resurrects a stale version, never approves anything, and a genuinely
+  // current, currently-approved item stays excluded exactly as before.
+  const approvalIsStale = Boolean(row.latestReviewInputFingerprint) && row.latestReviewInputFingerprint !== currentFingerprint;
+  if (approvalIsStale) return false;
+
+  // An item is "already interpreted" if it has a usable interpretation (COMPLETED
+  // or NEEDS_REVIEW) with matching input fingerprint, REGARDLESS of config
+  // fingerprint. Config fingerprint matching is for the REUSE check in
+  // executeRun, not for manifest eligibility. This prevents re-selecting items
+  // that have already been interpreted when the provider/config changes.
+  return attempts.some((attempt) => 
+    attempt.inputFingerprint === currentFingerprint && 
+    USABLE_INTERPRETATION_STATUSES.includes(attempt.status)
+  );
 }).map((row) => row.boqItemId));
 
 export const loadPilotManifest = async (db, projectId, options, currentConfigFingerprint = null) => {
-  const [rows, specs] = await Promise.all([activeRows(db, projectId), confirmedSpecifications(db, projectId)]);
+  // Sequential, not Promise.all, so confirmedSpecifications can route
+  // project-scoped approved clauses using the rows this function already read --
+  // preserving the two-read budget the manifest loader is pinned to, rather than
+  // adding a third authoritative read for the item systems.
+  const rows = await activeRows(db, projectId);
+  const specs = await confirmedSpecifications(db, projectId, rows);
   return buildBoqUnderstandingPilotManifest(projectId, rows, { alreadyInterpretedItemIds: alreadyInterpretedItemIds(rows, specs, currentConfigFingerprint), ...options });
 };
 
@@ -375,7 +428,55 @@ export const loadPilotManifest = async (db, projectId, options, currentConfigFin
 // diverged: an interpretation whose classification depended on confirmed
 // specification evidence could never be recognized as "current" by review,
 // permanently reporting UNAVAILABLE_OR_STALE regardless of approval status.
-export const confirmedSpecifications = async (db, projectId) => {
+// Real Al Mousa finding: this reader is the ONLY route by which approved
+// specification text can reach BOQ Understanding, and a clause that is genuinely
+// Approved + approved_for_downstream but linked to nothing never reached it. The
+// live project had an approved, system-wide clause ("provide install and connect
+// an intelligent addressable fire alarm system...") with zero link rows, so every
+// detector row reported its addressing as unestablished while approved project
+// authority already stated it -- an UNSUPPORTED_FAMILY_OVERCLAIM that was pure
+// routing loss, not a real evidence gap.
+//
+// Scope rule, deliberately narrow. A clause WITH a link row is EXCLUDED from the
+// project half: once a human has linked a clause to specific items, its reach is
+// governed by that link's own review status, and this reader must never bypass an
+// unconfirmed 'Suggested'/'Needs Review' link. Only a clause with no link at all
+// -- so the only scope it has recorded is the project -- is admitted, and then
+// only into items of the SAME governed system, so an Electrical or MEP clause can
+// never become Fire Alarm evidence. An item with no established system receives
+// none: fail safe rather than guess.
+//
+// This changes no approval state and writes nothing. It only stops discarding
+// evidence a human already approved. Provenance is carried per clause
+// (requirement id, normalized text, source document/location, scope) so a
+// reviewer can always see WHICH clause satisfied a claim.
+//
+// Bounded reads are preserved: both halves are ONE UNION ALL query, and the
+// item systems used for routing come from the caller's own already-loaded rows
+// (`items`), so this reader adds no authoritative read beyond the one it always
+// performed. Only a caller with no rows falls back to reading items.
+//
+// Scope is read from engineering_domain, NEVER from `system`.
+//
+// `engineering_domain` is the governed, human-editable authority: the requirement
+// review path writes exactly that column (`update` allows `domain`, and
+// `approve` writes `review_status` + `approved_for_downstream`), and
+// worker/spec-source-fact-promotion.mjs already decides project-scope from it.
+// `system` is extraction-time only and is never rewritten by any governed action,
+// so scoping on it silently defeated a human review: a requirement could be
+// correctly reviewed as engineering_domain='Fire Alarm' while system stayed
+// 'Unknown' and therefore never reached Understanding. There is deliberately NO
+// fallback to `system` -- a stale extraction-time label must never bypass
+// governance.
+//
+// Resolution goes through the registry's own canonical resolver
+// (resolveSystemNameFromText), so it fails closed exactly as the rest of the
+// system does: 'Unknown', blank, null and any unregistered domain all return
+// null and are simply not routed. No second domain vocabulary is introduced.
+const requirementScopeDomain = (requirement) => resolveSystemNameFromText(requirement?.engineering_domain);
+const itemScopeDomain = (item) => resolveSystemNameFromText(item?.system ?? item?.system_value);
+
+export const confirmedSpecifications = async (db, projectId, items = null) => {
   // Sprint 1.13 -- l.superseded_at IS NULL was missing here: a link's own
   // status column stays 'Confirmed' forever on its original row even after
   // /supersede marks it superseded (that row is never rewritten -- see
@@ -386,10 +487,44 @@ export const confirmedSpecifications = async (db, projectId) => {
   // the engineering-knowledge links list, knowledge-profile) already filters
   // on this; this was the one gap where a superseded link could still reach
   // downstream evidence.
-  const result = await db.prepare(`SELECT l.boq_item_id boqItemId,r.id,r.normalized_requirement normalizedRequirement,r.source_location sourceLocation
+  const result = await db.prepare(`SELECT 'ITEM' scope,l.boq_item_id boqItemId,NULL engineering_domain,r.id,r.normalized_requirement normalizedRequirement,r.source_location sourceLocation
     FROM boq_requirement_links l JOIN technical_requirements r ON r.id=l.requirement_id
-    WHERE l.project_id=? AND l.status='Confirmed' AND l.superseded_at IS NULL AND r.approved_for_downstream=1 AND r.review_status='Approved'`).bind(projectId).all();
-  return (result.results || []).reduce((map, row) => { (map[row.boqItemId] ||= []).push({ id: row.id, normalizedRequirement: row.normalizedRequirement, sourceLocation: parse(row.sourceLocation, null) }); return map; }, {});
+    WHERE l.project_id=?1 AND l.status='Confirmed' AND l.superseded_at IS NULL AND r.approved_for_downstream=1 AND r.review_status='Approved'
+    UNION ALL
+    SELECT 'PROJECT' scope,NULL boqItemId,r.engineering_domain,r.id,r.normalized_requirement normalizedRequirement,r.source_location sourceLocation
+    FROM technical_requirements r
+    WHERE r.project_id=?1 AND r.approved_for_downstream=1 AND r.review_status='Approved'
+      AND NOT EXISTS (SELECT 1 FROM boq_requirement_links l WHERE l.requirement_id=r.id)`).bind(projectId).all();
+
+  const map = {};
+  const byDomain = new Map();
+  for (const row of result.results || []) {
+    const clause = { id: row.id, normalizedRequirement: row.normalizedRequirement, sourceLocation: parse(row.sourceLocation, null), scope: row.scope };
+    if (row.scope === "ITEM") { (map[row.boqItemId] ||= []).push(clause); continue; }
+    // Fail closed: an Unknown/blank/unregistered governed domain routes nowhere.
+    const domain = requirementScopeDomain(row);
+    if (!domain) continue;
+    if (!byDomain.has(domain)) byDomain.set(domain, []);
+    byDomain.get(domain).push(clause);
+  }
+  if (!byDomain.size) return map;
+
+  let itemList = items;
+  if (!Array.isArray(itemList)) {
+    const fallback = await db.prepare(`SELECT id,system_value FROM boq_items WHERE project_id=?`).bind(projectId).all();
+    itemList = fallback.results || [];
+  }
+  for (const item of itemList) {
+    const id = item.boqItemId || item.id;
+    if (!id) continue;
+    // Same fail-closed resolution on the consuming side, so a clause can only
+    // ever reach an item of the same registered governed system.
+    const domain = itemScopeDomain(item);
+    const clauses = domain ? byDomain.get(domain) : null;
+    if (!clauses || !clauses.length) continue;
+    (map[id] ||= []).push(...clauses);
+  }
+  return map;
 };
 
 const listLatest = async (db, projectId) => {

@@ -50,6 +50,11 @@ const current = (db, documentId) =>
     )
     .bind(documentId)
     .first();
+// Canonical shared selector (Backend & Codebase Consolidation Sprint, item 1),
+// mirroring worker/requirement-profile-currency.mjs#currentRequirementProfile.
+// Same row shape as the private helper above: callers that only needed one or
+// two columns get a strict superset, not a different shape.
+export const currentSymbolRecognitionVersion = current;
 const currentIntake = (db, documentId) =>
   db
     .prepare(

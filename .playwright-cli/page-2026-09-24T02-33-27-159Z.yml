@@ -1,0 +1,269 @@
+- generic [ref=e7]:
+  - complementary "Primary navigation" [ref=e8]:
+    - generic [ref=e14]:
+      - strong [ref=e15]: AI Pricing Agent
+      - generic [ref=e16]: وكيل التسعير الذكي
+    - navigation "Global navigation" [ref=e18]:
+      - button "Home" [ref=e20] [cursor=pointer]:
+        - generic [aria-hidden] [ref=e21]: ⌂
+        - text: Home
+      - button "Projects" [ref=e23] [cursor=pointer]:
+        - generic [aria-hidden] [ref=e24]: ▦
+        - text: Projects
+      - generic [ref=e25]:
+        - button "Knowledge" [expanded] [ref=e26] [cursor=pointer]:
+          - generic [aria-hidden] [ref=e27]: ▤
+          - text: Knowledge
+          - generic [aria-hidden] [ref=e28]: ⌃
+        - generic [ref=e103]:
+          - button "Files" [active] [ref=e104] [cursor=pointer]
+          - button "Products" [ref=e105] [cursor=pointer]
+          - button "Manufacturers" [ref=e106] [cursor=pointer]
+          - button "Standards" [ref=e107] [cursor=pointer]
+          - button "Search" [ref=e108] [cursor=pointer]
+          - button "Product Identities" [ref=e109] [cursor=pointer]
+          - button "Prices" [ref=e110] [cursor=pointer]
+          - button "Case Studies" [ref=e111] [cursor=pointer]
+          - button "Fire Alarm" [ref=e112] [cursor=pointer]
+          - button "CCTV" [ref=e113] [cursor=pointer]
+      - button "Reports" [ref=e30] [cursor=pointer]:
+        - generic [aria-hidden] [ref=e31]: ▥
+        - text: Reports
+      - button "Administration" [ref=e33] [cursor=pointer]:
+        - generic [aria-hidden] [ref=e34]: ⚙
+        - text: Administration
+    - region "Authenticated account" [ref=e35]:
+      - generic [ref=e36]: LD
+      - generic [ref=e37]:
+        - strong [ref=e38]: Local Development User
+        - generic [ref=e39]: local@development.invalid
+        - generic [ref=e40]: Administrator
+        - generic [ref=e41]: BD-Shaft Internal Pilot · Organization Owner / Organization Administrator
+      - link "Sign out" [ref=e42] [cursor=pointer]:
+        - /url: /signout-with-chatgpt?return_to=/
+  - main [ref=e43]:
+    - generic [ref=e45]:
+      - generic [aria-hidden] [ref=e46]: ▤
+      - generic [ref=e47]:
+        - generic [ref=e48]: ORGANIZATION KNOWLEDGE
+        - strong [ref=e49]: Knowledge
+    - generic [ref=e114]:
+      - generic [ref=e115]:
+        - generic [ref=e116]:
+          - text: KNOWLEDGE · UPLOAD → LEARN → ORGANIZE → USE
+          - heading "Files" [level=1] [ref=e117]
+          - paragraph [ref=e118]: Searchable, source-backed company engineering knowledge.
+        - generic [ref=e119]: ＋ Upload knowledge
+      - generic [ref=e120]:
+        - strong [ref=e121]: No automatic promotion
+        - generic [ref=e122]: Historical evidence, reusable knowledge, product approval, and price approval remain separate.
+      - generic [ref=e124]:
+        - generic [ref=e125]: FILES
+        - strong [ref=e126]: "29"
+      - generic [ref=e127]:
+        - generic [ref=e128]: Search files
+        - textbox "Search files" [ref=e129]
+      - generic [ref=e130]:
+        - article [ref=e131]:
+          - generic [ref=e132]:
+            - strong [ref=e133]: Supplier Quotation
+            - paragraph [ref=e134]: Unclassified
+          - generic [ref=e135]:
+            - generic [ref=e136]: "Processing: Completed"
+            - text: "Source: SO26-06-17-01.pdf"
+        - article [ref=e137]:
+          - generic [ref=e138]:
+            - strong [ref=e139]: Supplier RFQ
+            - paragraph [ref=e140]: Unclassified
+          - generic [ref=e141]:
+            - generic [ref=e142]: "Processing: Completed"
+            - text: "Source: FA-RFQ-Farenhyt.xlsx"
+        - article [ref=e143]:
+          - generic [ref=e144]:
+            - strong [ref=e145]: Price List
+            - paragraph [ref=e146]: Unclassified
+          - generic [ref=e147]:
+            - generic [ref=e148]: "Processing: Completed"
+            - text: "Source: MCC__KAFD__V1_Deal_ID_85575734.xlsx"
+        - article [ref=e149]:
+          - generic [ref=e150]:
+            - strong [ref=e151]: Price List
+            - paragraph [ref=e152]: Unclassified
+          - generic [ref=e153]:
+            - generic [ref=e154]: "Processing: Completed"
+            - text: "Source: KSA Gent Fire Price list Ver 22.3 Oct 2022 (1).xlsx"
+        - article [ref=e155]:
+          - generic [ref=e156]:
+            - strong [ref=e157]: BOQ
+            - paragraph [ref=e158]: Unclassified
+          - generic [ref=e159]:
+            - generic [ref=e160]: "Processing: Completed"
+            - text: "Source: BGM BOM.xlsx"
+        - article [ref=e161]:
+          - generic [ref=e162]:
+            - strong [ref=e163]: Supplier Quotation
+            - paragraph [ref=e164]: Unclassified
+          - generic [ref=e165]:
+            - generic [ref=e166]: "Processing: Completed"
+            - text: "Source: 83833 - Quote.xlsx"
+        - article [ref=e167]:
+          - generic [ref=e168]:
+            - strong [ref=e169]: Price List
+            - paragraph [ref=e170]: Unclassified
+          - generic [ref=e171]:
+            - generic [ref=e172]: "Processing: Completed"
+            - text: "Source: 2.HCS MEA HIS Pricebook 2024 V12 (1).xlsx"
+        - article [ref=e173]:
+          - generic [ref=e174]:
+            - strong [ref=e175]: Price List
+            - paragraph [ref=e176]: Unclassified
+          - generic [ref=e177]:
+            - generic [ref=e178]: "Processing: Completed"
+            - text: "Source: 1.HCS MEA Partner Pricebook 2024 V12.xlsx"
+        - article [ref=e179]:
+          - generic [ref=e180]:
+            - strong [ref=e181]: Unknown
+            - paragraph [ref=e182]: Unclassified
+          - generic [ref=e183]:
+            - generic [ref=e184]: "Processing: Completed"
+            - text: "Source: Almespar - Q#6726.pdf"
+        - article [ref=e185]:
+          - generic [ref=e186]:
+            - strong [ref=e187]: Supplier Quotation
+            - paragraph [ref=e188]: Unclassified
+          - generic [ref=e189]:
+            - generic [ref=e190]: "Processing: Completed"
+            - text: "Source: Westcon__AL MESPAR CONTRACTING CORP_King Abdullah Financial District De_Quote#_2026_07_25500222_en.xlsx"
+        - article [ref=e191]:
+          - generic [ref=e192]:
+            - strong [ref=e193]: Unknown
+            - paragraph [ref=e194]: Unclassified
+          - generic [ref=e195]:
+            - generic [ref=e196]: "Processing: Completed"
+            - text: "Source: GAMMA Company Profile 2026.pdf"
+        - article [ref=e197]:
+          - generic [ref=e198]:
+            - strong [ref=e199]: Unknown
+            - paragraph [ref=e200]: Unclassified
+          - generic [ref=e201]:
+            - generic [ref=e202]: "Processing: Completed"
+            - text: "Source: RITCO-SQ-018865-YAM-0626-1952.pdf"
+        - article [ref=e203]:
+          - generic [ref=e204]:
+            - strong [ref=e205]: Supplier RFQ
+            - paragraph [ref=e206]: Unclassified
+          - generic [ref=e207]:
+            - generic [ref=e208]: "Processing: Completed"
+            - text: "Source: RE Passive Data System - RFQ - Datwyler.msg"
+        - article [ref=e209]:
+          - generic [ref=e210]:
+            - strong [ref=e211]: Unknown
+            - paragraph [ref=e212]: Unclassified
+          - generic [ref=e213]:
+            - generic [ref=e214]: "Processing: Completed"
+            - text: "Source: WTC-3909 (6).pdf"
+        - article [ref=e215]:
+          - generic [ref=e216]:
+            - strong [ref=e217]: Supplier RFQ
+            - paragraph [ref=e218]: Unclassified
+          - generic [ref=e219]:
+            - generic [ref=e220]: "Processing: Completed"
+            - text: "Source: FW MCC RFQ BP760 Passive Data Network Datwyler .msg"
+        - article [ref=e221]:
+          - generic [ref=e222]:
+            - strong [ref=e223]: Supplier RFQ
+            - paragraph [ref=e224]: Unclassified
+          - generic [ref=e225]:
+            - generic [ref=e226]: "Processing: Completed"
+            - text: "Source: FW MCC RFQ Datwyler .msg"
+        - article [ref=e227]:
+          - generic [ref=e228]:
+            - strong [ref=e229]: Unknown
+            - paragraph [ref=e230]: Unclassified
+          - generic [ref=e231]:
+            - generic [ref=e232]: "Processing: Completed"
+            - text: "Source: Almesbar - Q#5922.pdf"
+        - article [ref=e233]:
+          - generic [ref=e234]:
+            - strong [ref=e235]: Unknown
+            - paragraph [ref=e236]: Unclassified
+          - generic [ref=e237]:
+            - generic [ref=e238]: "Processing: Completed"
+            - text: "Source: QT-20260705125400 R0.pdf"
+        - article [ref=e239]:
+          - generic [ref=e240]:
+            - strong [ref=e241]: Supplier RFQ
+            - paragraph [ref=e242]: Unclassified
+          - generic [ref=e243]:
+            - generic [ref=e244]: "Processing: Completed"
+            - text: "Source: RE RFQ - Tripleplay.msg"
+        - article [ref=e245]:
+          - generic [ref=e246]:
+            - strong [ref=e247]: Unknown
+            - paragraph [ref=e248]: Unclassified
+          - generic [ref=e249]:
+            - generic [ref=e250]: "Processing: Completed"
+            - text: "Source: 00361. 1712601000361 -Elmesbar-ِAmaad Phase 2.pdf"
+        - article [ref=e251]:
+          - generic [ref=e252]:
+            - strong [ref=e253]: Unknown
+            - paragraph [ref=e254]: Unclassified
+          - generic [ref=e255]:
+            - generic [ref=e256]: "Processing: Completed"
+            - text: "Source: 2202626041.pdf"
+        - article [ref=e257]:
+          - generic [ref=e258]:
+            - strong [ref=e259]: Unknown
+            - paragraph [ref=e260]: Unclassified
+          - generic [ref=e261]:
+            - generic [ref=e262]: "Processing: Completed"
+            - text: "Source: RITCO-SQ-018640-YAM-0626-1688.pdf"
+        - article [ref=e263]:
+          - generic [ref=e264]:
+            - strong [ref=e265]: Unknown
+            - paragraph [ref=e266]: Unclassified
+          - generic [ref=e267]:
+            - generic [ref=e268]: "Processing: Completed"
+            - text: "Source: Ref.#QE.5000708.25.R00_ACS_LENEL_S2_KKIA_RAC_MCC_FUTURE_BUILDERS.pdf"
+        - article [ref=e269]:
+          - generic [ref=e270]:
+            - strong [ref=e271]: Unknown
+            - paragraph [ref=e272]: Unclassified
+          - generic [ref=e273]:
+            - generic [ref=e274]: "Processing: Completed"
+            - text: "Source: SAL-QTN-2026-01385 - MCC PROJECT - PAS.pdf"
+        - article [ref=e275]:
+          - generic [ref=e276]:
+            - strong [ref=e277]: Supplier RFQ
+            - paragraph [ref=e278]: Unclassified
+          - generic [ref=e279]:
+            - generic [ref=e280]: "Processing: Completed"
+            - text: "Source: FW MCC RFQ BP474 Passive Network System Datwyler.msg"
+        - article [ref=e281]:
+          - generic [ref=e282]:
+            - strong [ref=e283]: Supplier RFQ
+            - paragraph [ref=e284]: Unclassified
+          - generic [ref=e285]:
+            - generic [ref=e286]: "Processing: Completed"
+            - text: "Source: RE MCC RFQ BP816 Janadriyah Cultural Quarter Main Construction Works Package 2 Hospitality Assets CCTV System .msg"
+        - article [ref=e287]:
+          - generic [ref=e288]:
+            - strong [ref=e289]: Unknown
+            - paragraph [ref=e290]: Unclassified
+          - generic [ref=e291]:
+            - generic [ref=e292]: "Processing: Completed"
+            - text: "Source: QE.10046.26.R00 - AC - King Khaled Airport.pdf"
+        - article [ref=e293]:
+          - generic [ref=e294]:
+            - strong [ref=e295]: Unknown
+            - paragraph [ref=e296]: Unclassified
+          - generic [ref=e297]:
+            - generic [ref=e298]: "Processing: Completed"
+            - text: "Source: SAL-QTN-2026-01329 - KAFD Utility Tunnel Project.pdf"
+        - article [ref=e299]:
+          - generic [ref=e300]:
+            - strong [ref=e301]: Price List
+            - paragraph [ref=e302]: Unclassified
+          - generic [ref=e303]:
+            - generic [ref=e304]: "Processing: Completed"
+            - text: "Source: GW-FCI - Price List 2026 Jan 4 - KSA [2025.12.28].xlsx"

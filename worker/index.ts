@@ -7,6 +7,7 @@ import { handleBoqExtractionApi } from "./boq-extraction-api.mjs";
 import { handleSpecificationExtractionApi, handleSpecificationExtractionQueue } from "./specification-extraction-api.mjs";
 import { handleEngineeringKnowledgeApi } from "./engineering-knowledge-api.mjs";
 import { handleFireAlarmEcosystemDecisionApi } from "./fire-alarm-ecosystem-decision-api.mjs";
+import { handleFireAlarmPanelSizingApi } from "./fire-alarm-panel-sizing-api.mjs";
 import { handleTechnicalRequirementApi } from "./technical-requirement-api.mjs";
 import { handleEngineeringClassificationApi } from "./engineering-classification-api.mjs";
 import { handleEngineeringKnowledgeGraphApi } from "./engineering-knowledge-graph-api.mjs";
@@ -14,12 +15,17 @@ import { handleEngineeringDiscoveryApi } from "./engineering-discovery-api.mjs";
 import { handleDrawingIntakeApi } from "./drawing-intake-api.mjs";
 import { handleDrawingSymbolRecognitionApi } from "./drawing-symbol-recognition-api.mjs";
 import { handleDrawingStructuralParserApi } from "./drawing-structural-parser-api.mjs";
+import { handleDrawingBaselineApi } from "./drawing-baseline-api.mjs";
 import { handleDrawingStructuralReviewApi } from "./drawing-structural-review-api.mjs";
+import { handleDrawingArchitectureReviewApi } from "./drawing-architecture-review-api.mjs";
+import { handleDrawingQuantityEvidenceApi } from "./drawing-quantity-evidence-api.mjs";
+import { handleDrawingMetadataReviewApi } from "./drawing-metadata-review-api.mjs";
 import { handleDrawingLegendGeometryApi } from "./drawing-legend-geometry-api.mjs";
 import { handleSymbolCellSegmentationApi } from "./symbol-cell-segmentation-api.mjs";
 import { handleSymbolSignatureMatchingApi } from "./symbol-signature-matching-api.mjs";
 import { handleOccurrenceSpatialClusteringApi } from "./occurrence-spatial-clustering-api.mjs";
 import { handleProductPriceLibraryApi } from "./product-price-library-api.mjs";
+import { handleProductDocumentReviewApi } from "./product-document-review-api.mjs";
 import { handleIdentityResolutionApi } from "./identity-resolution-api.mjs";
 import { handleProductMatchingApi } from "./product-matching-api.mjs";
 import { handleConfidenceSafetyApi } from "./confidence-safety-api.mjs";
@@ -47,6 +53,9 @@ import { handleBoqLineDecisionApi } from "./boq-line-decision-api.mjs";
 import { handleBoqLineBomApi } from "./boq-line-bom-api.mjs";
 import { handleBoqLineCostApi } from "./boq-line-cost-api.mjs";
 import { handleBoqAiDiagnosticApi } from "./boq-ai-diagnostic-api.mjs";
+// SHADOW / SECOND_OPINION / NON_AUTHORITATIVE. Read-only: this module takes no DB
+// binding, performs no mutation, and cannot alter canonical BOQ or drawing truth.
+import { handleNvidiaDocumentShadowApi } from "./nvidia-document-shadow-api.mjs";
 import { securityHeaders } from "../app/domain/production-readiness.mjs";
 
 interface Env {
@@ -65,10 +74,19 @@ interface Env {
   APP_USER_EMAIL?: string;
   APP_USER_NAME?: string;
   APP_ORGANIZATION_ID?: string;
-  BOQ_AI_PROVIDER?: "cloudflare";
+  BOQ_AI_PROVIDER?: "cloudflare" | "NVIDIA_NIM";
   BOQ_AI_MODEL?: string;
   BOQ_AI_MODEL_VERSION?: string;
+  NVIDIA_API_KEY?: string;
+  NVIDIA_BASE_URL?: string;
+  NVIDIA_NIM_BASE_URL?: string;
+  NVIDIA_NIM_TIMEOUT_MS?: string;
   BOQ_AI_DIAGNOSTIC_SMOKE_ENABLED?: "1";
+  // NVIDIA DOCUMENT INTELLIGENCE — SHADOW / SECOND_OPINION / NON_AUTHORITATIVE.
+  // The probe is OFF unless explicitly enabled, and even then the trusted root
+  // allowlist defaults to synthetic-only. Nothing here grants write authority.
+  NVIDIA_DOCUMENT_SHADOW_ENABLED?: "1";
+  NVIDIA_DOCUMENT_SHADOW_ALLOWED_ROOTS?: string;
   AI?: { run(model: string, input: Record<string, unknown>): Promise<unknown> };
   IMAGES: {
     input(stream: ReadableStream): {
@@ -104,6 +122,12 @@ const worker = {
 
     const boqAiDiagnosticResponse = await handleBoqAiDiagnosticApi(request, env);
     if (boqAiDiagnosticResponse) return secured(boqAiDiagnosticResponse);
+
+    // NVIDIA document intelligence — second opinion only. Never authoritative,
+    // never persisted. Its own handler refuses transmission unless the gate and
+    // the trusted server allowlist both permit it.
+    const nvidiaDocumentShadowResponse = await handleNvidiaDocumentShadowApi(request, env);
+    if (nvidiaDocumentShadowResponse) return secured(nvidiaDocumentShadowResponse);
 
     const authContextResponse = await handleAuthContextApi(request, env);
     if (authContextResponse) return secured(authContextResponse);
@@ -177,6 +201,14 @@ const worker = {
     const productMatchingApiResponse = await handleProductMatchingApi(request, env, ctx);
     if (productMatchingApiResponse) return secured(productMatchingApiResponse);
 
+    // Product document review governance (Needs Review -> Approved / Rejected).
+    // Mounted BEFORE the price-library handler: that handler claims every
+    // /api/products/* path and ends in a 404 fallthrough, so a mount after it
+    // would be unreachable. This handler returns null for everything except
+    // the exact review path, leaving all existing routes untouched.
+    const productDocumentReviewApiResponse = await handleProductDocumentReviewApi(request, env);
+    if (productDocumentReviewApiResponse) return secured(productDocumentReviewApiResponse);
+
     const productPriceLibraryApiResponse = await handleProductPriceLibraryApi(request, env);
     if (productPriceLibraryApiResponse) return secured(productPriceLibraryApiResponse);
 
@@ -189,8 +221,16 @@ const worker = {
     if (drawingIntakeApiResponse) return secured(drawingIntakeApiResponse);
     const drawingStructuralParserApiResponse = await handleDrawingStructuralParserApi(request, env);
     if (drawingStructuralParserApiResponse) return secured(drawingStructuralParserApiResponse);
+    const drawingBaselineApiResponse = await handleDrawingBaselineApi(request, env);
+    if (drawingBaselineApiResponse) return secured(drawingBaselineApiResponse);
     const drawingStructuralReviewApiResponse = await handleDrawingStructuralReviewApi(request, env);
     if (drawingStructuralReviewApiResponse) return secured(drawingStructuralReviewApiResponse);
+    const drawingArchitectureReviewApiResponse = await handleDrawingArchitectureReviewApi(request, env);
+    if (drawingArchitectureReviewApiResponse) return secured(drawingArchitectureReviewApiResponse);
+    const drawingQuantityEvidenceApiResponse = await handleDrawingQuantityEvidenceApi(request, env);
+    if (drawingQuantityEvidenceApiResponse) return secured(drawingQuantityEvidenceApiResponse);
+    const drawingMetadataReviewApiResponse = await handleDrawingMetadataReviewApi(request, env);
+    if (drawingMetadataReviewApiResponse) return secured(drawingMetadataReviewApiResponse);
     const drawingLegendGeometryApiResponse = await handleDrawingLegendGeometryApi(request, env);
     if (drawingLegendGeometryApiResponse) return secured(drawingLegendGeometryApiResponse);
     const symbolCellSegmentationApiResponse = await handleSymbolCellSegmentationApi(request, env);
@@ -208,7 +248,9 @@ const worker = {
 
     const technicalRequirementApiResponse = await handleTechnicalRequirementApi(request, env, ctx);
     const fireAlarmEcosystemDecisionApiResponse = await handleFireAlarmEcosystemDecisionApi(request, env, ctx);
+    const fireAlarmPanelSizingApiResponse = await handleFireAlarmPanelSizingApi(request, env, ctx);
     if (technicalRequirementApiResponse) return secured(technicalRequirementApiResponse);
+    if (fireAlarmPanelSizingApiResponse) return secured(fireAlarmPanelSizingApiResponse);
     const engineeringKnowledgeApiResponse = await handleEngineeringKnowledgeApi(request, env);
     if (engineeringKnowledgeApiResponse) return secured(engineeringKnowledgeApiResponse);
     const specificationExtractionApiResponse = await handleSpecificationExtractionApi(request, env, ctx);

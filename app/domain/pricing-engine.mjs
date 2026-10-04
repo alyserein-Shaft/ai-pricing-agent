@@ -15,11 +15,42 @@ export const priceValidity = (source, at = new Date().toISOString()) => {
   return days <= 14 ? "Expiring Soon" : "Valid";
 };
 
-export const selectPriceSources = ({ sources, projectId, productId, quantity, region, at, precedence = ["Project Supplier Quote", "Supplier Quote", "Manufacturer Price List", "Framework Price", "Organization Price", "Historical Approved Price", "Manual Verified Price", "Manual Unverified Price"] }) => {
+// VALID_UNTIL_SUPERSEDED (temporal validity only).
+// Strict default is unchanged: an undated or expired price is not eligible.
+// When a governed commercial validity policy relaxes temporal validity, the
+// ONLY states it may admit are the two that assert no explicit expiry:
+//   "No Validity Provided" -- the source states no end date
+//   "Expired"              -- the stated end date has passed
+// It must never admit Future (the evidence is not yet in effect), Rejected or
+// Superseded (approval/scope governance, handled by approved/downstreamUse), or
+// anything failing project/quantity/region scope. Validity is reported
+// truthfully and never relabelled Valid/Current.
+export const RELAXABLE_VALIDITY_STATES = ["No Validity Provided", "Expired"];
+export const STRICT_VALIDITY_STATES = ["Valid", "Expiring Soon"];
+
+// Single source of truth for which validity states may reach Costing authority.
+// Relaxing temporal validity is strictly ADDITIVE: a currently-valid price
+// stays eligible either way, and the relaxed mode adds only the two states that
+// assert no explicit expiry. Future and Rejected are never admitted.
+export const temporalValidityStates = (allowExpiredOrMissingValidity = false) =>
+  allowExpiredOrMissingValidity
+    ? [...STRICT_VALIDITY_STATES, ...RELAXABLE_VALIDITY_STATES]
+    : STRICT_VALIDITY_STATES;
+
+export const isTemporallyUsable = (
+  { status, supersededAt, validUntil, effectiveFrom },
+  at = new Date().toISOString(),
+  allowExpiredOrMissingValidity = false,
+) => temporalValidityStates(allowExpiredOrMissingValidity).includes(priceValidity({ status, supersededAt, validUntil, effectiveFrom }, at));
+
+export const selectPriceSources = ({ sources, projectId, productId, quantity, region, at, allowExpiredOrMissingValidity = false, precedence = ["Project Supplier Quote", "Supplier Quote", "Manufacturer Price List", "Framework Price", "Organization Price", "Historical Approved Price", "Manual Verified Price", "Manual Unverified Price"] }) => {
+  const temporalStates = temporalValidityStates(allowExpiredOrMissingValidity);
   const ranked = sources.filter((source) => source.productId === productId).map((source) => {
     const validity = priceValidity(source, at), projectMatch = !source.projectId || source.projectId === projectId, quantityMatch = !source.minimumQuantity || Number(quantity) >= Number(source.minimumQuantity), regionMatch = !source.region || source.region === region, approved = source.approvalStatus === "Approved", rank = precedence.indexOf(source.priceType);
-    const eligible = projectMatch && quantityMatch && regionMatch && approved && ["Valid", "Expiring Soon"].includes(validity) && source.downstreamUse !== "Discovery Only";
-    return { ...source, validity, eligible, rank: rank < 0 ? precedence.length : rank, status: eligible ? "Valid Alternative" : validity === "Expired" ? "Expired" : !approved ? "Unverified" : "Rejected", explanation: !projectMatch ? "Price is scoped to another project." : !quantityMatch ? "Minimum quantity is not met." : !regionMatch ? "Regional scope does not match." : !approved ? "Price source is not approved." : validity === "Expired" ? "Price source has expired." : source.downstreamUse === "Discovery Only" ? "Source is restricted to discovery." : "Source is current, approved and in scope." };
+    const temporalOk = temporalStates.includes(validity);
+    const eligible = projectMatch && quantityMatch && regionMatch && approved && temporalOk && source.downstreamUse !== "Discovery Only";
+    const relaxedTemporal = allowExpiredOrMissingValidity && RELAXABLE_VALIDITY_STATES.includes(validity);
+    return { ...source, validity, eligible, temporalValidityRelaxed: relaxedTemporal, validityPolicy: relaxedTemporal ? "VALID_UNTIL_SUPERSEDED" : "FIXED_EXPIRY", rank: rank < 0 ? precedence.length : rank, status: eligible ? "Valid Alternative" : validity === "Expired" ? "Expired" : !approved ? "Unverified" : "Rejected", explanation: !projectMatch ? "Price is scoped to another project." : !quantityMatch ? "Minimum quantity is not met." : !regionMatch ? "Regional scope does not match." : !approved ? "Price source is not approved." : validity === "Rejected" || validity === "Future" ? `Price source is not temporally usable (${validity}).` : !temporalOk ? (validity === "Expired" ? "Price source has expired." : validity === "No Validity Provided" ? "Price source states no validity end date." : `Price source is not temporally usable (${validity}).`) : source.downstreamUse === "Discovery Only" ? "Source is restricted to discovery." : relaxedTemporal ? "Approved and in scope under a governed current-until-superseded validity policy; validity is reported truthfully." : "Source is current, approved and in scope." };
   }).sort((a, b) => Number(b.eligible) - Number(a.eligible) || a.rank - b.rank || Number(b.reliability || 0) - Number(a.reliability || 0));
   if (ranked[0]?.eligible) ranked[0] = { ...ranked[0], status: "Recommended", explanation: `Recommended by configured precedence: ${ranked[0].priceType}; validity, scope, approval and quantity checks passed. A user must still select it explicitly.` };
   return ranked;
@@ -166,7 +197,7 @@ export const calculateCommercialPricing = ({
 export const calculatePricingLine = (input) => {
   const blockers = []; if (!input.technicalApproval || input.technicalApproval.status !== "Approved" || input.technicalApproval.candidateId !== input.candidateId) blockers.push("TECHNICAL_APPROVAL_REQUIRED"); if (!input.safetyDecision || !/^Eligible/.test(input.safetyDecision.priceEligibility || "")) blockers.push("SAFETY_PRICE_ELIGIBILITY_REQUIRED"); if (!present(input.unit)) blockers.push("UNIT_REQUIRED");
   let multiplier; try { multiplier = quantityMultiplier({ quantity: input.quantity, unit: input.unit, lumpSumMode: input.lumpSumMode }); } catch (error) { blockers.push(error.code); }
-  const ranked = selectPriceSources({ sources: input.priceSources || [], projectId: input.projectId, productId: input.productId, quantity: input.quantity, region: input.region, at: input.calculatedAt, precedence: input.sourcePrecedence });
+  const ranked = selectPriceSources({ sources: input.priceSources || [], projectId: input.projectId, productId: input.productId, quantity: input.quantity, region: input.region, at: input.calculatedAt, allowExpiredOrMissingValidity: input.allowExpiredOrMissingValidity === true, precedence: input.sourcePrecedence });
   const recommended = ranked.find((entry) => entry.eligible);
   const suggestionPrerequisitesPassed = blockers.length === 0;
   const engineerSuggestion =

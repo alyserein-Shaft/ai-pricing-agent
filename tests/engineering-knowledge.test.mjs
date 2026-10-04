@@ -92,3 +92,32 @@ test("Sprint 1.11 -- a clause's second sentence resolves via the requirement's o
 });
 test("assembles a Task 8 profile from confirmed links only", () => { const requirement = { id: "r1", standards: [{ body: "NFPA", number: "72" }], attributes: [{ name: "Voltage", value: 24 }], manufacturers: [{ manufacturer: "Honeywell", status: "Approved" }] }; const profile = assembleKnowledgeProfile({ boqItem: { id: "b1", projectId: "p1" }, links: [{ requirementId: "r1", status: "Confirmed" }, { requirementId: "r2", status: "Suggested" }], requirements: [requirement, { id: "r2" }], conflicts: [], accessories: [], compatibility: [] }); assert.equal(profile.requirements.length, 1); assert.equal(profile.suggestedLinks.length, 1); assert.equal(profile.readiness.approvedForTask8, true); });
 test("wires canonical persistence, publication, profiles and auditable applicability review", async () => { const [schema, worker, index] = await Promise.all([readFile(new URL("../db/schema.ts", import.meta.url), "utf8"), readFile(new URL("../worker/engineering-knowledge-api.mjs", import.meta.url), "utf8"), readFile(new URL("../worker/index.ts", import.meta.url), "utf8")]); for (const entity of ["engineeringFacts", "engineeringFactProvenance", "boqRequirementLinks", "engineeringRelationships", "engineeringKnowledgeDecisions", "engineeringKnowledgeConflicts", "engineeringTaxonomyTerms", "engineeringUnitDefinitions"]) assert.match(schema, new RegExp(`export const ${entity}`)); assert.match(worker, /approved_for_downstream=1/); assert.match(worker, /knowledge-profile/); assert.match(worker, /Requirement Applicability Reviewed/); assert.match(index, /handleEngineeringKnowledgeApi/); });
+// Real Al Mousa gap: interface-row BOQ text never names its own module type,
+// so voltage-free-contact HVAC clauses and accept-and-provide BMS contact
+// clauses scored system-only points and never surfaced for the rows they
+// govern. The governed-family fallback (BOQ subcategory, human-classified)
+// restores the equipment signal without lowering any bar and without
+// overriding any text resolution.
+test("governed family fallback surfaces genuinely applicable interface clauses without lowering the bar", () => {
+  const hvac = { description: "Control of HVAC equipment, smoke exhaust fans, duct heaters and interfacing with BMS system", system: "Fire Alarm", category: "Modules and Interfaces", family: "Relay Module" };
+  const combined = { description: "Control and monitor element as required for interfacing with access doors, sliding door, fire fighting and HVAC system for proper operation", system: "Fire Alarm", category: "Modules and Interfaces", family: "Combined Monitor/Relay Module" };
+  const voltageFree = { originalText: "control outputs associated with designated alarm levels shall be provided by field control devices as voltage free contacts for hvac integration", system: "Fire Alarm", category: "Electrical", source: {} };
+  const acceptProvide = { originalText: "these units must both accept and provide contacts to other services that need to connect to the fire alarm system such as building management systems bms", system: "Fire Alarm", category: "Other", source: {} };
+  const hvacLink = scoreRequirementLink({ boqItem: hvac, requirement: voltageFree });
+  assert.equal(hvacLink.itemEquipment, "Relay Module");
+  assert.equal(hvacLink.requirementEquipment, "Relay Module");
+  assert.ok(hvacLink.confidence >= 25, `expected a confirmation-worthy score, got ${hvacLink.confidence}`);
+  assert.notEqual(hvacLink.status, "Confirmed");
+  const combinedLink = scoreRequirementLink({ boqItem: combined, requirement: acceptProvide });
+  assert.equal(combinedLink.itemEquipment, "Relay Module");
+  assert.equal(combinedLink.requirementEquipment, "Relay Module");
+  assert.ok(combinedLink.confidence >= 25, `expected a confirmation-worthy score, got ${combinedLink.confidence}`);
+  // The fallback never overrides a text resolution: a smoke-detector clause
+  // still mismatches a relay-family row exactly as before (fail closed).
+  const smokeClause = scoreRequirementLink({ boqItem: hvac, requirement: { originalText: "Addressable smoke detector shall meet UL 268.", system: "Fire Alarm", category: "Compliance", source: {} } });
+  assert.ok(smokeClause.evidence.some((entry) => entry.includes("Cross-equipment conflict")));
+  // ...and never invents a label: a family with no registered equipment
+  // label stays Unknown even with the fallback present.
+  const unmapped = scoreRequirementLink({ boqItem: { description: "Thermal sensor unit", system: "Fire Alarm", category: "Detector", family: "Detector" }, requirement: voltageFree });
+  assert.equal(unmapped.itemEquipment, "Unknown");
+});

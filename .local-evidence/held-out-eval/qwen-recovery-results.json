@@ -1,0 +1,344 @@
+{
+  "purpose": "Bounded output-budget recovery evaluation: SAME frozen 12 pairs (image bytes unchanged, sha256-verified identical to the held-out run), SAME neutral prompt, ONE changed generation configuration (non-thinking mode + right-sized completion budget), one call per pair, no retries.",
+  "createdAt": "2026-09-15T17:16:32.666896Z",
+  "documentedConfigSource": "https://developers.cloudflare.com/workers-ai/models/qwen3.8-27b/sync-input.json -- chat_template_kwargs.enable_thinking (boolean, default true, 'Whether to enable reasoning, enabled by default') and max_completion_tokens (the documented non-deprecated replacement for max_tokens) are both real fields in this model's own official input schema. reasoning_effort (low/medium/high) was also documented but not used -- enable_thinking:false is the stronger, more deterministic documented reasoning control, eliminating the reasoning phase rather than merely constraining it.",
+  "isolatedFromApplication": "Written only to .local-evidence/; no drawing_visual_runs row created, no drawing_extraction_proposals rows touched, no review status, reference resolution, or pricing eligibility changed, application default vision model unchanged.",
+  "calls": [
+    {
+      "pairId": "M1",
+      "category": "match",
+      "note": "H vs H",
+      "compositeImageSha256": "07425c05b6dca0fa6fdc381d67c0b2ce3c783ca90387f8b98e3dd3270f100ee7",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_completion_tokens": 400,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "changedFromPriorConfig": "Prior held-out run used max_tokens:900 with default enable_thinking:true (reasoning on). This recovery run uses the documented chat_template_kwargs.enable_thinking:false (non-thinking mode) plus max_completion_tokens:400 (the non-deprecated field, sized for a no-reasoning response) -- confirmed via official Cloudflare Workers AI schema docs for this exact model, not invented."
+      },
+      "latencySeconds": 3.938796,
+      "httpStatus": 200,
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 442,
+        "completion_tokens": 135,
+        "total_tokens": 577,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 57.35454177856445
+      },
+      "content": "**LEFT:** A circular symbol with a single horizontal line connected to its top. Inside the circle is a large letter \"H\". Below the symbol is the text \"1 No\".\n\n**RIGHT:** A vertical line segment separated from the text \"HEAT DETECTOR\". To the left of the text is a small circle containing the letter \"H\".\n\n**Comparison:** Visually, both items feature a circle enclosing the letter \"H\". They are different because the left symbol integrates the circle with a line and text, whereas the right symbol separates the circle from a vertical line and text. The text content differs: \"1 No\" versus \"HEAT DETECTOR\".",
+      "reasoning": null
+    },
+    {
+      "pairId": "M2",
+      "category": "match",
+      "note": "S+D vs S+D",
+      "compositeImageSha256": "2e3e57aa6fee87e5692df0eb6b131306cefc5cad109a7c36df00bddc6fffecfd",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_completion_tokens": 400,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "changedFromPriorConfig": "Prior held-out run used max_tokens:900 with default enable_thinking:true (reasoning on). This recovery run uses the documented chat_template_kwargs.enable_thinking:false (non-thinking mode) plus max_completion_tokens:400 (the non-deprecated field, sized for a no-reasoning response) -- confirmed via official Cloudflare Workers AI schema docs for this exact model, not invented."
+      },
+      "latencySeconds": 41.884163,
+      "httpStatus": 200,
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 442,
+        "completion_tokens": 132,
+        "total_tokens": 574,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 56.481815338134766
+      },
+      "content": "**LEFT**: A circle containing the letter \"S\", connected to a horizontal line via two diagonal segments. A small capital \"D\" is positioned outside the circle to the right.\n**RIGHT**: A circle containing the letter \"S\", with a small capital \"D\" positioned to its right.\n**Similarities**: Both symbols feature an identical core design consisting of a circle enclosing the letter \"S\", accompanied by a smaller capital \"D\" on the right side.\n**Differences**: The LEFT symbol includes two additional diagonal lines extending upward from the circle to meet a horizontal line at the top, whereas the RIGHT symbol lacks these connecting lines.",
+      "reasoning": null
+    },
+    {
+      "pairId": "M3",
+      "category": "match",
+      "note": "S+H vs S+H",
+      "compositeImageSha256": "d9f5d2ef9b7d2fe24153e24be339a7791d1f449c6fe1a538eaae6199a5603083",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_completion_tokens": 400,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "changedFromPriorConfig": "Prior held-out run used max_tokens:900 with default enable_thinking:true (reasoning on). This recovery run uses the documented chat_template_kwargs.enable_thinking:false (non-thinking mode) plus max_completion_tokens:400 (the non-deprecated field, sized for a no-reasoning response) -- confirmed via official Cloudflare Workers AI schema docs for this exact model, not invented."
+      },
+      "latencySeconds": 3.507461,
+      "httpStatus": 200,
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 442,
+        "completion_tokens": 122,
+        "total_tokens": 564,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 53.57272720336914
+      },
+      "content": "LEFT: A circle containing the letter \"S\", with a small letter \"H\" positioned to its right. It is connected to a line above it. The text \"5 Nos\" is below.\nRIGHT: A circle containing the letter \"S\", with a small letter \"H\" positioned to its right. It is not connected to any lines.\n\nSimilarities: Both feature an \"S\" in a circle with an \"H\" next to it.\nDifferences: The LEFT symbol has a connecting line and the text \"5 Nos\" below it, which are absent on the RIGHT.",
+      "reasoning": null
+    },
+    {
+      "pairId": "M4",
+      "category": "match",
+      "note": "F(plain) vs F(plain)",
+      "compositeImageSha256": "b6c75f4b9f5cfea636129b650f8b08fc5058e6e52d47189ffd827579728594ca",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_completion_tokens": 400,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "changedFromPriorConfig": "Prior held-out run used max_tokens:900 with default enable_thinking:true (reasoning on). This recovery run uses the documented chat_template_kwargs.enable_thinking:false (non-thinking mode) plus max_completion_tokens:400 (the non-deprecated field, sized for a no-reasoning response) -- confirmed via official Cloudflare Workers AI schema docs for this exact model, not invented."
+      },
+      "latencySeconds": 10.073446,
+      "httpStatus": 200,
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 442,
+        "completion_tokens": 139,
+        "total_tokens": 581,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 58.51818084716797
+      },
+      "content": "**LEFT**: A small square box containing the letter \"F\". A \"V\" shaped line with a horizontal bar at the bottom (forming an upside-down Y shape) attaches to the top of the box. The text \"1 No\" is positioned directly below the square box.\n\n**RIGHT**: A standalone small square box containing the letter \"F\".\n\n**Similarities**: Both contain a small square box with the letter \"F\" inside.\n\n**Differences**: LEFT has an additional \"V\" shaped line structure attached to the top of the box and the label \"1 No\" beneath it. RIGHT is only the isolated square box.\n\n**Unreadable**: None.",
+      "reasoning": null
+    },
+    {
+      "pairId": "M5",
+      "category": "match",
+      "note": "CE+M vs CE+M",
+      "compositeImageSha256": "e604bbecf60daa9a0f4703529674010d75c106748cc052e6fb1f7a73b7927d32",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_completion_tokens": 400,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "changedFromPriorConfig": "Prior held-out run used max_tokens:900 with default enable_thinking:true (reasoning on). This recovery run uses the documented chat_template_kwargs.enable_thinking:false (non-thinking mode) plus max_completion_tokens:400 (the non-deprecated field, sized for a no-reasoning response) -- confirmed via official Cloudflare Workers AI schema docs for this exact model, not invented."
+      },
+      "latencySeconds": 11.08044,
+      "httpStatus": 200,
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 442,
+        "completion_tokens": 188,
+        "total_tokens": 630,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 72.77272033691406
+      },
+      "content": "Based on the image provided:\n\n**LEFT:**\nThe outline shape is a circle attached to the bottom vertex of a \"V\" shape. The letters \"CE\" are visible inside the circle. A small, lowercase \"m\" is positioned just outside the circle, to the bottom right. Below the symbol is the text \"1 Nos\".\n\n**RIGHT:**\nThe outline shape is just a circle. The letters \"CE\" are visible inside the circle. A small, lowercase \"m\" is positioned just outside the circle, to the right.\n\n**Comparison:**\nThe visual similarity is that both contain the letters \"CE\" inside a circle with a small lowercase \"m\" attached to the exterior. The visual difference is that the LEFT symbol has a \"V\" shaped line attached to the top of the circle and the text \"1 Nos\" below it, whereas the RIGHT symbol has no lines attached to the circle.",
+      "reasoning": null
+    },
+    {
+      "pairId": "M6",
+      "category": "match",
+      "note": "S vs S",
+      "compositeImageSha256": "c02e209066d32773ee0f8ff4b81a37a4ff526c69e03a240e1b8337ad91e2a5f6",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_completion_tokens": 400,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "changedFromPriorConfig": "Prior held-out run used max_tokens:900 with default enable_thinking:true (reasoning on). This recovery run uses the documented chat_template_kwargs.enable_thinking:false (non-thinking mode) plus max_completion_tokens:400 (the non-deprecated field, sized for a no-reasoning response) -- confirmed via official Cloudflare Workers AI schema docs for this exact model, not invented."
+      },
+      "latencySeconds": 5.122002,
+      "httpStatus": 200,
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 442,
+        "completion_tokens": 117,
+        "total_tokens": 559,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 52.11817932128906
+      },
+      "content": "LEFT: A black circle containing the letter 'S'. The top of the circle connects to a V-shaped wire. Below the symbol is the text \"36 Nos\".\n\nRIGHT: A black circle containing the letter 'S'. To its right is a vertical line and the text \"SMOKE DETECTOR\".\n\nSimilarities: Both symbols consist of a circle containing the identical letter 'S'.\n\nDifferences: The LEFT symbol features a V-shaped attachment line and a quantity note (\"36 Nos\"), whereas the RIGHT symbol is unconnected and is accompanied by a label.",
+      "reasoning": null
+    },
+    {
+      "pairId": "D1",
+      "category": "different",
+      "note": "CE+M vs CE+C (C/M confusion)",
+      "compositeImageSha256": "98fac3e93a776df6321bcc95ba853aa42acf8513bb22a858608fab5e7a7ce7d5",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_completion_tokens": 400,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "changedFromPriorConfig": "Prior held-out run used max_tokens:900 with default enable_thinking:true (reasoning on). This recovery run uses the documented chat_template_kwargs.enable_thinking:false (non-thinking mode) plus max_completion_tokens:400 (the non-deprecated field, sized for a no-reasoning response) -- confirmed via official Cloudflare Workers AI schema docs for this exact model, not invented."
+      },
+      "latencySeconds": 6.544185,
+      "httpStatus": 200,
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 442,
+        "completion_tokens": 151,
+        "total_tokens": 593,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 62.009090423583984
+      },
+      "content": "LEFT: A horizontal line splits into two angled lines forming an inverted \"Y\" shape, terminating at a circle. Inside the circle are the letters \"CE\". To the right of the circle is a single capital letter \"M\". Below the symbol is the text \"4 Nos\".\n\nRIGHT: A simple circle containing the letters \"CE\". To the right of the circle is a single capital letter \"C\".\n\nSimilarities: Both symbols feature a circle with the letters \"CE\" inside, positioned to the left of a single uppercase letter. \n\nDifferences: LEFT contains the angled \"Y\" shape and \"4 Nos\" text, and is accompanied by the qualifier letter \"M\". RIGHT is a standalone circle accompanied by the letter \"C\".",
+      "reasoning": null
+    },
+    {
+      "pairId": "D2",
+      "category": "different",
+      "note": "S+D vs S+H (letter confusion)",
+      "compositeImageSha256": "65af78ecdeaba29f60fcb80e5d3714697a3c6f49087333bb1769afcfa3513143",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_completion_tokens": 400,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "changedFromPriorConfig": "Prior held-out run used max_tokens:900 with default enable_thinking:true (reasoning on). This recovery run uses the documented chat_template_kwargs.enable_thinking:false (non-thinking mode) plus max_completion_tokens:400 (the non-deprecated field, sized for a no-reasoning response) -- confirmed via official Cloudflare Workers AI schema docs for this exact model, not invented."
+      },
+      "latencySeconds": 4.492246,
+      "httpStatus": 200,
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 442,
+        "completion_tokens": 165,
+        "total_tokens": 607,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 66.08181762695312
+      },
+      "content": "LEFT: The outline is a circle with a letter \"S\" inside. There are two straight line segments extending out from the top of the circle, forming a shallow \"V\" shape. Outside the main outline, there is a small letter \"D\" positioned to the lower right of the circle.\n\nRIGHT: The outline is a circle with a letter \"S\" inside. There are no line segments attached to it. Outside the main outline, there is a small letter \"H\" positioned to the immediate right of the circle.\n\nVisual similarities: Both symbols share the exact same base shape: a circle enclosing the letter \"S\".\n\nVisual differences: LEFT features the \"V\" shaped lines attached to the top and an external qualifier \"D\". RIGHT has no attached lines and features an external qualifier \"H\".",
+      "reasoning": null
+    },
+    {
+      "pairId": "D3",
+      "category": "different",
+      "note": "F plain vs F dashed-enclosure",
+      "compositeImageSha256": "b4ba73b82796633bbf5bbedfb8eb90fda2210622aa9c6c5089d6f95fc1179056",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_completion_tokens": 400,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "changedFromPriorConfig": "Prior held-out run used max_tokens:900 with default enable_thinking:true (reasoning on). This recovery run uses the documented chat_template_kwargs.enable_thinking:false (non-thinking mode) plus max_completion_tokens:400 (the non-deprecated field, sized for a no-reasoning response) -- confirmed via official Cloudflare Workers AI schema docs for this exact model, not invented."
+      },
+      "latencySeconds": 5.507736,
+      "httpStatus": 200,
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 442,
+        "completion_tokens": 200,
+        "total_tokens": 642,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 76.26363372802734
+      },
+      "content": "**Left Description:** The symbol consists of a solid-lined square containing the letter \"F\". A \"Y\"-shaped wire connection extends upward from the top center of the square. Below the square is the text \"6 Nos\".\n\n**Right Description:** The symbol consists of a solid-lined square containing the letter \"F\". This square is enclosed by a dashed-line rectangular box. To the right, a vertical line separates the symbol from the text \"FIRE ALARM MANUAL STATION (WEATHER PROOF)\". Below the symbol is the text \"Unconfirmed candidate legend - drawing-number mismatch\".\n\n**Similarities:** Both feature a central solid square containing the letter \"F\" and have text annotations below them.\n\n**Differences:** The Left symbol has a solid \"Y\" connection at the top and a specific count (\"6 Nos\") below. The Right symbol lacks the \"Y\" connection, is surrounded by a dashed box, and includes different descriptive text below and to the side.",
+      "reasoning": null
+    },
+    {
+      "pairId": "D4",
+      "category": "different",
+      "note": "H vs DC (letter confusion, same circle outline)",
+      "compositeImageSha256": "9566ad8ce5b3d91e78dacc82dc40ad3f99586df125f107d8b95bd415366bdb47",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_completion_tokens": 400,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "changedFromPriorConfig": "Prior held-out run used max_tokens:900 with default enable_thinking:true (reasoning on). This recovery run uses the documented chat_template_kwargs.enable_thinking:false (non-thinking mode) plus max_completion_tokens:400 (the non-deprecated field, sized for a no-reasoning response) -- confirmed via official Cloudflare Workers AI schema docs for this exact model, not invented."
+      },
+      "latencySeconds": 3.614231,
+      "httpStatus": 200,
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 442,
+        "completion_tokens": 132,
+        "total_tokens": 574,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 56.481815338134766
+      },
+      "content": "LEFT: A horizontal line branches downward into a \"V\" shape connecting to a circle. The letter \"H\" is visible inside the circle. There is no qualifier mark attached to the circle; the text \"1 No\" is located below it.\n\nRIGHT: A circle containing the letters \"DC\". There is no qualifier mark attached to the circle; the text \"DOOR CONTACT\" and a vertical line are positioned to its right.\n\nSimilarity: Both primary outlines are circles containing letters.\n\nDifference: LEFT is connected to a branching wire and has text below; RIGHT has no wire connections and features a vertical line and text to its right.",
+      "reasoning": null
+    },
+    {
+      "pairId": "D5",
+      "category": "different",
+      "note": "square-F vs circle-S (outline difference)",
+      "compositeImageSha256": "8bee6ca96a8b8d25f2547ed2e297bd1b30876c52bbbbce0041616ef00a127b9f",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_completion_tokens": 400,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "changedFromPriorConfig": "Prior held-out run used max_tokens:900 with default enable_thinking:true (reasoning on). This recovery run uses the documented chat_template_kwargs.enable_thinking:false (non-thinking mode) plus max_completion_tokens:400 (the non-deprecated field, sized for a no-reasoning response) -- confirmed via official Cloudflare Workers AI schema docs for this exact model, not invented."
+      },
+      "latencySeconds": 6.636791,
+      "httpStatus": 200,
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 442,
+        "completion_tokens": 175,
+        "total_tokens": 617,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 68.99090576171875
+      },
+      "content": "**LEFT:** A horizontal line descends from both sides into a \"V\" shape (vertex pointing down), which then drops into a small square. Inside the square is the letter \"F\". There are no marks outside the main outline, but the text \"1 No\" is located directly below the symbol.\n\n**RIGHT:** A single circle containing the letter \"S\". There are no marks outside the circle's outline.\n\n**Similarity:** Both symbols are black line drawings and contain a single uppercase letter within a closed geometric outline.\n\n**Difference:** The main outline shapes differ (a square beneath a \"V\" versus a circle). The letters differ (\"F\" versus \"S\"). The LEFT symbol features connecting lines attached to the top, whereas the RIGHT symbol is a completely isolated, enclosed shape.\n\nAll text and symbols in both drawings are clearly readable.",
+      "reasoning": null
+    },
+    {
+      "pairId": "D6",
+      "category": "different",
+      "note": "S vs CE+M (clearly different)",
+      "compositeImageSha256": "270d0d4868918bc0265feedce555dff48de3c6aa8610d69767f641ca58d6aee7",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "requestSettings": {
+        "max_completion_tokens": 400,
+        "chat_template_kwargs": {
+          "enable_thinking": false
+        },
+        "changedFromPriorConfig": "Prior held-out run used max_tokens:900 with default enable_thinking:true (reasoning on). This recovery run uses the documented chat_template_kwargs.enable_thinking:false (non-thinking mode) plus max_completion_tokens:400 (the non-deprecated field, sized for a no-reasoning response) -- confirmed via official Cloudflare Workers AI schema docs for this exact model, not invented."
+      },
+      "latencySeconds": 36.601017,
+      "httpStatus": 200,
+      "finishReason": "stop",
+      "usage": {
+        "prompt_tokens": 442,
+        "completion_tokens": 133,
+        "total_tokens": 575,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 56.77272415161133
+      },
+      "content": "**Left:** A Y-shaped outline consisting of two horizontal lines that converge at a central point. Below this point is a circle containing the letter \"S\". Below the circle is the text \"36 Nos\". There are no external qualifier marks.\n\n**Right:** A circle containing the letters \"CE\". To the immediate right of the circle is the letter \"M\". There are no external qualifier marks like dashed boxes.\n\n**Similarities:** Both symbols feature a primary circular element.\n\n**Differences:** The left symbol includes a branching Y-shape and text below the circle, while the right symbol is a circle accompanied by a letter to its side.",
+      "reasoning": null
+    }
+  ]
+}

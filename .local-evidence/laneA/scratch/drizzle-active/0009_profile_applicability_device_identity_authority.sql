@@ -1,0 +1,1 @@
+ALTER TABLE `profile_requirement_applicability` RENAME COLUMN "drawing_requirement_ref" TO "device_identity_ref";

@@ -1,12 +1,13 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readdirSync } from "node:fs";
 import { join } from "node:path";
+import { resolveCanonicalD1 } from "./lib/canonical-d1.mjs";
 
 const baseUrl = process.env.PHASE3_SMOKE_BASE_URL || "http://127.0.0.1:5173";
-const d1Directory = join(process.cwd(), ".wrangler/state/v3/d1/miniflare-D1DatabaseObject");
-const database = process.env.PHASE3_SMOKE_DB || readdirSync(d1Directory).filter((name) => name.endsWith(".sqlite") && name !== "metadata.sqlite").map((name) => join(d1Directory, name))[0];
-assert.ok(database, "Local D1 database was not found.");
+// Resolved by database IDENTITY, never by readdir order. This directory holds
+// backup copies that share the canonical database id, so `[0]` could silently
+// read a backup. Fails closed when the canonical file is absent.
+const database = process.env.PHASE3_SMOKE_DB || resolveCanonicalD1({ override: process.env.CANONICAL_D1_PATH });
 const sql = (statement) => execFileSync("sqlite3", [database, statement], { encoding: "utf8" }).trim();
 const scalar = (statement) => Number(sql(statement) || 0);
 const quote = (value) => `'${String(value).replaceAll("'", "''")}'`;

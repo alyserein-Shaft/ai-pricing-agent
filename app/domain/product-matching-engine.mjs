@@ -4,6 +4,8 @@ import { familiesAreSynonyms, hasGovernedTaxonomy, isAccessoryFamily, normalizeA
 import { evaluateRelationshipCondition, resolveRelationshipApplicability } from "./product-relationship-condition-engine.mjs";
 import { resolveCapacityDependentAccessory } from "./fire-alarm-slc-expansion-resolver.mjs";
 import { evaluateProductLifecycle } from "./product-lifecycle-authority.mjs";
+import { fireAlarmCapability, isGovernedBooleanCapability, isGovernedRelationalConstraint, parseCapabilityBoolean } from "./fire-alarm-taxonomy.mjs";
+import { normalizeProductListingBody } from "./standards-citations.mjs";
 
 export const MATCH_ENGINE_VERSION = "product-matching-engine-1.0.0";
 // Fire Alarm E2E fix (cross-family ranking) -- bumped because runProductMatching's
@@ -312,7 +314,135 @@ const standardKey = (value) => norm(`${value.body || value.issuingBody || ""} ${
 // missing/placeholder number), so it can never exclude a real standard;
 // real ones always carry their own number (UL 268, NFPA 72, ...).
 const isUnfalsifiableStandardCitation = (standard) => norm(standard.number) === "standard" && !norm(standard.year);
-const evaluateStandards = (required, product) => required.filter((standard) => !isUnfalsifiableStandardCitation(standard)).map((standard) => { const offered = (product.standards || []).find((entry) => standardKey(entry) === standardKey(standard)); const result = offered?.evidence || offered?.source ? "Verified Compliant" : offered ? "Claimed Compliant" : "Evidence Missing"; return { requirement: standard, productStandard: offered || null, result, pass: Boolean(offered), blocking: !offered, evidence: offered?.source || offered?.evidence || null }; });
+
+// A citation with a body but NO number at all is equally unfalsifiable, and it
+// is the shape a bare listing word produces. Measured on the real Al Mousa
+// requirement seq 100313: "Connectivity includes an EIA-232 interface linking
+// the fire alarm control panel with UL Listed Electronic Data Processing (EDP)
+// peripherals..." The extractor read the product's OWN listing status ("UL
+// Listed") as a standard compliance obligation and emitted requirement_standards
+// (body "UL", number NULL). standardKey then compares "ul  " against the product's
+// real keys ("ul listing", "ul 864") and matches nothing, so the requirement was
+// reported "Evidence Missing" / blocking -- a false non-compliance against a
+// panel that IS UL 864 10th Edition listed.
+//
+// "UL Listed" states what the product IS, not a standard it must satisfy, so it
+// can never be satisfied by any comparison and can only ever manufacture a false
+// failure. A body-only citation is therefore excluded from the standards gate
+// exactly like the existing "number === Standard" placeholder, and is reported
+// as such rather than silently dropped.
+const isBodyOnlyStandardCitation = (standard) => Boolean(norm(standard.body)) && !norm(standard.number) && !norm(standard.part) && !norm(standard.year);
+export const unfalsifiableStandardCitations = (standard) => isUnfalsifiableStandardCitation(standard) || isBodyOnlyStandardCitation(standard);
+const evaluateStandards = (required, product) => required.filter((standard) => !unfalsifiableStandardCitations(standard)).map((standard) => { const offered = (product.standards || []).find((entry) => standardKey(entry) === standardKey(standard)); const result = offered?.evidence || offered?.source ? "Verified Compliant" : offered ? "Claimed Compliant" : "Evidence Missing"; return { requirement: standard, productStandard: offered || null, result, pass: Boolean(offered), blocking: !offered, evidence: offered?.source || offered?.evidence || null }; });
+
+// GOVERNED LISTING / CERTIFICATION AUTHORITY COMPARISON
+//
+// A project may demand that equipment be LISTED or CERTIFIED by a NAMED authority
+// while citing no standard number for it (28 46 00 / 1 GENERAL / P, sequence
+// 100075: "Every component of the fire alarm system shall be listed ... approved by
+// Underwriters Laboratories (UL), and clearly bear the UL certification.").
+//
+// That is a real, mandatory requirement, and it is NOT "UL 864 required". This
+// comparator is therefore the ONLY place a listing requirement is decided, and it
+// deliberately reaches none of the numbered-standard machinery:
+//
+//   * evaluateStandards and unfalsifiableStandardCitations above are UNCHANGED. An
+//     unnumbered citation is still refused there, so nothing that was failing
+//     closed before can start passing through the numbered gate.
+//   * No standard number is ever read from, or written to, the requirement. The
+//     project's requirement text stays generic "UL listed" forever; a product's
+//     UL 864 file number remains that product's own evidence.
+//   * A NUMBERED requirement is never satisfied by this path. evaluateStandards is
+//     the only thing that decides numbered citations, and it still demands an exact
+//     body+number+part match.
+//
+// A listing requirement passes only when ALL of the following hold. Each is a
+// separate refusal so the report can say exactly which one failed:
+//   1. the requirement actually requires the listing (required !== false);
+//   2. the authority is a governed, recognised body (never free text);
+//   3. the product carries a certification from THAT authority;
+//   4. that certification is live (not deleted, not superseded) and Approved;
+//   5. its certification type actually asserts a listing/certification of the
+//      product -- a seismic qualification is not a listing;
+//   6. it is not scoped to a different variant than the candidate;
+//   7. no OTHER approved certification from that authority contradicts it.
+//
+// Any failure is `Evidence Missing` and blocking, so an unproven listing can never
+// be reported as compliant. An unapproved (Needs Review / Rejected) certification
+// is not evidence and is neither proof NOR contradiction -- it simply leaves the
+// requirement unsatisfied, which is the fail-closed direction.
+const LISTING_ASSERTING_CERTIFICATION_TYPES = ["listing claim", "standard compliance", "approval claim"];
+// A live, Approved certification whose recorded status says the product is NOT
+// listed / no longer listed by that authority. Present-and-approved is the only
+// kind of evidence a project can act on, so only such a row may contradict.
+const CONTRADICTING_CERTIFICATION_STATUS = /\b(?:not\s+listed|unlisted|withdrawn|revoked|suspended|expired|recalled|non[-\s]?compliant|failed|rejected)\b/i;
+const isLiveCertification = (certification) => Boolean(certification) && !certification.deletedAt && !certification.supersededAt;
+const isApprovedCertification = (certification) => norm(certification.reviewStatus) === "approved";
+const assertsProductListing = (certification) => LISTING_ASSERTING_CERTIFICATION_TYPES.includes(norm(certification.type));
+
+const decideListingRequirement = (claim, product) => {
+  const authority = normalizeProductListingBody(claim.authority);
+  const base = { requiredAuthority: claim.authority, authority, evidence: null };
+  // 2. Ungoverned authority: fail closed rather than match arbitrary text.
+  if (!authority) return { ...base, result: "Listing Authority Ungoverned", pass: false, blocking: true, productCertification: null };
+  const fromAuthority = (product.certifications || []).filter((certification) => normalizeProductListingBody(certification.body) === authority);
+  const live = fromAuthority.filter(isLiveCertification);
+  // 4. Only an APPROVED certification is evidence.
+  const approved = live.filter(isApprovedCertification);
+  // 7. Contradiction: approved, live, from this authority, recorded as not listed.
+  const contradicted = approved.find((certification) => CONTRADICTING_CERTIFICATION_STATUS.test(certification.status || ""));
+  if (contradicted) return { ...base, result: "Listing Contradicted", pass: false, blocking: true, productCertification: contradicted, evidence: contradicted.evidenceLocation || null };
+  // 5 + 6. Must assert a listing of THIS product, not a seismic/other claim and not a
+  // claim scoped to a different variant.
+  const offered = approved.find((certification) => assertsProductListing(certification) && !norm(certification.variantId));
+  if (!offered) {
+    return {
+      ...base,
+      result: live.length > approved.length ? "Certification Evidence Not Approved" : approved.length ? "Listing Claim Not Present" : "Evidence Missing",
+      pass: false,
+      blocking: true,
+      productCertification: null,
+    };
+  }
+  // `reviewStatus = 'Approved'` is the governance gate, exactly as it is for every
+  // other governed product fact: a human decided this row is evidence. The recorded
+  // `status` is reported, not re-gated -- an approved row whose source was a
+  // manufacturer claim rather than a verified document is honestly labelled "Claimed
+  // Listed", never "Verified Listed". Re-gating on the status string would invent a
+  // rule this governance model does not have.
+  // `\bverified\b`, not /verif/i: an UNVERIFIED claim contains the substring "verif"
+  // too, and a loose test would report it as verified evidence.
+  const verified = Boolean(offered.evidenceLocation) && /\bverified\b/i.test(offered.status || "");
+  return { ...base, result: verified ? "Verified Listed" : "Claimed Listed", pass: true, blocking: false, productCertification: offered, evidence: offered.evidenceLocation || null };
+};
+
+export const evaluateListingRequirements = (requirements, product) =>
+  (requirements || []).flatMap((requirement) =>
+    // A stored `required: false` records that the project does not demand this
+    // listing. It produces NO comparison at all, so it can never lower a score or
+    // block a candidate.
+    (requirement.listingRequirements || [])
+      .filter((claim) => claim?.required !== false)
+      .map((claim) => {
+        const outcome = decideListingRequirement(claim, product);
+        return {
+          ...outcome,
+          // The governing requirement id travels with the comparison so the
+          // fail-closed unstructured gate can tell "this requirement now HAS a
+          // machine-comparable dimension" from "it still has none" -- the same
+          // contract evaluateCapabilities uses. Without it a mandatory clause that
+          // carries an approved listing claim and no attribute would be
+          // double-counted as "Missing Product Data" and block every product,
+          // including a genuinely listed one.
+          //
+          // The requirement-side provenance travels too, so a persisted comparison
+          // can name WHICH specification text demanded the listing. The project
+          // requirement stays generic, but it is never anonymous.
+          governingRequirementId: requirement.id,
+          evidence: { ...outcome.evidence, ...requirementProvenance(requirement, claim), listingAuthoritySource: claim.source || null },
+        };
+      }),
+  );
 const evaluateManufacturer = (scope, product) => { const prohibited = scope.prohibitedManufacturers.some((name) => sameManufacturerIdentity(name, product.manufacturer)); const required = scope.approvedManufacturers; const approved = !required.length || required.some((name) => sameManufacturerIdentity(name, product.manufacturer)); return { result: prohibited ? "Prohibited" : approved ? "Approved" : "Not Approved", pass: !prohibited && approved, blocking: prohibited || !approved, required, offered: product.manufacturer }; };
 // Sprint 9 -- "provide initiating devices and notification appliances made
 // by the same manufacturer" (req_200) is a cross-item project consistency
@@ -331,6 +461,221 @@ const evaluateManufacturer = (scope, product) => { const prohibited = scope.proh
 // keeps going through evaluateManufacturer/profile.manufacturers as before).
 const isManufacturerConsistencyRequirement = (requirement) => requirement.requirementCategory === "Manufacturer" && !(requirement.manufacturers || []).length;
 const evaluateManufacturerConsistency = (requirements, product) => requirements.filter(isManufacturerConsistencyRequirement).map((requirement) => { const resolved = canonicalManufacturerName(product.manufacturer); return { requirement, offered: resolved.canonical, result: resolved.canonical ? "Resolved" : "Missing Product Data", pass: Boolean(resolved.canonical), blocking: !resolved.canonical }; });
+
+// CANONICAL CAPABILITY COMPARISON
+//
+// A Mandatory requirement written as a qualitative capability ("shall feature an
+// LCD/LED display", "shall support alarm verification") carries no numeric or
+// free-text comparison dimension, so it previously fell straight through to the
+// fail-closed `unstructuredComparisons` gate and was reported
+// "Missing Product Data" / BLOCKING against EVERY product. That is not
+// non-compliance: it means no machine-comparable dimension existed at all.
+//
+// This evaluator gives those requirements ONE real dimension, using only the
+// governed canonical capability vocabulary (fire-alarm-taxonomy.mjs
+// FIRE_ALARM_CAPABILITIES) on the requirement side and the same governed
+// canonical name on the product side. Nothing here reads requirement prose,
+// infers a value, or relaxes any existing gate.
+//
+// FAIL-CLOSED SEMANTICS (the whole contract):
+//   true  + required true  -> "Capability Compliant",     pass, NOT blocking
+//   false + required true  -> "Capability Non-Compliant", fail, BLOCKING
+//   absent / unparseable   -> "Insufficient Evidence",    fail, NOT blocking
+//   ungoverned key / unknown value type -> fail closed as Insufficient Evidence
+//
+// The absent case is deliberately NON-blocking. Blocking it would report a
+// product NON-COMPLIANT for evidence that simply has not been captured yet --
+// the exact false non-compliance this replaces. It stays a failed comparison, so
+// the candidate resolves to "Compliant with Warnings" / "Conditional
+// Alternative" and never to "Technically Compliant", and the governing clause is
+// still visible in the comparison list.
+export const CAPABILITY_RESULT = Object.freeze({
+  Compliant: "Capability Compliant",
+  NonCompliant: "Capability Non-Compliant",
+  InsufficientEvidence: "Insufficient Evidence",
+});
+
+// Governed capability evidence for a product, read from BOTH attribute
+// authorities.
+//
+// `product.attributes` is the denormalized catalogue blob; `product.reviewedAttributes`
+// is the Approved-only projection of the governed `product_attributes` table that
+// worker/product-matching-api.mjs supplies. A governed capability approved from a
+// first-party manual exists only in the second, so reading just the first made
+// approved evidence permanently invisible here.
+//
+// Reading both is safe precisely because this comparator already fails closed on
+// disagreement (capabilityValuesFor): two authorities that agree produce one
+// value, and two that do NOT become "conflicting values" rather than a silent
+// winner. Nothing else in this file consults `reviewedAttributes`, so every other
+// comparison path keeps its existing single authority.
+const governedCapabilityEntries = (product) => [
+  ...productAttributes(product),
+  ...(Array.isArray(product?.reviewedAttributes) ? product.reviewedAttributes : []),
+];
+
+const capabilityAttribute = (product, capabilityKey) =>
+  governedCapabilityEntries(product).find((entry) => attributeName(entry) === norm(capabilityKey)) || null;
+
+// The governed record that supported a capability comparison, for the evidence
+// trail. Absent for a catalogue-blob attribute (which carries no governed id,
+// source or decider) -- reported as such rather than invented, so a reader can
+// always tell a reviewed Product Knowledge value from an unreviewed catalogue one.
+const capabilityProvenance = (entry) => {
+  if (!entry) return {};
+  if (!entry.attributeId) return { productEvidenceAuthority: "Catalogue Attribute (not governed Product Knowledge)" };
+  return {
+    productAttributeId: entry.attributeId,
+    productEvidenceAuthority: entry.authority || "Governed Product Knowledge",
+    productEvidenceSourceId: entry.sourceId || null,
+    productEvidenceDecidedBy: entry.decidedBy || null,
+    productEvidenceDecidedRole: entry.decidedRole || null,
+    productEvidenceDecidedAt: entry.decidedAt || null,
+  };
+};
+
+// Every governed capability value the product carries for one key, across BOTH
+// authorities. More than one DISTINCT value is a conflict, not a choice, and is
+// never silently resolved.
+const capabilityValuesFor = (product, capabilityKey) => {
+  const seen = new Map();
+  for (const entry of governedCapabilityEntries(product)) {
+    if (attributeName(entry) !== norm(capabilityKey)) continue;
+    const parsed = parseCapabilityBoolean(productValue(entry));
+    if (parsed === null) continue;
+    const key = String(parsed);
+    if (!seen.has(key)) seen.set(key, entry);
+  }
+  return seen;
+};
+
+/**
+ * Compare one governed BOOLEAN capability.
+ * @param {{name:string,value:unknown}} required requirement-side capability claim
+ * @param {object} product candidate product
+ */
+export const compareBooleanCapability = (required, product) => {
+  const definition = fireAlarmCapability(required?.name);
+  const requirementSide = { requirement: { id: `capability:${required.name}`, capabilityName: required.name, normalizedRequirement: `${required.name} is required`, priority: "Informational" }, capabilityName: required.name, capabilityMeaning: definition?.meaning || null, governingClause: definition?.governingClause || null, comparisonType: "Capability" };
+  // An ungoverned capability name is not comparable at all: fail closed rather
+  // than fall back to any text comparison.
+  if (!isGovernedBooleanCapability(required?.name)) return { ...requirementSide, result: CAPABILITY_RESULT.InsufficientEvidence, pass: false, blocking: false, offered: null, evidence: { reason: "The capability name is not in the governed canonical capability vocabulary." } };
+  const requiredValue = parseCapabilityBoolean(required?.value);
+  if (requiredValue === null) return { ...requirementSide, result: CAPABILITY_RESULT.InsufficientEvidence, pass: false, blocking: false, offered: null, evidence: { reason: "The requirement's own capability value is not a governed boolean." } };
+  const offered = capabilityAttribute(product, required.name);
+  const offeredValue = offered ? parseCapabilityBoolean(productValue(offered)) : null;
+  if (offeredValue === null) return { ...requirementSide, result: CAPABILITY_RESULT.InsufficientEvidence, pass: false, blocking: false, offered: null, evidence: { reason: offered ? "The product carries this capability with a value that is not a governed boolean." : "The product carries no evidence for this capability." } };
+  const distinct = capabilityValuesFor(product, required.name);
+  if (distinct.size > 1) return { ...requirementSide, result: CAPABILITY_RESULT.InsufficientEvidence, pass: false, blocking: false, offered: productValue(offered), evidence: { reason: "The product carries conflicting values for this capability, so none can be used." } };
+  const pass = offeredValue === requiredValue;
+  // Carry WHICH governed record decided this, so a later technical approval can be
+  // bound to the exact approved attribute, its first-party source and the human
+  // who reviewed it. A capability comparison that resolved to Compliant without
+  // naming its supporting evidence would be an unverifiable compliance claim.
+  return { ...requirementSide, result: pass ? CAPABILITY_RESULT.Compliant : CAPABILITY_RESULT.NonCompliant, pass, blocking: !pass, offered: productValue(offered), evidence: { requiredValue, offeredValue, ...capabilityProvenance(offered) } };
+};
+
+/**
+ * Compare one governed RELATIONAL constraint.
+ *
+ * Al Mousa 28 46 00 / 1 GENERAL / E reads "If a separate enclosure is used, it
+ * must match the FACP enclosure's color exactly." That names NO absolute colour:
+ * it is an equality between this panel's enclosure colour and a related
+ * enclosure's colour. It must therefore never be modelled as
+ * `cabinet_color = <absolute>` -- doing so would convert a relational project
+ * constraint into a false absolute requirement and would manufacture a
+ * shortcut for whichever panel happens to be selected.
+ *
+ * Following the EXISTING in-file precedent for a cross-item rule
+ * (`evaluateManufacturerConsistency`, and its comment for req_200: "No
+ * single-candidate evaluation can verify consistency against OTHER items'
+ * eventual selections -- that is a project-wide check, out of scope here"), a
+ * single-candidate evaluation can honestly decide only one thing: whether this
+ * candidate exposes exactly ONE clear, resolvable reference value for the
+ * attribute the related item must match. The equality itself is reported as an
+ * explicit project-level check, never silently asserted here.
+ *
+ * `referencedAttribute` names the governed attribute both sides must share; it
+ * is part of the constraint definition, not a value invented at comparison time.
+ */
+export const compareRelationalConstraint = (required, product) => {
+  const definition = fireAlarmCapability(required?.name);
+  const requirementSide = { requirement: { id: `capability:${required.name}`, capabilityName: required.name, normalizedRequirement: required?.normalizedRequirement || `${required.name}`, priority: "Informational" }, capabilityName: required.name, capabilityMeaning: definition?.meaning || null, governingClause: definition?.governingClause || null, comparisonType: "Relational Constraint" };
+  if (!isGovernedRelationalConstraint(required?.name)) return { ...requirementSide, result: CAPABILITY_RESULT.InsufficientEvidence, pass: false, blocking: false, offered: null, evidence: { reason: "The relational constraint is not in the governed canonical vocabulary." } };
+  const referenced = required?.referencedAttribute || definition?.referencedAttribute;
+  if (!referenced) return { ...requirementSide, result: CAPABILITY_RESULT.InsufficientEvidence, pass: false, blocking: false, offered: null, evidence: { reason: "The relational constraint does not name the governed attribute both sides must share." } };
+  // A reference value the project has not actually resolved is not a reference.
+  // "Unknown", "TBD" and friends are exactly the states a relational constraint
+  // must refuse, because asserting them would make the cross-item equality
+  // formally true against a value nobody decided.
+  const UNRESOLVED_REFERENCE = /^(?:unknown|unspecified|indeterminate|tbd|tbc|n\/?a|none|null|undefined|not\s+(?:applicable|specified|known|determined))$/i;
+  // The referenced attribute is read from BOTH authorities for the same reason
+  // as the boolean comparator: the governed `cabinet_color` approved through
+  // review lives only in `reviewedAttributes`, so reading the catalogue blob
+  // alone reported "no value" for a colour that had in fact been decided. Two
+  // authorities that disagree yield the same fail-closed "different values"
+  // outcome below -- neither can silently win.
+  const values = new Set(governedCapabilityEntries(product).filter((entry) => attributeName(entry) === norm(referenced)).map(productValue).map((value) => String(value ?? "").trim()).filter(Boolean));
+  if (values.size === 0) return { ...requirementSide, result: CAPABILITY_RESULT.InsufficientEvidence, pass: false, blocking: false, offered: null, evidence: { reason: `The product exposes no value for ${referenced}, so a related enclosure has nothing to match.` } };
+  const unresolved = [...values].filter((value) => UNRESOLVED_REFERENCE.test(value));
+  if (unresolved.length) return { ...requirementSide, result: CAPABILITY_RESULT.InsufficientEvidence, pass: false, blocking: false, offered: [...values], evidence: { reason: `The product's ${referenced} is unresolved (${unresolved.join(", ")}), so there is no reference value to match.` } };
+  if (values.size > 1) return { ...requirementSide, result: CAPABILITY_RESULT.InsufficientEvidence, pass: false, blocking: false, offered: [...values], evidence: { reason: `The product exposes ${values.size} different values for ${referenced}, so no single reference value exists.` } };
+  const [reference] = [...values];
+  return { ...requirementSide, result: CAPABILITY_RESULT.Compliant, pass: true, blocking: false, offered: reference, evidence: { referencedAttribute: referenced, referenceValue: reference, projectLevelCheck: `Every separately-supplied related enclosure for this project must resolve to exactly "${reference}" for ${referenced}. This equality is a project-level cross-item check and is deliberately NOT asserted by this single-candidate comparison.` } };
+};
+
+// Where this capability claim came from on the REQUIREMENT side. Copied from the
+// approved intelligence fact, never reconstructed: a compound requirement's claim
+// carries its own verbatim list-member text and page, which is the only link back
+// to the specification that actually demanded the capability.
+const requirementProvenance = (requirement, claim) => {
+  const source = claim?.source || null;
+  return {
+    // `consolidatedRequirements` carry a synthetic `consolidated:<key>` id, so the
+    // governing RAW requirement id is taken from the governing source rather than
+    // the group id -- that is the id that resolves to a row in
+    // technical_requirements, and therefore the only one a reviewer can audit.
+    governingRequirementDbId: requirement?.governingSourceId || requirement?.sources?.[0]?.requirementId || null,
+    governingRequirementGroupId: requirement?.id || null,
+    governingRequirementText: requirement?.originalText || requirement?.normalizedRequirement || null,
+    capabilityRequirementSource: source
+      ? {
+          page: source.page ?? null,
+          pageTo: source.pageTo ?? null,
+          clause: source.clause ?? null,
+          section: source.section ?? null,
+          evidenceSnippet: source.evidenceSnippet ?? null,
+        }
+      : null,
+  };
+};
+
+/** Evaluate every governed capability/relational claim carried by the profile. */
+export const evaluateCapabilities = (requirements, product) =>
+  (requirements || []).flatMap((requirement) =>
+    (requirement.capabilities || []).map((claim) => {
+      const outcome = isGovernedRelationalConstraint(claim.name)
+        ? compareRelationalConstraint(claim, product)
+        : compareBooleanCapability(claim, product);
+      // The governing requirement id travels with the comparison so the
+      // fail-closed unstructured gate can tell "this requirement now HAS a
+      // machine-comparable dimension" from "it still has none".
+      //
+      // The requirement-side provenance travels too. The synthetic
+      // `capability:<name>` requirement id is a canonical CAPABILITY identity, not
+      // a specification citation, so without this a persisted comparison row could
+      // not say WHICH specification text demanded the capability. For a compound
+      // requirement this is the difference between "surge protection is required"
+      // and "surge protection is required by clause I member 3 of Al Mousa 1
+      // GENERAL, page 4" -- and the latter is what a technical approval must be
+      // bound to.
+      return {
+        ...outcome,
+        governingRequirementId: requirement.id,
+        evidence: { ...outcome.evidence, ...requirementProvenance(requirement, claim) },
+      };
+    }),
+  );
 // Sprint 10 -- a compatibility target that is itself a bare standard
 // citation (e.g. "IEEE Standard 802", leaked in from the same
 // mis-extraction as the malformed Standard entry above) does not describe a
@@ -425,7 +770,9 @@ const resolveAccessoryCandidates = (product, profile) => {
 };
 
 export const evaluateCandidate = ({ profile, generated, prices = [], projectId = null, weights = {} }) => {
-  const product = generated.product, scope = buildSearchScope(profile); const requirements = profile.consolidatedRequirements || []; const attributeComparisons = [...requirements.flatMap((requirement) => (requirement.attributes || []).map((entry) => ({ comparisonType: "Attribute", requirement, ...compareAttribute(requirementAttribute(entry), findAttribute(product, requirementAttribute(entry))) }))), ...boqAttributeComparisons(profile.boqItem?.system, profile.boqItem?.attributes, product, profile.boqItem?.productFamily), ...deviceRoleComparisons(profile.boqItem?.system, profile.boqItem?.productFamily, product)]; const manufacturerConsistency = evaluateManufacturerConsistency(requirements, product); const structuredRequirementIds = new Set([...attributeComparisons.map((entry) => entry.requirement?.id), ...(profile.standards || []).map((entry) => entry.requirementId), ...(profile.compatibility || []).map((entry) => entry.requirementId), ...(profile.accessories || []).map((entry) => entry.requirementId), ...manufacturerConsistency.map((entry) => entry.requirement?.id)].filter(Boolean)); const unstructuredComparisons = requirements.filter((requirement) => ["Critical Mandatory", "Mandatory", "Conditional Mandatory"].includes(requirement.priority) && !(requirement.attributes || []).length && !structuredRequirementIds.has(requirement.id)).map((requirement) => ({ requirement, result: "Missing Product Data", pass: false, blocking: true, offered: null, evidence: null })); const standards = evaluateStandards(profile.standards || [], product); const manufacturer = evaluateManufacturer(scope, product); const compatibility = evaluateCompatibility(profile.compatibility || [], product); const accessories = evaluateAccessories([...(profile.accessories || []), ...(profile.derivedRequirements || []).filter((entry) => entry.output?.accessory)], product); const lifecycle = evaluateLifecycle(product); const comparisons = [
+  const product = generated.product, scope = buildSearchScope(profile); const requirements = profile.consolidatedRequirements || []; const attributeComparisons = [...requirements.flatMap((requirement) => (requirement.attributes || []).map((entry) => ({ comparisonType: "Attribute", requirement, ...compareAttribute(requirementAttribute(entry), findAttribute(product, requirementAttribute(entry))) }))), ...boqAttributeComparisons(profile.boqItem?.system, profile.boqItem?.attributes, product, profile.boqItem?.productFamily), ...deviceRoleComparisons(profile.boqItem?.system, profile.boqItem?.productFamily, product)]; const manufacturerConsistency = evaluateManufacturerConsistency(requirements, product); const capabilities = evaluateCapabilities(requirements, product); const listingRequirements = evaluateListingRequirements(requirements, product); const structuredRequirementIds = new Set([...attributeComparisons.map((entry) => entry.requirement?.id), ...(profile.standards || []).map((entry) => entry.requirementId), ...(profile.compatibility || []).map((entry) => entry.requirementId), ...(profile.accessories || []).map((entry) => entry.requirementId), ...manufacturerConsistency.map((entry) => entry.requirement?.id), // A requirement whose governed LISTING AUTHORITY claim was DECIDED by evaluateListingRequirements must not ALSO be reported by the fail-closed unstructured gate below, for the same reason capability claims are excluded: the listing comparison IS its machine-comparable dimension. Only requirements that actually produced a listing entry are removed, so a claim that could not be evaluated at all still fails closed below.
+    ...requirements.filter((requirement) => (requirement.listingRequirements || []).length && listingRequirements.some((entry) => entry.governingRequirementId === requirement.id)).map((requirement) => requirement.id), // A requirement whose governed capability claim was DECIDED by evaluateCapabilities must not also be reported by the fail-closed unstructured gate: the capability comparison IS its machine-comparable dimension. Only requirements that actually produced a capability entry are removed, so a capability claim that could not be evaluated at all still fails closed below.
+    ...requirements.filter((requirement) => (requirement.capabilities || []).length && capabilities.some((entry) => entry.governingRequirementId === requirement.id)).map((requirement) => requirement.id)].filter(Boolean)); const unstructuredComparisons = requirements.filter((requirement) => ["Critical Mandatory", "Mandatory", "Conditional Mandatory"].includes(requirement.priority) && !(requirement.attributes || []).length && !structuredRequirementIds.has(requirement.id)).map((requirement) => ({ requirement, result: "Missing Product Data", pass: false, blocking: true, offered: null, evidence: null })); const standards = evaluateStandards(profile.standards || [], product); const manufacturer = evaluateManufacturer(scope, product); const compatibility = evaluateCompatibility(profile.compatibility || [], product); const accessories = evaluateAccessories([...(profile.accessories || []), ...(profile.derivedRequirements || []).filter((entry) => entry.output?.accessory)], product); const lifecycle = evaluateLifecycle(product); const comparisons = [
     ...attributeComparisons,
     ...unstructuredComparisons.map((entry) => ({
       comparisonType: "Technical Requirement",
@@ -451,6 +798,12 @@ export const evaluateCandidate = ({ profile, generated, prices = [], projectId =
       requirement: entry.requirement,
       ...entry,
     })),
+    ...listingRequirements.map((entry) => ({
+      comparisonType: "Listing Authority",
+      requirement: { authority: entry.requiredAuthority, required: true, listing: true },
+      ...entry,
+    })),
+    ...capabilities,
   ]; const mandatoryFailures = comparisons.filter((entry) => entry.blocking); if (manufacturer.blocking) mandatoryFailures.push({ type: "Manufacturer", ...manufacturer }); if (lifecycle.blocking) mandatoryFailures.push({ type: "Lifecycle", ...lifecycle });
   // Sprint 1.17 -- real ranking gap: when a BOQ item has no confirmed
   // specification requirements yet (attributeComparisons/standards/
@@ -477,7 +830,7 @@ export const evaluateCandidate = ({ profile, generated, prices = [], projectId =
   // matter, and before either can be overridden by peripheral score noise.
   const evidenceStrength = components.technicalAttributes + components.standards + components.compatibility + components.accessories;
   const familyMatchTier = familyTier(profile.boqItem?.system, profile.boqItem?.productFamily, product);
-  const candidate = { product, searchStage: generated.stage, searchScore: Number(generated.searchScore || 0), evidenceStrength, familyMatchTier, isFallbackCandidate: familyMatchTier > 0, matchingBasis: generated.basis, components, score, technicalStatus, recommendationTier: tier, confidence, confidenceScore, comparisons, standards, manufacturer, manufacturerConsistency, compatibility, accessories, accessoryCandidates: resolveAccessoryCandidates(product, profile), lifecycle, commercialAvailability: commercialState(prices, product.id, projectId), mandatoryFailures, approvalReady: false, reviewStatus: "Needs Review", provenance: { productSource: product.source || null, requirementProfileVersion: profile.versionNumber, engineVersion: MATCH_ENGINE_VERSION, rulesetVersion: MATCH_RULESET_VERSION, searchVersion: MATCH_SEARCH_VERSION, modelVersion: MATCH_MODEL_VERSION } }; candidate.explanation = explanation(candidate); candidate.rankingReason = buildRankingReason(candidate, profile.boqItem?.productFamily); return candidate;
+  const candidate = { product, searchStage: generated.stage, searchScore: Number(generated.searchScore || 0), evidenceStrength, familyMatchTier, isFallbackCandidate: familyMatchTier > 0, matchingBasis: generated.basis, components, score, technicalStatus, recommendationTier: tier, confidence, confidenceScore, comparisons, standards, listingRequirements, manufacturer, manufacturerConsistency, compatibility, accessories, accessoryCandidates: resolveAccessoryCandidates(product, profile), lifecycle, commercialAvailability: commercialState(prices, product.id, projectId), mandatoryFailures, approvalReady: false, reviewStatus: "Needs Review", provenance: { productSource: product.source || null, requirementProfileVersion: profile.versionNumber, engineVersion: MATCH_ENGINE_VERSION, rulesetVersion: MATCH_RULESET_VERSION, searchVersion: MATCH_SEARCH_VERSION, modelVersion: MATCH_MODEL_VERSION } }; candidate.explanation = explanation(candidate); candidate.rankingReason = buildRankingReason(candidate, profile.boqItem?.productFamily); return candidate;
 };
 
 export const runProductMatching = ({ profile, products, prices = [], projectId = null, previousVersion = 0, weights }) => {

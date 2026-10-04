@@ -17,6 +17,13 @@
 /.next/
 /out/
 
+# AI-synthetic benchmark measurement substrate (durable, repo-local, NOT committable:
+# contains provider run metadata and per-request records)
+/out/ai-synthetic-bench/
+
+# Local env variant carrying a provider credential — must never be committed.
+.dev.vars.*
+
 # misc
 .DS_Store
 *.pem

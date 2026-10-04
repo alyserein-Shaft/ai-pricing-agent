@@ -113,15 +113,107 @@ export const segmentSpecification = (pages) => {
   flush(); return { sections, clauses };
 };
 
+// CONTEXT PROPAGATION (Al Mousa panel selection lane).
+//
+// A requirement sentence is classified against `clause.path + sentence`, but a
+// clause path carries only the SECTION number and its own heading -- never the
+// specification's own title. In "28 46 00 Fire Detection and Alarm System", the
+// heading line is literally "28 46 00 SECTION 28 46 00", so a sentence that
+// does not itself name a system yields domain "Unknown" even though its parent
+// specification unambiguously governs exactly one system.
+//
+// Measured on the real Al Mousa clause "2 PRODUCTS / 5 System Capacity":
+//   "28 46 00 SECTION 28 46 00 2 PRODUCTS 5 System Capacity: This configuration
+//    provides a maximum system capacity of 3,180 points."  -> Unknown
+//   "28 46 00 Fire Detection and Alarm System <same sentence>" -> Fire Alarm
+// So the governing context EXISTED in the extraction input and was simply never
+// consulted for a sentence that lacked its own token.
+//
+// This resolves the document-level domain ONCE from the full page text plus
+// every clause path, and uses it ONLY as a fallback when the sentence's own
+// context resolves to "Unknown". A sentence that names its own system keeps its
+// own detection untouched, so no sentence-specific fact is overwritten, and an
+// inherited value is reported honestly as sourceType "Inherited From Document"
+// at reduced confidence rather than dressed up as an explicit statement.
+const inheritedDomainFor = (pages, structure) => {
+  const pageText = (pages || []).map((page) => (page.lines || []).map(text).join(" ")).join(" ");
+  const pathText = structure.clauses.map((clause) => clause.path.join(" ")).join(" ");
+  return detectEngineeringDomain(`${pathText} ${pageText}`);
+};
+
 export const extractSpecificationPages = (pages, metadata = {}) => {
   const structure = segmentSpecification(pages); const requirements = [];
-  for (const clause of structure.clauses) for (const sentence of sentenceSplit(clause.text)) {
-    const type = classifyRequirementType(sentence); const attributes = extractAttributes(sentence); const standards = extractStandards(sentence); const manufacturers = extractManufacturers(sentence); const compatibility = parseCompatibility(sentence); const accessories = parseAccessory(sentence); const ambiguities = detectAmbiguities(sentence); const category = classifyRequirementCategory(sentence);
+  const documentDomain = inheritedDomainFor(pages, structure);
+  // COLON-INTRODUCED LIST MEMBERSHIP (root-cause repair).
+  //
+  // A specification lead-in that ends in a colon introduces a list whose members
+  // are grammatical noun phrases with NO modal of their own ("Fire management.",
+  // "Historical data.", "Surge and Transient Protection: ..."). `segmentSpecification`
+  // makes each of those lines its own clause, and because each carries no
+  // shall/must/should, `classifyRequirementType` returns "Informational" and the
+  // `requirementLike` gate below drops it -- so the ENTIRE constraint the colon
+  // introduced was silently lost, leaving only the dangling lead-in.
+  //
+  // Measured on the real Al Mousa clause 1 GENERAL / H and / I of
+  // "28 46 00 Fire Detection and Alarm System - Rev 1":
+  //   "FACP shall have sufficient memory to support its operating system and
+  //    databases including:"   -> items 8-13 (Fire management, Alarm management,
+  //    Historical data, Maintenance support applications, Custom processes,
+  //    Operator I/O) were ALL absent from the extracted requirement set;
+  //   "FACP Shall be provided with the following for basic operation:" -> its
+  //    items 1-3 (Communication Ports, Integrated On-Line Diagnostics, Surge
+  //    and Transient Protection) were ALL absent.
+  // Confirmed against the real specification text and against the DB (the probes
+  // "Fire management", "Historical data", "Maintenance support", "Custom
+  // processes", "Operator I/O", "Communication Ports" and "Integrated On-Line
+  // Diagnostics" are ABSENT FROM DB entirely).
+  //
+  // The fix makes the governing parent's modal INHERIT to its list members. It is
+  // deliberately narrow: inheritance applies only when the immediately preceding
+  // clause text ends in a colon AND that clause carried a real requirement type
+  // AND this clause contributes no structure of its own. A bare noun phrase that
+  // is NOT a colon list member is still Informational and still dropped, so no
+  // new requirement is invented and no modal is ever fabricated.
+  const MODAL_TYPES = new Set(["Mandatory", "Prohibited", "Conditional", "Preferred", "Approved Equivalent Allowed"]);
+  let listLeadInType = null;
+  const clauseCapabilityClaims = [];
+  for (const clause of structure.clauses) {
+    const clauseType = classifyRequirementType(clause.text);
+    for (const sentence of sentenceSplit(clause.text)) {
+      const ownType = classifyRequirementType(sentence); const attributes = extractAttributes(sentence); const standards = extractStandards(sentence); const manufacturers = extractManufacturers(sentence); const compatibility = parseCompatibility(sentence); const accessories = parseAccessory(sentence); const ambiguities = detectAmbiguities(sentence); const category = classifyRequirementCategory(sentence);
+    // Colon-introduced list membership: a bare noun phrase that immediately
+    // follows a colon-terminated lead-in inherits that lead-in's governing modal.
+    // Narrow on purpose -- it requires an empty own type, no structure of its own,
+    // and an immediately preceding colon lead-in -- so a bare noun phrase that is
+    // NOT a list member stays Informational and is still dropped. No modal is
+    // ever fabricated.
+    // A list member inherits the lead-in's modal exactly when it states NO modal of
+    // its own. Whether it also carries its own structure (an attribute, a standard)
+    // is irrelevant to the modal question -- "Surge and Transient Protection:
+    // Isolation will be provided ..." mentions a standard and still has no
+    // shall/must of its own, so it is governed by the parent's.
+    const inheritsListModal = ownType === "Informational" && listLeadInType !== null;
+    const type = inheritsListModal ? listLeadInType : ownType;
     const requirementLike = type !== "Informational" || attributes.length || standards.length || manufacturers.length || compatibility.length || accessories.length;
     if (!requirementLike || /copyright|table of contents|index of sections/i.test(sentence)) continue;
-    const domain = detectEngineeringDomain(`${clause.path.join(" ")} ${sentence}`); let confidence = clamp(55 + (type === "Mandatory" || type === "Prohibited" ? 18 : 8) + (clause.number ? 10 : 0) + (attributes.length || standards.length ? 8 : 0) - ambiguities.length * 25);
+    if (inheritsListModal) clauseCapabilityClaims.push({ sequence: requirements.length, originalText: sentence, inheritedType: listLeadInType, source: { pageFrom: clause.pageFrom, pageTo: clause.pageTo, clause: clause.number, clausePath: clause.path } });
+    const ownDomain = detectEngineeringDomain(`${clause.path.join(" ")} ${sentence}`);
+    const inherited = ownDomain.value === "Unknown" && documentDomain.value !== "Unknown";
+    const domain = inherited ? { value: documentDomain.value, sourceType: "Inherited From Document", confidence: Math.min(ownDomain.confidence, 82), explicitlyStated: false } : ownDomain;
+    let confidence = clamp(55 + (type === "Mandatory" || type === "Prohibited" ? 18 : 8) + (clause.number ? 10 : 0) + (attributes.length || standards.length ? 8 : 0) - ambiguities.length * 25 - (inherited ? 5 : 0));
     if (!clause.number || ambiguities.length || type === "Informational") confidence = Math.min(confidence, 79);
     requirements.push({ sequence: requirements.length + 1, originalText: sentence, normalizedRequirement: normalized(sentence), domain, system: domain.value, category, subcategory: null, requirementType: ambiguities.length ? "Clarification Required" : type, requirementCategory: category, attributes, standards, manufacturers, compatibility, accessories, crossReferences: crossReferences(sentence), condition: type === "Conditional" ? sentence : null, exception: type === "Exception" ? sentence : null, installation: category === "Installation", testing: category === "Testing", commissioning: category === "Commissioning", warranty: category === "Warranty", documentation: category === "Documentation", ambiguities, confidence, confidenceState: confidence >= 90 ? "High Confidence" : confidence >= 70 ? "Medium Confidence" : "Needs Review", reviewStatus: confidence >= 90 && !ambiguities.length ? "Pending Approval" : "Needs Review", source: { pageFrom: clause.pageFrom, pageTo: clause.pageTo, section: clause.path.find((entry) => /section/i.test(entry)) || null, part: clause.path.find((entry) => /part/i.test(entry)) || null, article: clause.kind === "Article" ? clause.number : null, clause: clause.number, clausePath: clause.path, originalClauseText: clause.text } });
+    }
+    // A clause whose OWN text ends in a colon OPENS a list; a clause that carries
+    // its own modal or any structure of its own CLOSES it; a bare list member
+    // leaves it open, which is what lets members 8-13 (or 1-3) all be recovered
+    // rather than only the first one.
+    //
+    // Both the lead-in and every member must be a NUMBERED clause: an unnumbered
+    // "Preamble" clause can never open or join a list.
+    const isNumbered = Boolean(clause.number);
+    if (isNumbered && /:\s*$/.test(text(clause.text)) && MODAL_TYPES.has(clauseType)) listLeadInType = clauseType;
+    else if (clauseType !== "Informational" || !isNumbered) listLeadInType = null;
   }
   const conflicts = [];
   const attributeIndex = new Map();
@@ -133,7 +225,13 @@ export const extractSpecificationPages = (pages, metadata = {}) => {
   for (const field of requiredByDomain) if (!presentAttributes.has(field)) missing.push({ field, reasonRequired: `${field} is needed for safe ${domain.value} product selection.`, technicalImpact: "Compatibility or compliance cannot be validated.", commercialImpact: "Supplier scope and price may vary.", blocking: true, clarificationQuestion: `Please confirm the required ${field.toLowerCase()} and its governing clause.` });
   const allAmbiguities = requirements.flatMap((requirement) => requirement.ambiguities.map((ambiguity) => ({ ...ambiguity, requirementSequence: requirement.sequence, source: requirement.source })));
   const summary = { totalPagesReviewed: pages.length, totalSectionsDetected: structure.sections.length, totalClausesDetected: structure.clauses.length, totalRequirementsExtracted: requirements.length, mandatoryRequirements: requirements.filter((item) => item.requirementType === "Mandatory").length, optionalRequirements: requirements.filter((item) => item.requirementType === "Optional").length, standardsDetected: requirements.reduce((sum, item) => sum + item.standards.length, 0), approvedManufacturers: requirements.reduce((sum, item) => sum + item.manufacturers.filter((entry) => entry.status === "Approved").length, 0), compatibilityRules: requirements.reduce((sum, item) => sum + item.compatibility.length, 0), requiredAccessories: requirements.reduce((sum, item) => sum + item.accessories.length, 0), installationRequirements: requirements.filter((item) => item.installation).length, testingRequirements: requirements.filter((item) => item.testing).length, warrantyRequirements: requirements.filter((item) => item.warranty).length, ambiguities: allAmbiguities.length, conflicts: conflicts.length, missingInformation: missing.length, itemsNeedingReview: requirements.filter((item) => item.reviewStatus === "Needs Review").length, averageConfidence: requirements.length ? Math.round(requirements.reduce((sum, item) => sum + item.confidence, 0) / requirements.length) : 0, parserVersion: SPEC_PARSER_VERSION, modelVersion: SPEC_MODEL_VERSION };
-  return { parserVersion: SPEC_PARSER_VERSION, rulesetVersion: SPEC_RULESET_VERSION, modelVersion: SPEC_MODEL_VERSION, promptVersion: SPEC_PROMPT_VERSION, ocrVersion: SPEC_OCR_VERSION, extractionMethod: metadata.extractionMethod || "structured-text", metadata, pages, sections: structure.sections, clauses: structure.clauses, requirements, conflicts, ambiguities: allAmbiguities, missingInformation: missing, summary };
+  const listMemberRequirements = clauseCapabilityClaims.map((entry) => ({ ...entry, originalText: requirements[entry.sequence - 1]?.originalText || entry.originalText }));
+  return { parserVersion: SPEC_PARSER_VERSION, rulesetVersion: SPEC_RULESET_VERSION, modelVersion: SPEC_MODEL_VERSION, promptVersion: SPEC_PROMPT_VERSION, ocrVersion: SPEC_OCR_VERSION, extractionMethod: metadata.extractionMethod || "structured-text", metadata, pages, sections: structure.sections, clauses: structure.clauses, requirements, // Every requirement whose ONLY governing modal was inherited from a
+    // colon-introduced lead-in, recorded so the repair is auditable rather than
+    // invisible: a reviewer can see exactly which requirements exist solely
+    // because of colon-list membership, and a later re-extraction diff has a
+    // precise handle on them. Never used to reclassify or rewrite a requirement.
+    inheritedModalListMembers: listMemberRequirements, conflicts, ambiguities: allAmbiguities, missingInformation: missing, summary };
 };
 
 const docxPages = (bytes) => { let archive; try { archive = unzipSync(bytes); } catch { throw new SpecificationExtractionError("CORRUPT_DOCX", "The DOCX specification is unreadable.", "The OOXML ZIP container could not be opened.", "Upload an unprotected DOCX copy."); } const xmlBytes = archive["word/document.xml"]; if (!xmlBytes) throw new SpecificationExtractionError("CORRUPT_DOCX", "The DOCX specification has no readable document body.", "word/document.xml is missing.", "Repair or export the document again."); const xml = new TextDecoder().decode(xmlBytes); const pages = [[]]; for (const paragraph of xml.matchAll(/<w:p\b[\s\S]*?<\/w:p>/g)) { const value = text(decodeXml(paragraph[0])); if (value) pages.at(-1).push(value); if (/<w:lastRenderedPageBreak\b|<w:br\b[^>]*w:type="page"/.test(paragraph[0])) pages.push([]); } return pages.filter((lines) => lines.length).map((lines, index) => ({ page: index + 1, lines, extractionQuality: 0.95 })); };

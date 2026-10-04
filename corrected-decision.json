@@ -1,0 +1,101 @@
+{
+  "ecosystem": "FARENHYT",
+  "primaryProtocol": "IDP/SK",
+  "allowedLegacyProtocols": [],
+  "protocolExceptions": [],
+  "preliminaryPanelFamily": {
+    "key": "FARENHYT_IFP_2100",
+    "family": "Honeywell Farenhyt IFP-2100 Series",
+    "manufacturer": "FARENHYT",
+    "candidates": ["IFP-2100HV", "IFP-2100HVB", "IFP-2100ECSHV", "IFP-2100ECSHVB"],
+    "candidateKinds": {
+      "IFP-2100HV": "MODEL",
+      "IFP-2100HVB": "MODEL",
+      "IFP-2100ECSHV": "MODEL",
+      "IFP-2100ECSHVB": "MODEL"
+    },
+    "licensedPersonas": [],
+    "eligibility": "TECHNICALLY_ACCEPTABLE_CANDIDATE",
+    "finalModelSelection": "PENDING_LATER_ENGINEERING_DECISION",
+    "isSelected": false,
+    "isConsultantApproved": false,
+    "nameplateSystemPoints": 2100,
+    "nameplateIsSizingAuthority": false,
+    "sizingReadiness": "PARTIALLY",
+    "sizingAuthority": null,
+    "sizingNote": "Nameplate '2100 point' is recorded as a nameplate only. Net addressable capacity must come from the governed panel-sizing snapshot (loop card / 5815RMK / 6815 expansion), which is a separate governed calculation.",
+    "governedCapabilityEvidence": {
+      "nativeSlcLoops": 1,
+      "maxDetectorsPerLoop": 159,
+      "maxModulesPerLoop": 159,
+      "networkPanels": 32,
+      "expansionComponents": ["5815RMK", "6815"],
+      "certifications": ["UL", "FM"]
+    },
+    "protocolBasis": "IDP/SK",
+    "exclusions": {
+      "IFP-75 / IFP-75B / IFP-75HV / IFP-75HVB": "Separate, smaller Farenhyt family. Governed sizing readiness is INSUFFICIENT (no capacity evidence in the catalog text; 75 detector / 150 point panel). It cannot be a preliminary design basis for a project of this scale, and eligibility may only ever be TECHNICALLY_ACCEPTABLE_CANDIDATE, which would be a false claim here.",
+      "RFP-2100HV / RFP-2100HVB": "Separate RFP series: the Farenhyt REMOTE addressable panel (no display) used as a remote/repeater panel, not the control-panel design basis. Same capacities, different product line and different system role.",
+      "IFP-2100BCB / IFP-2100ECSCB": "Cabinet-only accessories of the IFP-2100 / IFP-2100ECS platforms, not panels. They carry no addressable function and are not a design basis.",
+      "IFP-NET-3": "Software and key. Not a panel.",
+      "IFP-FFT": "Farenhyt Fire Fighter Telephone Control Panel. A different product line."
+    },
+    "governedEvidence": [
+      { "type": "GOVERNED_PRODUCT_LIBRARY", "source": "canonical_library_products / product_brands / product_families", "finding": "10 governed Fire Alarm Control Panel products exist and all 10 are Farenhyt. Gamewell-FCI: 0. Gent by Honeywell: 0. Simplex: 0." },
+      { "type": "GOVERNED_PRODUCT_CAPABILITY", "source": "product_attributes on IFP-2100HV (review_status Approved)", "finding": "max_system_points 2100, max_detectors_per_loop 159, max_modules_per_loop 159, native_slc_loops 1." },
+      { "type": "GOVERNED_POLICY_DOCUMENT", "source": "docs/GOLDEN-7A-FIRE-ALARM-PANEL-PRODUCT-MASTER.md section 10", "finding": "IFP-2100HV/HVB 1 loop, 159/159 per loop, 2100 nameplate, network 32, UL+FM, 5815RMK/6815. IFP-2100ECSHV/ECSHVB as above plus 16 A, 2000 W, 128 speaker circuits. IFP-75 variants INSUFFICIENT. The nameplate is deliberately not accepted as sizing evidence." }
+    ]
+  },
+  "directMatchPolicy": "Direct technical match is permitted only inside the FARENHYT ecosystem. Any product outside it is an equivalence candidate requiring a governed human decision; the system may only ever propose APPROVED_EQUIVALENT.",
+  "notDirectMatchEcosystems": ["NOTIFIER", "GAMEWELL_FCI", "GENT", "SIMPLEX"],
+  "complianceBasisState": "PARTIALLY_RESOLVED",
+  "complianceBasis": {
+    "state": "PARTIALLY_RESOLVED",
+    "established": {
+      "saudiCivilDefenseEquipmentAcceptance": "ESTABLISHED",
+      "ul217EighthEditionSmokeDetectors": "ESTABLISHED",
+      "ul268SeventhEditionSmokeDetectors": "ESTABLISHED",
+      "nfpaInstallationObligations": "ESTABLISHED",
+      "en54InstallationObligations": "ESTABLISHED",
+      "bsInstallationObligations": "ESTABLISHED"
+    },
+    "unresolved": [
+      { "field": "ul864GoverningEdition", "state": "CONTRACT_REQUIREMENT_NEEDS_SOURCE_REVIEW" },
+      { "field": "fmApprovalRequirement", "state": "UNRESOLVED" },
+      { "field": "lpcbRegime", "state": "UNRESOLVED" },
+      { "field": "en54ProductListing", "state": "UNRESOLVED" },
+      { "field": "ahjSubstantiveBasis", "state": "UNRESOLVED" }
+    ]
+  },
+  "contractualManufacturerAcceptance": "CONSULTANT_APPROVAL_REQUIRED",
+  "substitutionAuthority": "HUMAN_APPROVAL_REQUIRED",
+  "proposedSubstitutionState": "PROPOSED_EQUIVALENT",
+  "equivalenceComparisonDimensions": [
+    "protocol", "exactDevicePanelCompatibility", "listings", "capacity",
+    "networkArchitecture", "interfaces", "causeAndEffectFunctionality",
+    "power", "batteries", "environmentalRatings", "softwareLicensing",
+    "bases", "cards", "accessories", "projectSpecificAuthorityRequirements"
+  ],
+  "networkCapacityFacts": [
+    { "key": "addressableDevicesPerFacp", "scopeType": "FACP", "scopeEntity": "FARENHYT IFP-2100HV (preliminary panel family)", "resourceClass": "addressableDevices", "protocolMode": "IDP/SK", "state": "PARTIALLY_RESOLVED", "authority": "MANUFACTURER_DOCUMENT", "valueCarried": false, "note": "A per-FACP addressable-device capacity under IDP/SK protocol. Not a network-node count. Value intentionally not carried in the ecosystem decision." },
+    { "key": "networkNodesPerNetwork", "scopeType": "NETWORK", "scopeEntity": "FARENHYT IFP-2100 Series", "resourceClass": "networkNodes", "protocolMode": "IDP/SK", "state": "PARTIALLY_RESOLVED", "authority": "MANUFACTURER_DOCUMENT", "valueCarried": false, "note": "Manufacturer product capability for nodes per network." },
+    { "key": "additionalNodesProjectClause", "scopeType": "PROJECT_CLAUSE", "scopeEntity": "28 46 00 Fire Detection and Alarm System, network capacity clause", "resourceClass": "networkNodes", "protocolMode": "UNSPECIFIED_BY_CLAUSE", "state": "UNRESOLVED_PROJECT_CLAUSE", "authority": "PROJECT_REQUIREMENT", "valueCarried": false, "note": "The project clause referencing a distinct additional-node figure. Its original scope and intended topology are not yet established. Retained as an open project requirement, never auto-reconciled." }
+  ],
+  "appliesWhile": "Applies while this project's BOQ and specification remain current for the Fire Alarm scope. This decision supersedes the prior NOTIFIER ecosystem decision which was based on an incorrect interpretation that the specification mandated Notifier. The specification actually lists Honeywell – U.S.A. as one of three approved manufacturers (alongside Simplex and Siemens), not as a Notifier mandate. The project pre-sales brand strategy follows the current in-house policy (UL/FM, <=2000 points) and therefore selects Farenhyt as the in-house primary strategy.",
+  "evidence": [
+    "Project specification 28 46 00 - Fire Detection and Alarm System v1, Section 3 EXECUTION Clause A: 'The manufacturer shall be one of the following: 1. Simplex – U.S.A. 2. Honeywell – U.S.A. 3. Siemens – Germany.' This is an approved manufacturer list, not a Notifier mandate.",
+    "Project BOQ (BOQ.xlsx v1) Fire Alarm lines: 87 Fire Alarm items with governed addressable point count of ~1877 (<=2000), placing the project in the small-project in-house band per company policy.",
+    "Fire Alarm Brand Strategy decision (fire-alarm-brand-strategy_631ea7f8-afa3-458e-8835-b34f70844ca2): FARENHYT selected as in-house primary strategy (UL/FM, 1877 points <= 2000 threshold). Notifier reclassified to TECHNICALLY_VALID_ALTERNATIVE.",
+    "Fire Alarm Ecosystem Policy (fire-alarm-ecosystem-policy-1.0.0): No explicit project ecosystem requirement exists. UL/FM regime with preliminary point count 1877 (<=2000) and not-exceptional complexity resolves to RESOLVED_FARENHYT per Rule C."
+  ],
+  "reason": "The prior NOTIFIER ecosystem decision was based on an incorrect interpretation that the specification mandated Notifier. The specification actually lists Honeywell – U.S.A. as one of three approved manufacturers (Simplex, Honeywell – U.S.A., Siemens – Germany). This is an approved manufacturer list, not a single mandatory manufacturer. No single mandatory manufacturer exists. The project's UL/FM regime with ~1877 governed addressable points (<=2000) and not-exceptional complexity therefore resolves to Farenhyt per the governed Fire Alarm Ecosystem Policy (Rule C). Notifier remains a TECHNICALLY_VALID_ALTERNATIVE per company brand policy. Contractual manufacturer acceptance remains CONSULTANT_APPROVAL_REQUIRED. No substitution is authorised.",
+  "decidedBy": "authoritative-engineer-decision",
+  "decidedRole": "Project Engineer (authoritative human decision)",
+  "specificationVersion": "28 46 00 - Fire Detection and Alarm System, document version v1",
+  "contractUncertainty": {
+    "manufacturerListIncludesNotifier": "OPEN - Does the manufacturer list's use of 'Honeywell' contractually include the NOTIFIER brand?",
+    "approvedEquivalentAuthority": "OPEN - What is the governing approval mechanism and authority for an 'Approved Equivalent'?",
+    "ul864EditionObligationalStructure": "OPEN - Does the original specification make UL 864 10th Edition mandatory through a parent-clause / list structure, or is it a reference-standards list?",
+    "additionalNodesClauseScope": "OPEN - What is the original scope and intended topology behind the project's additional-node requirement?"
+  }
+}

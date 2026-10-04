@@ -1,0 +1,1 @@
+{"nodes": [{"id": "$graphify-root$_tests_e2e_seed_golden_catalog_sql", "label": "seed-golden-catalog.sql", "file_type": "code", "source_file": "tests/e2e/seed-golden-catalog.sql", "source_location": null}], "edges": []}

@@ -24,8 +24,23 @@ test("legacy global URLs map to the Release 1 information architecture", () => {
   assert.equal(canonicalizeGlobalSearch("?workspace=Case+Studies"), "?workspace=Knowledge&section=Case+Studies");
 });
 
+test("the Document Shadow workspace is non-authoritative and globally scoped", () => {
+  const shadow = GLOBAL_DESTINATIONS.find((item) => item.workspace === "Document Shadow");
+  assert.ok(shadow, "the shadow workspace must be reachable from navigation");
+  // Non-authoritative: it must never be gated behind a commercial permission and
+  // must never appear as a project workspace.
+  assert.equal(shadow.commercial, undefined, "shadow is not a commercial destination");
+  assert.equal(PROJECT_NAVIGATION.some((item) => item.label === "Document Shadow"), false,
+    "shadow is global, not project-scoped");
+  assert.equal(globalNavigationSelection("Document Shadow").parent, "Document Shadow");
+  assert.deepEqual(resolveGlobalDestination("Document Shadow"), { workspace: "Document Shadow", section: "" });
+});
+
 test("global and project navigation are distinct configurations", () => {
-  assert.deepEqual(GLOBAL_DESTINATIONS.map((item) => item.label), ["Home", "Projects", "Knowledge", "Reports", "Administration"]);
+  // "Document Shadow" is the SHADOW / SECOND_OPINION / NON_AUTHORITATIVE
+  // read-only engineering surface. It is deliberately global, NOT project
+  // scoped, and NOT a commercial destination.
+  assert.deepEqual(GLOBAL_DESTINATIONS.map((item) => item.label), ["Home", "Projects", "Knowledge", "Reports", "Document Shadow", "Administration"]);
   assert.deepEqual(PROJECT_NAVIGATION.map((item) => item.label), ["Overview", "Tender", "Product Selection", "Pricing", "Quotation", "Activity"]);
   assert.deepEqual(projectNavigationSelection("Project Context"), { parent: "Tender", child: "Documents" });
   assert.equal(PROJECT_NAVIGATION.some((item) => item.label === "Home"), false);

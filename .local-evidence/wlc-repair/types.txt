@@ -1,0 +1,7 @@
+app/page.tsx(4701,9): error TS2783: 'revision' is specified more than once, so this usage will be overwritten.
+app/page.tsx(4702,9): error TS2783: 'issueDate' is specified more than once, so this usage will be overwritten.
+app/page.tsx(4703,9): error TS2783: 'status' is specified more than once, so this usage will be overwritten.
+app/page.tsx(4704,9): error TS2783: 'transmittal' is specified more than once, so this usage will be overwritten.
+app/page.tsx(15294,9): error TS2367: This comparison appears to be unintentional because the types '"Costing" | "Quotation" | "Price Sources" | "Supplier RFQs" | "Reports" | "Technical Review" | "Commercial Review" | "Case Studies" | "Knowledge Library" | "Pricing Memory" | "Administration" | "Activity" | "Fire Alarm Knowledge" | "CCTV Knowledge"' and '"Technical Matching"' have no overlap.
+app/page.tsx(15973,9): error TS2367: This comparison appears to be unintentional because the types '"Costing" | "Quotation" | "Price Sources" | "Supplier RFQs" | "Reports" | "Case Studies" | "Knowledge Library" | "Pricing Memory" | "Administration" | "Activity" | "Fire Alarm Knowledge" | "CCTV Knowledge"' and '"Technical Review"' have no overlap.
+app/page.tsx(15999,9): error TS2367: This comparison appears to be unintentional because the types '"Costing" | "Quotation" | "Price Sources" | "Supplier RFQs" | "Reports" | "Case Studies" | "Knowledge Library" | "Pricing Memory" | "Administration" | "Activity" | "Fire Alarm Knowledge" | "CCTV Knowledge"' and '"Technical Review"' have no overlap.

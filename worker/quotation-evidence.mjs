@@ -4,6 +4,46 @@ import { currentBoqEvidenceFrom, currentBoqItemPredicate } from "./current-evide
 
 const rows = async (db, sql, ...values) => (await db.prepare(sql).bind(...values).all()).results || [];
 
+// Same Fire Alarm domain test the quotation-line authority uses, so the manifest
+// and the line gate can never disagree about whether panel sizing is required.
+const FIRE_ALARM_DOMAIN = /fire\s*alarm/i;
+
+/**
+ * The panel-sizing authority a Fire Alarm quotation rests on.
+ *
+ * `projectPanelSizingBlockers` in worker/quotation-line-authority.mjs decides
+ * whether a Fire Alarm project may be quoted at all, but that verdict was not
+ * part of the evidence manifest, so it was invisible to the export freshness
+ * gate: producing, superseding or never producing a panel-sizing snapshot could
+ * not invalidate an export, and an approved Fire Alarm architecture could change
+ * after approval while the export kept carrying the old panel authority.
+ *
+ * `fire_alarm_panel_sizing_snapshots` is append-only with BEFORE UPDATE/DELETE
+ * abort triggers, so the head row's identity fully determines the sizing that
+ * was approved and carrying that identity is sufficient. Absence is reported,
+ * never papered over: an environment whose chain predates the table reports
+ * sourceAvailable=false rather than silently behaving as if no authority were
+ * needed.
+ */
+async function loadPanelSizingAuthority(db, project) {
+  const required = FIRE_ALARM_DOMAIN.test(String(project?.system_domain || ""));
+  if (!required) return { required: false, sourceAvailable: true, current: null };
+  try {
+    const current = await db
+      .prepare(
+        "SELECT id,version_number,status,input_fingerprint,engine_version,created_at FROM fire_alarm_panel_sizing_snapshots WHERE project_id=? ORDER BY version_number DESC LIMIT 1",
+      )
+      .bind(project.id)
+      .first();
+    return { required: true, sourceAvailable: true, current: current || null };
+  } catch (error) {
+    if (String(error).includes("no such table")) {
+      return { required: true, sourceAvailable: false, current: null };
+    }
+    throw error;
+  }
+}
+
 export async function buildQuotationEvidenceManifest(db, projectId) {
   const project = await db.prepare("SELECT id,name,organization_id,system_domain,initial_status,updated_at FROM projects WHERE id=? AND archived_at IS NULL").bind(projectId).first();
   if (!project) throw Object.assign(new Error("Project not found."), { code: "PROJECT_NOT_FOUND" });
@@ -27,6 +67,6 @@ export async function buildQuotationEvidenceManifest(db, projectId) {
       WHERE q.project_id=? AND q.boq_item_id=? AND q.review_type='Final Estimation Review' AND q.deleted_at IS NULL ORDER BY q.updated_at DESC LIMIT 1`).bind(projectId, item.itemId).first();
     items.push({ ...item, requirement: requirement || null, match: match || null, safety: safety || null, technicalApproval: technicalApproval || null, pricing: pricing || null, commercialApproval: commercialApproval || null, finalReview: finalReview || null });
   }
-  const manifest = { authorityVersion: QUOTATION_AUTHORITY_VERSION, project, selectedPricingScenario: scenario || null, currency: scenario?.project_currency || profile?.currency || "SAR", items };
+  const manifest = { authorityVersion: QUOTATION_AUTHORITY_VERSION, project, selectedPricingScenario: scenario || null, currency: scenario?.project_currency || profile?.currency || "SAR", panelSizingAuthority: await loadPanelSizingAuthority(db, project), items };
   return { manifest, fingerprint: await quotationEvidenceFingerprint(manifest) };
 }

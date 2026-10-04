@@ -1,0 +1,75 @@
+{
+  "purpose": "Neutral-prompt vision baseline: same model, same exact saved image bytes (sha256-verified against the candidate run's manifest), one call per image, no retries, no prompt tuning, no device names or expected matches in the prompt.",
+  "createdAt": "2026-09-15T15:20:52.379170Z",
+  "isolatedFromApplication": "Written only to .local-evidence/; no drawing_visual_runs row created, no drawing_extraction_proposals rows touched, no review status or candidate applicability changed.",
+  "calls": [
+    {
+      "comparisonId": "smoke",
+      "compositeImageIndex": 22,
+      "sourceRun": "drawingCandidateRun_e0db2e73-d4a9-4556-bed0-5faf6a51b8a7",
+      "model": "@cf/llava-hf/llava-1.5-7b-hf",
+      "imageSha256VerifiedAgainstManifest": true,
+      "httpStatus": 200,
+      "prompt": "This image shows two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them. Describe LEFT: its outline shape, any letters visible inside it, and any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it). Then describe RIGHT the same way. Then state what is visually similar between LEFT and RIGHT, and what is visually different -- if you see no real difference, say so explicitly rather than inventing one. If any part of either symbol is too small or unclear to read, say exactly which part is unreadable. Do not name or guess what kind of device either symbol represents, and do not use outside knowledge about what these symbols usually mean. Keep the answer under 150 words.",
+      "response": {
+        "result": {
+          "description": " The LEFT symbol is a circle with a small letter \"s\" inside it. The RIGHT symbol is a circle with a small letter \"p\" inside it. Both symbols are black and white and have a similar shape. The main difference between the two symbols is the letter inside the circle."
+        },
+        "success": true,
+        "errors": [],
+        "messages": []
+      }
+    },
+    {
+      "comparisonId": "manual-weatherproof",
+      "compositeImageIndex": 24,
+      "sourceRun": "drawingCandidateRun_e0db2e73-d4a9-4556-bed0-5faf6a51b8a7",
+      "model": "@cf/llava-hf/llava-1.5-7b-hf",
+      "imageSha256VerifiedAgainstManifest": true,
+      "httpStatus": 200,
+      "prompt": "This image shows two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them. Describe LEFT: its outline shape, any letters visible inside it, and any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it). Then describe RIGHT the same way. Then state what is visually similar between LEFT and RIGHT, and what is visually different -- if you see no real difference, say so explicitly rather than inventing one. If any part of either symbol is too small or unclear to read, say exactly which part is unreadable. Do not name or guess what kind of device either symbol represents, and do not use outside knowledge about what these symbols usually mean. Keep the answer under 150 words.",
+      "response": {
+        "result": {
+          "description": " The LEFT symbol is a square with a small letter \"f\" inside it, positioned to the left of the square. The RIGHT symbol is a square with a small letter \"t\" inside it, positioned to the right of the square. The symbols are visually similar, with the main difference being the letter inside each square. The letter \"f\" in the LEFT symbol is larger and more prominent than the letter \"t\" in the RIGHT symbol."
+        },
+        "success": true,
+        "errors": [],
+        "messages": []
+      }
+    },
+    {
+      "comparisonId": "control-interface",
+      "compositeImageIndex": 26,
+      "sourceRun": "drawingCandidateRun_e0db2e73-d4a9-4556-bed0-5faf6a51b8a7",
+      "model": "@cf/llava-hf/llava-1.5-7b-hf",
+      "imageSha256VerifiedAgainstManifest": true,
+      "httpStatus": 200,
+      "prompt": "This image shows two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them. Describe LEFT: its outline shape, any letters visible inside it, and any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it). Then describe RIGHT the same way. Then state what is visually similar between LEFT and RIGHT, and what is visually different -- if you see no real difference, say so explicitly rather than inventing one. If any part of either symbol is too small or unclear to read, say exactly which part is unreadable. Do not name or guess what kind of device either symbol represents, and do not use outside knowledge about what these symbols usually mean. Keep the answer under 150 words.",
+      "response": {
+        "result": {
+          "description": " The LEFT symbol is a circle with a small letter \"i\" inside it. The RIGHT symbol is a circle with a small letter \"o\" inside it. Both symbols are black and white and have a similar shape. The only difference between the two symbols is the letter inside the circle."
+        },
+        "success": true,
+        "errors": [],
+        "messages": []
+      }
+    },
+    {
+      "comparisonId": "square-s-unmatched",
+      "compositeImageIndex": 28,
+      "sourceRun": "drawingCandidateRun_e0db2e73-d4a9-4556-bed0-5faf6a51b8a7",
+      "model": "@cf/llava-hf/llava-1.5-7b-hf",
+      "imageSha256VerifiedAgainstManifest": true,
+      "httpStatus": 200,
+      "prompt": "This image shows two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them. Describe LEFT: its outline shape, any letters visible inside it, and any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it). Then describe RIGHT the same way. Then state what is visually similar between LEFT and RIGHT, and what is visually different -- if you see no real difference, say so explicitly rather than inventing one. If any part of either symbol is too small or unclear to read, say exactly which part is unreadable. Do not name or guess what kind of device either symbol represents, and do not use outside knowledge about what these symbols usually mean. Keep the answer under 150 words.",
+      "response": {
+        "result": {
+          "description": " The LEFT symbol is a square with a small letter \"s\" inside it. The RIGHT symbol is a circle with a small letter \"s\" inside it. The symbols are visually similar, with the main difference being the orientation of the letters. The LEFT symbol has the letter \"s\" on the left side, while the RIGHT symbol has the letter \"s\" on the right side."
+        },
+        "success": true,
+        "errors": [],
+        "messages": []
+      }
+    }
+  ]
+}

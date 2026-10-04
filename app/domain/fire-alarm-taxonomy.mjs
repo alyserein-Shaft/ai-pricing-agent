@@ -15,7 +15,35 @@ export const FIRE_ALARM_TAXONOMY = Object.freeze({
   // not a new "Detection Devices" concept.
   "Detection Devices": freezeList(["Addressable Smoke Detector", "Addressable Heat Detector", "Multi-Criteria Detector", "Beam Detector", "Duct Detector", "Flame Detector", "Conventional Detector", "Carbon Monoxide Detector", "Detector Base", "Sounder Base", "Isolator Base"]),
   "Notification Devices": freezeList(["Sounder", "Strobe", "Sounder/Strobe", "Bell", "Horn", "Speaker", "Speaker/Strobe"]),
-  "Modules and Interfaces": freezeList(["Monitor Module", "Control Module", "Input Module", "Output Module", "Relay Module", "Isolator Module", "Zone Module", "Interface Module"]),
+  // "Combined Monitor/Relay Module" is added ONLY because a real Al Mousa BOQ
+  // line ("Control and monitor element as required for interfacing with access
+  // doors, sliding door, fire fighting and HVAC system for proper operation")
+  // explicitly requires BOTH a command output AND monitored feedback for the
+  // same interface. That is not expressible as a Relay Module (command only) or
+  // a Monitor Module (input only), and splitting it into arbitrary quantities
+  // of two separate modules would invent topology the BOQ does not state.
+  // It lives in the EXISTING "Modules and Interfaces" category because it is a
+  // genuine addressable I/O module, so panel-compatibility semantics are
+  // unchanged.
+  "Modules and Interfaces": freezeList(["Monitor Module", "Control Module", "Input Module", "Output Module", "Relay Module", "Isolator Module", "Zone Module", "Interface Module", "Combined Monitor/Relay Module"]),
+  // Real Al Mousa BOQ lines "Fireman telephone jack". The governed product
+  // library ALREADY carries a canonical family named "Fireman Telephone Jack"
+  // (product_families, engineering_domain = "Fire Alarm"), so this is the
+  // vocabulary gap, not a product gap. It is deliberately its OWN category and
+  // NOT "Control Equipment": a telephone jack is a passive telephone-system
+  // endpoint, so giving it an SLC-control category would falsely imply panel
+  // compatibility and a control-circuit address. Neither name embeds a token
+  // from FAMILY_NAME_SEMANTIC_CLAIMS, so no addressing/detection claim is
+  // asserted -- exactly correct for a passive endpoint.
+  "Firefighter Telephone System": freezeList(["Fireman Telephone Jack"]),
+  // Real Al Mousa BOQ line "Door contact". A door contact is a PASSIVE field
+  // device; the addressable Fire Alarm interface to it is a separate Monitor
+  // Module. Classifying the contact inside "Modules and Interfaces" would
+  // assert an SLC module identity (and a module address) that the BOQ never
+  // states, so it gets its own category instead. This mirrors the real
+  // engineering distinction the decision records: DOOR CONTACT = passive field
+  // device, IDP-MONITOR = the addressable interface where required.
+  "Field Interface Devices": freezeList(["Door Contact"]),
   "Manual Initiation": freezeList(["Manual Call Point", "Pull Station", "Break Glass Unit"]),
   "Power and Batteries": freezeList(["Fire Alarm Power Supply", "Booster Power Supply", "Battery", "Battery Cabinet", "Charger"]),
   Accessories: freezeList(["Mounting Base", "Back Box", "Weatherproof Box", "Guard", "Bracket", "End-of-Line Device", "Enclosure", "Cable Accessory", "Programming Tool", "Software License"]),
@@ -278,7 +306,25 @@ const familyPhrases = Object.freeze({
   // as an attribute-level distinction (single vs. 2-input monitor module),
   // not a separate family.
   "Monitor Module": ["monitor module", "monitoring module", "monitor moudule"], "Control Module": ["control module"], "Input Module": ["input module"],
-  "Output Module": ["output module"], "Relay Module": ["relay module"],
+  "Output Module": ["output module"], "Relay Module": ["relay module",
+    // Real Al Mousa gap: the project's own governing spec clauses for the
+    // elevator/HVAC/BMS interface rows never say "relay module" -- they say
+    // "voltage free contacts" (req_427) and the catalog's own relay hardware
+    // says "dry contacts"/"Form C" (IDP-RELAY, PAM-1/2/4, FRM-1). Verified
+    // against every catalog description containing these strings: all are
+    // relay-contact hardware (relay modules, relay bases, encapsulated
+    // relays), never monitor/input devices. The one monitor-module
+    // description mentioning dry contacts (FMM-1) still resolves Monitor
+    // Module first: "monitor module" (14 chars) outscores "dry contact"
+    // (12 chars) under the existing exactSpecificity rule.
+    "dry contact", "dry contacts", "voltage free contact", "voltage free contacts", "form c contact", "form c contacts"],
+  // Real Al Mousa gap: req_235 ("these units must both accept and provide
+  // contacts to other services... BMS") is the governing clause for the
+  // "Control and monitor element" rows, but no existing phrase resolves it.
+  // Kept to this one literal spec-anchored phrase: a bare "contacts" or
+  // "monitor" phrase would collide with monitor-module and door-contact
+  // text across the catalog.
+  "Combined Monitor/Relay Module": ["accept and provide contacts"],
   // Sprint 1.34 -- real catalog gap found while auditing Modules and
   // Interfaces: IDP-ISO ("Intelligent Addressable Line Isolator Mod.
   // Isolates Short Circuits On Slc Loop") and ISO-6 ("Six Position Line
@@ -308,6 +354,20 @@ const familyPhrases = Object.freeze({
   // own text drops the word "Module" after "Zone Interface" -- adding the
   // bare "zone interface" phrase closes that gap.
   "Zone Module": ["zone module", "zone interface module", "zone interface"], "Interface Module": ["interface module", "interface unit"],
+  // Real Al Mousa gap: the three "Fireman telephone jack" rows had zero
+  // suggested links (scorer 12, below the Mandatory 15 threshold) because
+  // neither side resolved: the BOQ text names no module type and the
+  // requirement clauses say "telephone jack"/"fire fighters telephone",
+  // which no phrase covered. Verified against every catalog description and
+  // every Fire Alarm spec clause containing these strings: only genuine
+  // telephone-jack hardware (FFT-FPJ, N-FPJ) and jack clauses (req_266,
+  // req_267). Deliberately NOT a bare "telephone"/"firefighter telephone"
+  // phrase: that would sweep in the FTM-1 firephone control module, the
+  // SK-FFT system text, and the speaker/telephone-circuit cable clause.
+  // The possessive-"s" system clauses ("fire fighter s telephone system",
+  // req_349/356) remain unmatched by design -- req_267 (plate marking,
+  // Mandatory) is the jack-specific baseline; req_349 stays a follow-up.
+  "Fireman Telephone Jack": ["telephone jack", "phone jack", "fire fighters telephone", "fireman telephone jack", "firefighter telephone jack"],
   // Sprint 1.22 -- real Opera gap: NFPA 72's own standard term for this
   // device is "manual fire alarm box" (used by requirement text that never
   // says "call point" or "pull station" at all, e.g. "Actuation of any
@@ -343,7 +403,13 @@ const familyPhrases = Object.freeze({
   // correctly classified as Manual Call Point, a genuinely different
   // regional-terminology and mixed-manufacturer bucket, not the same
   // product line).
-  "Manual Call Point": ["manual call point", "manual fire alarm box", "mclp", "manual station"], "Pull Station": ["pull station", "pullstation"], "Break Glass Unit": ["break glass unit"],
+  // Verified zero-collision 2026-10-03: "signaling box" occurs nowhere else
+  // in the catalog, the Fire Alarm spec, or the Al Mousa BOQ -- only UL 38
+  // req_29 ("manual signaling boxes for fire alarm systems"). Lets the
+  // family-correct UL 38 standard clause surface for manual-station rows.
+  // (The bare word "signaling" alone is deliberately NOT added: NAC and
+  // notification clauses use it generically.)
+  "Manual Call Point": ["manual call point", "manual fire alarm box", "mclp", "manual station", "manual signaling box", "manual signaling boxes"], "Pull Station": ["pull station", "pullstation"], "Break Glass Unit": ["break glass unit"],
   // Sprint 1.27 -- real Opera gap: "Battery" was a declared Power and
   // Batteries family with zero phrases. A bare "battery" phrase is unsafe
   // -- it would also catch three real accessory products that only mention
@@ -387,10 +453,258 @@ const attributeAliases = new Map([
   ["notificationfeature", "notification_feature"],
 ]);
 
+// ---------------------------------------------------------------------------
+// THE SIZING CONTRACT ALIAS SEAM
+// ---------------------------------------------------------------------------
+// `product_attributes.attribute_name` reaches the governed consumers carrying
+// whatever name the catalogue or the research author used, not necessarily the
+// governed one. `worker/fire-alarm-panel-sizing-api.mjs` reads panel capacity
+// and expansion facts through this seam (and through
+// `worker/product-attribute-review.mjs`), so ONE resolver owns that mapping and
+// neither consumer keeps a private copy.
+//
+// DELIBERATELY A CLOSED MAP, NOT A PATTERN. Each entry is a 1:1 concept that a
+// real source has actually used. A pattern rule would let an unseen spelling of
+// a genuinely different concept resolve as a known one, and these names ARE
+// capacity and power claims: a wrong resolve silently re-points a panel's
+// detector/module/point ceiling. Anything not listed resolves to null, and every
+// consumer already treats null as "leave the stored name alone", so an
+// unrecognised name is preserved rather than mangled.
+//
+// `slc_address_model` appears here mapped to ITSELF on purpose. It is a promoted
+// canonical name (knowledge-promotion-policy.mjs ADDRESS_MODEL_CANONICAL_VALUES)
+// that the sizing loader passes through this seam, so it must survive it. That is
+// the one self-mapping in this map; every other already-canonical governed name
+// (native_slc_loops, max_system_points, ...) is deliberately absent and returns
+// null, which is the same end state via the consumer's fallback.
+const SIZING_CONTRACT_ATTRIBUTE_ALIASES = new Map([
+  // Panel capacity. These four are the sizing calculator's entire input
+  // contract; the legacy names are the ones real catalogue rows carried.
+  ["slc_loop_count", "native_slc_loops"],
+  ["detector_capacity", "max_detectors_per_loop"],
+  ["module_capacity", "max_modules_per_loop"],
+  ["panel_capacity", "max_system_points"],
+  // Panel electricals / cabinet.
+  ["cabinet_color", "color"],
+  ["ac_input", "input_voltage"],
+  ["total_power_output", "power_rating"],
+  ["supported_interfaces", "communication_interface"],
+  ["battery_capacity_in_cabinet", "battery_capacity"],
+  // Address model. Concept-level only: no product name is special-cased, so a
+  // product-qualified string such as "6500RSE address model" resolves to null
+  // rather than being pattern-matched into a known behaviour.
+  ["address_model", "slc_address_model"],
+  ["slc_address_model", "slc_address_model"],
+  ["addressing_model", "slc_address_model"],
+  ["device_address_model", "slc_address_model"],
+]);
+
+// Case- and separator-insensitive, but WHOLE-STRING: the key must equal the
+// entire attribute name. Substring matching is what would let a
+// product-qualified name inherit a governed meaning it never claimed.
+const normalizedAttributeAliasKey = (value) =>
+  String(value ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+
+/**
+ * Resolve a stored Fire Alarm attribute name onto the governed sizing-contract
+ * name, or null when the name is not a known alias.
+ *
+ * Null is meaningful, not a failure: it means "this name is not an alias", and
+ * every caller falls back to the stored name, so an already-canonical or an
+ * unrecognised name passes through unchanged instead of being rewritten.
+ *
+ * @param {unknown} value raw `attribute_name` as stored on a product attribute
+ * @returns {string|null} governed attribute name, or null
+ */
+// CANONICAL CAPABILITY VOCABULARY
+//
+// A capability is a governed PRODUCT OR SYSTEM CAPABILITY with an explicitly
+// typed value. It is deliberately NOT another entry in COMMON_ATTRIBUTES: those
+// are value-agnostic measurement names, and several of them (`network_capability`,
+// `communication_interface`, `included_components`) already exist for products and
+// would silently acquire boolean semantics if a capability reused their name.
+// A capability therefore lives in its own closed registry with its own value type
+// and its own fail-closed matching semantics.
+//
+// CREATION RULES (every key below satisfies all five):
+//   1. a real, CURRENTLY-APPLICABLE project requirement demands it;
+//   2. first-party manufacturer evidence can prove whether a given product
+//      supports it (verified against Honeywell 351602 rev C and the IFP-2100
+//      Installation & Operation Manual, P/N LS10143-001SK-E:C);
+//   3. it is reusable beyond one BOQ row -- all keys describe CONTROL PANEL
+//      behaviour, not a project's particular clause;
+//   4. matching is defined fail-closed (see product-matching-engine.mjs);
+//   5. ABSENCE of evidence resolves to Insufficient Evidence and is never
+//      implied false.
+//
+// Each key names the exact governing clause of Al Mousa "28 46 00 Fire Detection
+// and Alarm System - Rev 1" that forced its creation, so a reviewer can check the
+// derivation rather than take the list on trust. NO key is named after a
+// requirement sentence, and there is no product-specific shortcut.
+const CAPABILITY_DEFINITIONS = [
+  ["local_operator_display", "Boolean", "The panel provides a local visual display for operator interaction.", "1 GENERAL / G"],
+  ["panel_operator_switches", "Boolean", "The panel provides local operator switches or keys for system interaction.", "1 GENERAL / G"],
+  ["operator_event_logging", "Boolean", "Operator key presses are recorded in the panel's event history.", "1 GENERAL / H.7"],
+  ["panel_database_support", "Boolean", "The panel supports an operating system and programmable databases.", "1 GENERAL / H.7"],
+  ["panel_communication_ports", "Boolean", "The panel offers data communication interfaces enabling concurrent operation of other devices.", "1 GENERAL / I.1"],
+  ["panel_online_diagnostics", "Boolean", "The panel continuously runs self, communication and subsidiary equipment diagnostics.", "1 GENERAL / I.2"],
+  ["panel_transient_protection", "Boolean", "Isolation is provided at field terminations to suppress voltage transients.", "1 GENERAL / I.3"],
+  ["signal_reactivation_control", "Boolean", "Silenced signalling can be reactivated, including after a subsequent alarm.", "1 GENERAL / X"],
+  ["alarm_verification_support", "Boolean", "The panel supports alarm verification of activated detectors before processing.", "1 GENERAL / X"],
+  ["peer_to_peer_network", "Boolean", "The panel network architecture is peer-to-peer with survivability under partial failure.", "2 PRODUCTS / 5a and 6"],
+  ["panel_software_integration", "Boolean", "The panel is software-integrated with the main control unit for continuous signal monitoring.", "2 PRODUCTS / D"],
+];
+
+const RELATIONAL_DEFINITIONS = [
+  ["related_enclosure_colour_match", "Relational", "The colour of any separately-supplied related enclosure must equal the selected panel enclosure's colour.", "1 GENERAL / E", "cabinet_color"],
+];
+
+const freezeCapabilities = (rows) =>
+  Object.freeze(Object.fromEntries(rows.map(([key, valueType, meaning, clause, referencedAttribute]) => [
+    key,
+    Object.freeze({
+      key,
+      valueType,
+      meaning,
+      governingClause: clause,
+      semantics: "Fail-Closed",
+      // Only a relational constraint carries the governed attribute BOTH sides
+      // must share. It is declared here, in the governed vocabulary, so the
+      // comparison never invents which attribute to compare at decision time.
+      ...(referencedAttribute ? { referencedAttribute } : {}),
+    }),
+  ])));
+
+/** Closed, versioned registry of canonical control-panel capability keys. */
+export const FIRE_ALARM_CAPABILITIES = Object.freeze({
+  version: "fire-alarm-capabilities-1.0.0",
+  capabilities: freezeCapabilities(CAPABILITY_DEFINITIONS),
+  relationalConstraints: freezeCapabilities(RELATIONAL_DEFINITIONS),
+});
+
+/** @returns {object|null} the capability definition, or null when ungoverned. */
+export const fireAlarmCapability = (key) =>
+  FIRE_ALARM_CAPABILITIES.capabilities[String(key ?? "").trim()] ||
+  FIRE_ALARM_CAPABILITIES.relationalConstraints[String(key ?? "").trim()] ||
+  null;
+
+/** True only for a governed BOOLEAN capability key. */
+export const isGovernedBooleanCapability = (key) =>
+  FIRE_ALARM_CAPABILITIES.capabilities[String(key ?? "").trim()]?.valueType === "Boolean";
+
+/** True only for a governed relational constraint key. */
+export const isGovernedRelationalConstraint = (key) =>
+  Boolean(FIRE_ALARM_CAPABILITIES.relationalConstraints[String(key ?? "").trim()]);
+
+/**
+ * Normalise a stored capability value to a real boolean, or null when the value
+ * is absent or not an unambiguous boolean.
+ *
+ * Only the literal affirmative/negative words and 1/0 are accepted. Anything
+ * else (including a free-text sentence, an "Unknown", a colour word, a number)
+ * returns null, which the matcher reports as Insufficient Evidence. That is the
+ * whole point: a capability comparison may NEVER degrade into free-text matching.
+ */
+export const parseCapabilityBoolean = (value) => {
+  if (value === true || value === false) return value;
+  if (value === null || value === undefined) return null;
+  const key = String(value).trim().toLowerCase();
+  if (["true", "yes", "supported", "present", "1"].includes(key)) return true;
+  if (["false", "no", "not supported", "absent", "0"].includes(key)) return false;
+  return null;
+};
+
+export const resolveFireAlarmAttributeAlias = (value) => {
+  const key = normalizedAttributeAliasKey(value);
+  if (!key) return null;
+  return (
+    SIZING_CONTRACT_ATTRIBUTE_ALIASES.get(key) ||
+    attributeAliases.get(key) ||
+    attributeAliases.get(key.replace(/_/g, " ")) ||
+    null
+  );
+};
+
 // The one Fire-Alarm-specific system-name synonym ("Fire Alarm System" as an
 // AI-proposed alias of "Fire Alarm"). Kept here, not in the generic core or the
 // system-knowledge-registry, so the registry stays free of domain-specific text.
 export const isFireAlarmSystemName = (value) => /^fire alarm(?: system)?$/i.test(String(value ?? "").trim());
+
+// ---------------------------------------------------------------------------
+// MATERIAL SEMANTIC CLAIMS EMBEDDED IN A GOVERNED FAMILY NAME ITSELF
+// ---------------------------------------------------------------------------
+// Real Al Mousa finding (advisory pilot, read-only). A returned family can be
+// perfectly in-vocabulary and still assert engineering the source evidence never
+// established: "Addressable Smoke Detector" was returned for the BOQ line
+// "Smoke detectors (above ceiling)", which never states an addressing mode.
+// In-vocabulary therefore does NOT mean supported.
+//
+// This is declared GENERICALLY, from the taxonomy's own governed family names
+// plus its own attribute vocabulary (COMMON_ATTRIBUTES above). It is NOT a list
+// of BOQ phrases and knows nothing about any provider, project or fixture: a
+// family name is read for tokens that name a governed attribute VALUE. Adding a
+// family that embeds a claim automatically participates; adding a token here is
+// required for a new claim dimension to be checked at all.
+//
+// Deliberately only dimensions with an existing governed attribute slot AND a
+// closed, evidenced value concept are declared. `addressing` has a two-value
+// closed set (ATTRIBUTE_VALUE_VALIDATORS below). `detection_principle` follows
+// this taxonomy's own documented "one family per hazard type" structure. No
+// dimension is invented here, and an attribute with no closed concept (protocol,
+// loop capacity, ...) is intentionally absent rather than approximated.
+const FAMILY_NAME_SEMANTIC_CLAIMS = Object.freeze([
+  Object.freeze({ attribute: "addressing", values: Object.freeze({ addressable: "Addressable", conventional: "Conventional" }) }),
+  Object.freeze({ attribute: "detection_principle", values: Object.freeze({
+    smoke: "Smoke", heat: "Heat", "multi criteria": "Multi-Criteria", duct: "Duct",
+    beam: "Beam", flame: "Flame", "carbon monoxide": "Carbon Monoxide",
+  }) }),
+]);
+
+// The governed families that actually embed at least one claim. Derived, never
+// hand-listed, so it cannot drift from FIRE_ALARM_TAXONOMY.
+const familiesWithNameClaims = new Set(
+  Object.values(FIRE_ALARM_TAXONOMY).flat().filter((family) => {
+    const name = normalized(family);
+    return FAMILY_NAME_SEMANTIC_CLAIMS.some((dimension) => Object.keys(dimension.values).some((token) => name.includes(token)));
+  }),
+);
+
+// Claims a governed family NAME makes about itself. Empty for every family whose
+// name asserts no governed attribute value (Fire Alarm Control Panel, Manual
+// Call Point, Sounder, ...) -- an empty result means "nothing to overclaim", NOT
+// "fully supported".
+export function fireAlarmFamilyNameClaims(family) {
+  if (!familiesWithNameClaims.has(String(family ?? ""))) return [];
+  const name = normalized(family);
+  const claims = [];
+  for (const dimension of FAMILY_NAME_SEMANTIC_CLAIMS) {
+    for (const [token, value] of Object.entries(dimension.values)) {
+      // Word-boundary match on the normalized name: "addressable" must not be
+      // found inside an unrelated longer word, and "carbon monoxide" is a
+      // two-token phrase so a plain substring test is correct for it.
+      if (new RegExp(`\\b${token.replace(/ /g, "\\s+")}\\b`).test(name)) claims.push({ attribute: dimension.attribute, value, token });
+    }
+  }
+  return claims;
+}
+
+// Fail-closed support assessment: a name-embedded claim is SUPPORTED only when
+// the evidence text itself establishes that value. Absence is not support, and
+// is reported as unsupported rather than assumed. `additionalEvidence` lets a
+// caller supply additional established evidence (e.g. the project's APPROVED
+// specification clauses) without that evidence being folded into the BOQ line.
+export function assessFireAlarmFamilySupport(family, evidenceText, { additionalEvidence = [] } = {}) {
+  const claims = fireAlarmFamilyNameClaims(family);
+  const haystack = normalized([evidenceText, ...additionalEvidence].filter(Boolean).join(" "));
+  const unsupported = claims.filter((claim) => {
+    if (haystack.includes(claim.token)) return false;
+    // An attribute the evidence states under its governed VALUE spelling is also
+    // support (e.g. evidence "addressable" vs value "Addressable").
+    return !haystack.includes(normalized(claim.value));
+  });
+  return { family, claims, supported: unsupported.length === 0, unsupported };
+}
+
 export const normalizeFireAlarmCategory = (value) => exactCategoryAliases.get(normalized(value)) || null;
 export const normalizeFireAlarmFamily = (value) => exactFamilyAliases.get(normalized(value)) || (familyCategory.has(String(value)) ? String(value) : null);
 export const fireAlarmCategoryForFamily = (family) => familyCategory.get(family) || null;
@@ -498,6 +812,34 @@ const rejectFamilyOrCategoryNameEcho = (value) => {
   if (!text) return null;
   return familyAndCategoryNames.has(normalized(text)) ? null : text;
 };
+// ---------------------------------------------------------------------------
+// SCALAR CAPACITY CLAIMS -- fail closed on ambiguity, never coerce
+// ---------------------------------------------------------------------------
+// WHY THIS IS NOT A TYPE COERCION. These names are the sizing calculator's
+// entire input contract, and the real first-party datasheet strings for the
+// governing panel are DUAL-VALUED. IFP-2100HV datasheet 351602 states
+// "Addressable device capacity: 2100 (IDP/SK) or 2032 (SD)" and "Intelligent
+// Signaling Line Circuits: 1 (expandable)". A permissive Number() coercion would
+// silently take 2100 and bind the SD protocol's 2032-point ceiling to the wrong
+// device population -- an invented capacity that sizes every loop on the panel.
+//
+// The rule is deliberately about COUNT, not about spelling: exactly one number
+// in the string is a scalar claim and is accepted as that integer; two or more
+// is a dual-valued claim and is REFUSED; none is not a quantity at all. This
+// accepts "75", "150" and "159 detectors" alike while refusing both
+// "150 IDP/SK points; 75 SD points" and "seventy five".
+//
+// Refusal returns valid:false, so the caller downgrades the fact to MISSING and
+// keeps the raw string in reviewReasons only. It is never promoted as authority.
+const scalarCapacityValue = (value) => {
+  const text = String(value ?? "").trim();
+  if (!text) return null;
+  const numbers = text.match(/\d+(?:\.\d+)?/g);
+  if (!numbers || numbers.length !== 1) return null;
+  const scalar = Number(numbers[0]);
+  return Number.isFinite(scalar) && scalar >= 0 ? scalar : null;
+};
+
 const ATTRIBUTE_VALUE_VALIDATORS = Object.freeze({
   addressing: (value) => {
     const n = normalized(value);
@@ -534,6 +876,14 @@ const ATTRIBUTE_VALUE_VALIDATORS = Object.freeze({
   protocol: rejectFamilyOrCategoryNameEcho,
   compatible_panel_family: rejectFamilyOrCategoryNameEcho,
   loop_compatibility: rejectFamilyOrCategoryNameEcho,
+  // Scalar capacity claims -- see SCALAR_CAPACITY_VALUE below. Fail closed on a
+  // dual-valued claim; never coerce.
+  native_slc_loops: scalarCapacityValue,
+  max_slc_loops: scalarCapacityValue,
+  added_slc_loops: scalarCapacityValue,
+  max_detectors_per_loop: scalarCapacityValue,
+  max_modules_per_loop: scalarCapacityValue,
+  max_system_points: scalarCapacityValue,
 });
 
 // Returns { valid, normalizedValue }. No validator defined for this attribute
@@ -821,6 +1171,30 @@ export function classifyFireAlarmFamilyFromText(value) {
 // detector", already bare) needs no fallback at all; it is recognized on the
 // first, strict pass, exactly like "manual call point" already is.
 const LOOSE_QUALIFIER_PREFIX = /^(?:addressable|conventional|photoelectric|intelligent|optical)\s+/;
+
+// A stripped "bare" form is only ever a useful fallback when it still names a
+// DISTINCTIVE piece of equipment. Stripping the qualifier off "conventional
+// detector" yields the bare word "detector", which is not a distinctive piece of
+// equipment at all: it is the common noun for an entire device class, so ANY text
+// mentioning a detector matched it.
+//
+// Measured on the real Al Mousa requirement seq 100058 ("The Fire Alarm Control
+// Panel (FACP) shall feature switches and an LCD/LED display for system
+// interaction. The entry keypad must support technical operations, system and
+// DETECTOR maintenance, history review, ..."): the sentence that actually names
+// the panel resolved correctly on its own, but the scorer reads the whole clause
+// through originalClauseText, where the second sentence's "detector
+// maintenance" hijacked the clause into "Conventional Detector". That produced
+// a Cross-equipment conflict against the panel BOQ item, so `scoreRequirementLink`
+// scored the panel's own requirement at 8 instead of 56 and the governed
+// applicability scorer could never propose it for a Fire Alarm Control Panel row.
+//
+// The same reasoning the familyPhrases comment already records for bare "smoke
+// detector" / "heat detector" applies with full force to a bare "detector":
+// asserting it is not safe, and it was only ever safe by accident because the
+// qualifying word happened to be checked first.
+const NOT_DISTINCTIVE_BARE_FORMS = new Set(["detector", "device", "module", "panel", "unit"]);
+
 export function looseFireAlarmEquipmentMatch(value) {
   const strict = classifyFireAlarmFamilyFromText(value);
   if (strict) return strict.family;
@@ -830,7 +1204,9 @@ export function looseFireAlarmEquipmentMatch(value) {
     for (const phrase of phrases) {
       const normalizedPhrase = normalized(phrase);
       const bare = normalizedPhrase.replace(LOOSE_QUALIFIER_PREFIX, "");
-      if (bare && bare !== normalizedPhrase && text.includes(bare)) return family;
+      if (!bare || bare === normalizedPhrase) continue;
+      if (NOT_DISTINCTIVE_BARE_FORMS.has(bare)) continue;
+      if (text.includes(bare)) return family;
     }
   }
   return null;

@@ -15,6 +15,15 @@ export const GLOBAL_DESTINATIONS = Object.freeze([
     ],
   },
   { id: "Reports", label: "Reports", icon: "▥", workspace: "Reports", commercial: true },
+  {
+    // SHADOW / SECOND_OPINION / NON_AUTHORITATIVE. A read-only engineering
+    // surface: it never mutates project truth, so it is deliberately NOT placed
+    // inside a governed commercial or tender group.
+    id: "Document Shadow",
+    label: "Document Shadow",
+    icon: "◐",
+    workspace: "Document Shadow",
+  },
   { id: "Administration", label: "Administration", icon: "⚙", workspace: "Administration" },
 ]);
 
@@ -53,6 +62,8 @@ export const LEGACY_GLOBAL_WORKSPACE_MAP = Object.freeze({
   "Pricing Memory": { workspace: "Knowledge", section: "Prices" },
   "Case Studies": { workspace: "Case Studies", section: "Case Studies", canonicalWorkspace: "Knowledge" },
   Reports: { workspace: "Reports" },
+  // SHADOW / SECOND_OPINION / NON_AUTHORITATIVE — read-only engineering surface.
+  "Document Shadow": { workspace: "Document Shadow" },
   Settings: { workspace: "Administration" },
   Administration: { workspace: "Administration" },
 });

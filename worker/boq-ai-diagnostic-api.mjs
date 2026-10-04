@@ -5,6 +5,7 @@ import {
   validateBoqUnderstandingResponseSchema,
 } from "../app/domain/boq-understanding-engine.mjs";
 import {
+  NVIDIA_NIM,
   boqUnderstandingProviderReadiness,
   createConfiguredBoqUnderstandingProvider,
 } from "./boq-understanding-provider.mjs";
@@ -42,6 +43,10 @@ export async function handleBoqAiDiagnosticApi(request, env = {}) {
     diagnosticLogger: (diagnostic) => console.error("BOQ_AI_PROVIDER_DIAGNOSTIC", JSON.stringify(diagnostic)),
   });
   if (!provider) return json({ reachedCloudflare: false, readiness, errorCategory: readiness.state === "Misconfigured" ? "MISCONFIGURED" : "AI_BINDING_MISSING" }, 503);
+  // The diagnostic names the provider that actually failed. Identity is observable
+  // and truthful, so a failure is never reported against the wrong vendor.
+  const providerLabel = provider.metadata.provider === NVIDIA_NIM ? "NVIDIA NIM" : "Workers AI";
+  const providerFailureDetail = `${providerLabel} could not complete the request.`;
 
   const input = prepareBoqUnderstandingInput({
     id: "fictional-native-smoke",
@@ -72,7 +77,7 @@ export async function handleBoqAiDiagnosticApi(request, env = {}) {
     const providerError = timedOut || error?.code === "AI_PROVIDER_ERROR";
     return json({
       reachedCloudflare: !providerError,
-      readiness: providerError ? { ...readiness, state: "Provider error", detail: "Workers AI could not complete the request." } : readiness,
+      readiness: providerError ? { ...readiness, state: "Provider error", detail: providerFailureDetail } : readiness,
       provider: provider.metadata.provider,
       model: provider.metadata.model,
       schemaValid: false,

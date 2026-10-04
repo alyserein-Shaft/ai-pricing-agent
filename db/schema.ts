@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
-import { index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
+import type { AnySQLiteColumn } from "drizzle-orm/sqlite-core";
+import { check, index, integer, real, sqliteTable, text, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 // Governed Completed Projects Learning Foundation. These tables are intentionally
 // isolated from matching, pricing and canonical product records.
@@ -351,11 +352,11 @@ export const requirementProfileVersions = sqliteTable("requirement_profile_versi
 }, (table) => [uniqueIndex("requirement_profile_item_version_idx").on(table.boqItemId, table.versionNumber), index("requirement_profile_project_status_idx").on(table.projectId, table.status, table.readinessStatus)]);
 
 export const requirementIntelligenceFacts = sqliteTable("requirement_intelligence_facts", {
-  id: text("id").primaryKey(), profileVersionId: text("profile_version_id").notNull().references(() => requirementProfileVersions.id), requirementId: text("requirement_id").notNull().references(() => technicalRequirements.id), factKey: text("fact_key").notNull(), factType: text("fact_type").notNull(), originalValue: text("original_value", { mode: "json" }).notNull(), currentValue: text("current_value", { mode: "json" }).notNull(), modality: text("modality").notNull(), confidence: integer("confidence").notNull(), sourcePage: integer("source_page"), sourcePageTo: integer("source_page_to"), sourceClause: text("source_clause"), sourceSection: text("source_section"), evidenceSnippet: text("evidence_snippet").notNull(), extractionBasis: text("extraction_basis").notNull(), engineVersion: text("engine_version").notNull(), reviewStatus: text("review_status").notNull().default("Needs Review"), reviewedBy: text("reviewed_by"), reviewedAt: text("reviewed_at"), reviewReason: text("review_reason"), createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  id: text("id").primaryKey(), profileVersionId: text("profile_version_id").notNull().references(() => requirementProfileVersions.id), requirementSource: text("requirement_source").notNull(), requirementId: text("requirement_id").references(() => technicalRequirements.id), deviceIdentityRef: text("device_identity_ref"), factKey: text("fact_key").notNull(), factType: text("fact_type").notNull(), originalValue: text("original_value", { mode: "json" }).notNull(), currentValue: text("current_value", { mode: "json" }).notNull(), modality: text("modality").notNull(), confidence: integer("confidence").notNull(), sourcePage: integer("source_page"), sourcePageTo: integer("source_page_to"), sourceClause: text("source_clause"), sourceSection: text("source_section"), evidenceSnippet: text("evidence_snippet").notNull(), extractionBasis: text("extraction_basis").notNull(), engineVersion: text("engine_version").notNull(), reviewStatus: text("review_status").notNull().default("Needs Review"), reviewedBy: text("reviewed_by"), reviewedAt: text("reviewed_at"), reviewReason: text("review_reason"), createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [uniqueIndex("requirement_intelligence_profile_key_idx").on(table.profileVersionId, table.factKey), index("requirement_intelligence_review_idx").on(table.profileVersionId, table.reviewStatus, table.factType)]);
 
 export const profileRequirementApplicability = sqliteTable("profile_requirement_applicability", {
-  id: text("id").primaryKey(), profileVersionId: text("profile_version_id").notNull().references(() => requirementProfileVersions.id), requirementId: text("requirement_id").notNull().references(() => technicalRequirements.id), status: text("status").notNull(), method: text("method").notNull(), confidence: integer("confidence").notNull(), evidence: text("evidence", { mode: "json" }).notNull(), priority: text("priority").notNull(), reviewStatus: text("review_status").notNull(), reviewedBy: text("reviewed_by"), reviewedAt: text("reviewed_at"), reviewReason: text("review_reason"), createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  id: text("id").primaryKey(), profileVersionId: text("profile_version_id").notNull().references(() => requirementProfileVersions.id), requirementSource: text("requirement_source").notNull(), requirementId: text("requirement_id").references(() => technicalRequirements.id), deviceIdentityRef: text("device_identity_ref"), status: text("status").notNull(), method: text("method").notNull(), confidence: integer("confidence").notNull(), evidence: text("evidence", { mode: "json" }).notNull(), priority: text("priority").notNull(), reviewStatus: text("review_status").notNull(), reviewedBy: text("reviewed_by"), reviewedAt: text("reviewed_at"), reviewReason: text("review_reason"), createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [uniqueIndex("profile_applicability_requirement_idx").on(table.profileVersionId, table.requirementId), index("profile_applicability_status_idx").on(table.profileVersionId, table.status)]);
 
 export const consolidatedProfileRequirements = sqliteTable("consolidated_profile_requirements", {
@@ -659,3 +660,77 @@ export const projectStatusHistory = sqliteTable("project_status_history", {
 export const dashboardAuditLog = sqliteTable("dashboard_audit_log", {
   id: text("id").primaryKey(), projectId: text("project_id").references(() => projects.id), action: text("action").notNull(), previousValue: text("previous_value", { mode: "json" }), newValue: text("new_value", { mode: "json" }), reason: text("reason").notNull(), actorUserId: text("actor_user_id").notNull(), actorRole: text("actor_role").notNull(), requestId: text("request_id").notNull(), createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 }, (table) => [index("dashboard_audit_project_idx").on(table.projectId, table.createdAt), index("dashboard_audit_action_idx").on(table.action, table.createdAt)]);
+
+// Governed Fire Alarm panel-sizing snapshots (migration
+// drizzle-active/0004_fire_alarm_panel_sizing_snapshots.sql).
+//
+// APPEND-ONLY BY CONSTRUCTION, and deliberately so: there is no superseded_at
+// column and no updated_at. A sizing snapshot is the immutable record of one
+// panel-sizing calculation, not a mutable current-state row. "Current" is
+// expressed by the (project_id, version_number) unique index plus a single
+// Active version, and a correction is a NEW higher version -- never an edit of a
+// stored calculation. SQLite enforces the append-only rule independently of
+// application code through the fire_alarm_panel_sizing_snapshots_immutable_update
+// and fire_alarm_panel_sizing_snapshots_immutable_delete triggers in that
+// migration, so a violation is refused by the database itself.
+export const fireAlarmPanelSizingSnapshots = sqliteTable("fire_alarm_panel_sizing_snapshots", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id),
+  versionNumber: integer("version_number").notNull(),
+  inputFingerprint: text("input_fingerprint").notNull(),
+  engineVersion: text("engine_version").notNull(),
+  status: text("status").notNull(),
+  inputJson: text("input_json", { mode: "json" }).notNull(),
+  calculationJson: text("calculation_json", { mode: "json" }).notNull(),
+  dossierJson: text("dossier_json", { mode: "json" }).notNull(),
+  reason: text("reason").notNull(),
+  createdBy: text("created_by").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  uniqueIndex("fire_alarm_panel_sizing_project_version_idx").on(table.projectId, table.versionNumber),
+  index("fire_alarm_panel_sizing_project_current_idx").on(table.projectId, table.versionNumber),
+]);
+
+
+// Phase 4.1F: governed Drawing Quantity claim authority (migration 0020).
+// Append-only claim history with supersession. Uniqueness of the CURRENT claim is
+// enforced by an expression index in SQL, because SQLite treats NULLs as DISTINCT
+// inside a UNIQUE index; a plain column list would admit a duplicate whenever
+// sheet or floor_or_area is NULL. See drizzle-active/0020_drawing_quantity_claims.sql.
+export const drawingQuantityClaims = sqliteTable("drawing_quantity_claims", {
+  id: text("id").primaryKey(),
+  projectId: text("project_id").notNull().references(() => projects.id),
+  documentId: text("document_id").references(() => documents.id),
+  documentVersionId: text("document_version_id").notNull().references(() => documentVersions.id),
+  sheet: text("sheet"),
+  page: integer("page"),
+  floorOrArea: text("floor_or_area"),
+  parserVersion: text("parser_version"),
+  semanticsVersion: text("semantics_version").notNull(),
+  deviceClass: text("device_class").notNull(),
+  deviceVariant: text("device_variant").notNull(),
+  quantityType: text("quantity_type").notNull(),
+  quantity: integer("quantity"),
+  countMethod: text("count_method").notNull(),
+  printedTotal: integer("printed_total"),
+  componentTotal: integer("component_total"),
+  discrepancy: text("discrepancy"),
+  unresolvedReason: text("unresolved_reason"),
+  sourceRegion: text("source_region"),
+  sourceAssetIds: text("source_asset_ids").notNull().default("[]"),
+  evidenceFingerprint: text("evidence_fingerprint").notNull(),
+  state: text("state").notNull(),
+  authorityVersion: text("authority_version").notNull(),
+  reviewStatus: text("review_status").notNull().default("Needs Review"),
+  reviewedBy: text("reviewed_by"),
+  reviewedAt: text("reviewed_at"),
+  reviewReason: text("review_reason"),
+  versionNumber: integer("version_number").notNull().default(1),
+  previousVersionId: text("previous_version_id").references((): AnySQLiteColumn => drawingQuantityClaims.id),
+  supersededAt: text("superseded_at"),
+  createdBy: text("created_by").notNull(),
+  createdAt: text("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+  index("drawing_quantity_claims_project_head_idx").on(table.projectId, table.documentVersionId).where(sql`${table.supersededAt} is null`),
+  index("drawing_quantity_claims_class_idx").on(table.projectId, table.deviceClass, table.deviceVariant).where(sql`${table.supersededAt} is null`),
+]);

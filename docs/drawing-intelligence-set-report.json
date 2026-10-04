@@ -1,0 +1,647 @@
+{
+  "generatedAt": "2026-09-15T10:23:32.495Z",
+  "projectId": "project_c0123d91-c30b-4956-87cb-e473ef53f89d",
+  "engineVersion": "drawing-general-extraction-engine-1.1.0 + drawing-type-intelligence-1.0.0",
+  "documents": [
+    {
+      "documentId": "doc_9a183e79-b471-4433-97db-230d9ae6b329",
+      "name": "2401232-PC-AMS-DR-E-00-ZZZ-002.pdf",
+      "documentType": "Drawing",
+      "intakeVersionId": "drawingIntake_e02d3932-36ec-4cc4-9dff-27a05b21eec0",
+      "drawingNumber": "2401232- PC- AMS- DR- E-00-ZZZ-002",
+      "revision": "Not Found",
+      "sheetName": "ELECTRICAL LEGENDS",
+      "drawingType": "Legend / Notes",
+      "drawingTypeConfidence": 85,
+      "drawingTypeEvidence": "Explicit sheet title: \"ELECTRICAL LEGENDS\"",
+      "typeSpecificProposals": {
+        "legendDefinitions": 11,
+        "generalNotes": 44
+      },
+      "primaryIntelligenceTypesExpected": [
+        "LegendDefinition",
+        "GeneralNote"
+      ],
+      "equipmentSchedulesDetected": 0,
+      "equipmentProposals": 0,
+      "callouts": 0,
+      "excludedCallouts": 0,
+      "panelCandidates": 0,
+      "unresolvedAmbiguous": 0,
+      "structuralRegions": 1,
+      "governedStatusCounts": {
+        "verified": 11,
+        "verifiedWithAssumption": 0,
+        "needsReview": 44,
+        "conflict": 0,
+        "notFound": 0
+      },
+      "proposalsExtracted": 55,
+      "crossSheetReferences": [],
+      "resolvedReferenceCount": 0,
+      "unresolvedReferenceCount": 0,
+      "engineerQuestions": [],
+      "extractionCoverageVerdict": "Coverage as expected for this drawing type",
+      "status": "Evaluated"
+    },
+    {
+      "documentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+      "name": "2401232-PC-AMS-DR-T-00-ZZZ-002.pdf",
+      "documentType": "Drawing",
+      "intakeVersionId": "drawingIntake_57719080-1ce0-4a11-833a-311f213efcd1",
+      "drawingNumber": "2401232- PC- AMS- DR- T-00-ZZZ-002",
+      "revision": "Not Found",
+      "sheetName": "ELV LEGENDS, NOTES AND ABBREVIATIONS",
+      "drawingType": "Legend / Notes",
+      "drawingTypeConfidence": 85,
+      "drawingTypeEvidence": "Explicit sheet title: \"ELV LEGENDS, NOTES AND ABBREVIATIONS\"",
+      "typeSpecificProposals": {
+        "legendDefinitions": 5,
+        "generalNotes": 31
+      },
+      "primaryIntelligenceTypesExpected": [
+        "LegendDefinition",
+        "GeneralNote"
+      ],
+      "equipmentSchedulesDetected": 0,
+      "equipmentProposals": 0,
+      "callouts": 0,
+      "excludedCallouts": 0,
+      "panelCandidates": 0,
+      "unresolvedAmbiguous": 0,
+      "structuralRegions": "Not Found (structural parsing not yet run)",
+      "governedStatusCounts": {
+        "verified": 5,
+        "verifiedWithAssumption": 0,
+        "needsReview": 31,
+        "conflict": 0,
+        "notFound": 0
+      },
+      "proposalsExtracted": 36,
+      "crossSheetReferences": [],
+      "resolvedReferenceCount": 0,
+      "unresolvedReferenceCount": 0,
+      "engineerQuestions": [],
+      "extractionCoverageVerdict": "Coverage as expected for this drawing type",
+      "status": "Evaluated"
+    },
+    {
+      "documentId": "doc_a5e85f32-2e29-48dd-8c0f-d31c483a6172",
+      "name": "2401232-PC-AMS-DR-T-93-ZZZ-001.pdf",
+      "documentType": "Drawing",
+      "intakeVersionId": "drawingIntake_4a42f63e-594d-4ca0-bc4d-b22ec5b679d8",
+      "drawingNumber": "2401232- PC- AMS- DR- T-93-ZZZ-001",
+      "revision": "Not Found",
+      "sheetName": "OVERALL FIRE ALARM PANEL NETWORK DIAGRAM",
+      "drawingType": "Riser Diagram",
+      "drawingTypeConfidence": 85,
+      "drawingTypeEvidence": "Explicit sheet title: \"OVERALL FIRE ALARM PANEL NETWORK DIAGRAM\"",
+      "typeSpecificProposals": {
+        "loops": 0,
+        "cableSpecs": 0,
+        "systemInterfaces": 0,
+        "connectionCandidates": 0,
+        "deviceCodes": 1
+      },
+      "primaryIntelligenceTypesExpected": [
+        "LoopCandidate",
+        "CableSpecCandidate",
+        "SystemInterfaceCandidate",
+        "ConnectionCandidate"
+      ],
+      "equipmentSchedulesDetected": 0,
+      "equipmentProposals": 0,
+      "callouts": 0,
+      "excludedCallouts": 0,
+      "panelCandidates": 0,
+      "unresolvedAmbiguous": 0,
+      "structuralRegions": "Not Found (structural parsing not yet run)",
+      "governedStatusCounts": {
+        "verified": 0,
+        "verifiedWithAssumption": 0,
+        "needsReview": 1,
+        "conflict": 0,
+        "notFound": 0
+      },
+      "proposalsExtracted": 1,
+      "crossSheetReferences": [],
+      "resolvedReferenceCount": 0,
+      "unresolvedReferenceCount": 0,
+      "engineerQuestions": [],
+      "extractionCoverageVerdict": "Coverage as expected for this drawing type",
+      "status": "Evaluated"
+    },
+    {
+      "documentId": "doc_fa19d9f3-9ee4-4980-aae1-97a9a1826538",
+      "name": "2401232-PC-AMS-DR-T-93-ZZZ-002.pdf",
+      "documentType": "Drawing",
+      "intakeVersionId": "drawingIntake_56824c0c-adb5-4b3a-9c32-e6642dd0d801",
+      "drawingNumber": "2401232- PC- AMS- DR- T-93-ZZZ-002",
+      "revision": "Not Found",
+      "sheetName": "SUBSTATION FIRE DETECTION AND ALARM SCHEMATIC",
+      "drawingType": "Schematic / Single-Line",
+      "drawingTypeConfidence": 85,
+      "drawingTypeEvidence": "Explicit sheet title: \"SUBSTATION FIRE DETECTION AND ALARM SCHEMATIC\"",
+      "typeSpecificProposals": {
+        "loops": 9,
+        "cableSpecs": 12,
+        "systemInterfaces": 0,
+        "connectionCandidates": 3,
+        "deviceCodes": 6
+      },
+      "primaryIntelligenceTypesExpected": [
+        "LoopCandidate",
+        "CableSpecCandidate",
+        "SystemInterfaceCandidate",
+        "ConnectionCandidate"
+      ],
+      "equipmentSchedulesDetected": 0,
+      "equipmentProposals": 0,
+      "callouts": 0,
+      "excludedCallouts": 0,
+      "panelCandidates": 0,
+      "unresolvedAmbiguous": 0,
+      "structuralRegions": "Not Found (structural parsing not yet run)",
+      "governedStatusCounts": {
+        "verified": 9,
+        "verifiedWithAssumption": 0,
+        "needsReview": 21,
+        "conflict": 0,
+        "notFound": 0
+      },
+      "proposalsExtracted": 30,
+      "crossSheetReferences": [],
+      "resolvedReferenceCount": 0,
+      "unresolvedReferenceCount": 0,
+      "engineerQuestions": [],
+      "extractionCoverageVerdict": "Coverage as expected for this drawing type",
+      "status": "Evaluated"
+    },
+    {
+      "documentId": "doc_f3ce8475-0c64-4abf-8e1b-1d2bfc6a60b5",
+      "name": "2401232-PC-AMS-DR-T-94-ZZZ-001.pdf",
+      "documentType": "Drawing",
+      "intakeVersionId": "drawingIntake_cf0eacb0-3889-4281-8971-e3d0836b1497",
+      "drawingNumber": "2401232- PC- AMS- DR- T-94-ZZZ-001",
+      "revision": "Not Found",
+      "sheetName": "FIRE ALARM SYSTEM CAUSE AND EFFECT MATRIX",
+      "drawingType": "Cause & Effect",
+      "drawingTypeConfidence": 85,
+      "drawingTypeEvidence": "Explicit sheet title: \"FIRE ALARM SYSTEM CAUSE AND EFFECT MATRIX\"",
+      "typeSpecificProposals": {
+        "headers": 0,
+        "relationships": 0
+      },
+      "primaryIntelligenceTypesExpected": [
+        "MatrixRelationshipCandidate"
+      ],
+      "equipmentSchedulesDetected": 0,
+      "equipmentProposals": 0,
+      "callouts": 0,
+      "excludedCallouts": 0,
+      "panelCandidates": 0,
+      "unresolvedAmbiguous": 0,
+      "structuralRegions": "Not Found (structural parsing not yet run)",
+      "governedStatusCounts": {
+        "verified": 0,
+        "verifiedWithAssumption": 0,
+        "needsReview": 0,
+        "conflict": 0,
+        "notFound": 0
+      },
+      "proposalsExtracted": 0,
+      "crossSheetReferences": [],
+      "resolvedReferenceCount": 0,
+      "unresolvedReferenceCount": 0,
+      "engineerQuestions": [],
+      "extractionCoverageVerdict": "Coverage as expected for this drawing type",
+      "status": "Evaluated"
+    },
+    {
+      "documentId": "doc_e5fa0f97-89a5-4fad-9bf4-c7ed0cd1caff",
+      "name": "2401232-PC-BOS-DR-T-93-ZZZ-005.pdf",
+      "documentType": "Drawing",
+      "intakeVersionId": "drawingIntake_3396b159-ab6b-4713-b3db-cae90a6b03d3",
+      "drawingNumber": "2401232- PC- BOS- DR- T-93-ZZZ-005",
+      "revision": "1",
+      "sheetName": "FIRE DETECTION & ALARM SCHEMATIC",
+      "drawingType": "Schematic / Single-Line",
+      "drawingTypeConfidence": 85,
+      "drawingTypeEvidence": "Explicit sheet title: \"FIRE DETECTION & ALARM SCHEMATIC\"",
+      "typeSpecificProposals": {
+        "loops": 7,
+        "cableSpecs": 4,
+        "systemInterfaces": 6,
+        "connectionCandidates": 1,
+        "deviceCodes": 11
+      },
+      "primaryIntelligenceTypesExpected": [
+        "LoopCandidate",
+        "CableSpecCandidate",
+        "SystemInterfaceCandidate",
+        "ConnectionCandidate"
+      ],
+      "equipmentSchedulesDetected": 0,
+      "equipmentProposals": 0,
+      "callouts": 0,
+      "excludedCallouts": 0,
+      "panelCandidates": 0,
+      "unresolvedAmbiguous": 0,
+      "structuralRegions": "Not Found (structural parsing not yet run)",
+      "governedStatusCounts": {
+        "verified": 7,
+        "verifiedWithAssumption": 0,
+        "needsReview": 22,
+        "conflict": 0,
+        "notFound": 0
+      },
+      "proposalsExtracted": 29,
+      "crossSheetReferences": [
+        {
+          "referencedDrawingNumber": "2401232-PC-AMS-T-00-ZZZ-002",
+          "resolvedTargetDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+          "status": "Resolved",
+          "applicableSystem": "ELV",
+          "applicabilityStatus": "Scoped to ELV drawings"
+        }
+      ],
+      "resolvedReferenceCount": 1,
+      "unresolvedReferenceCount": 0,
+      "engineerQuestions": [],
+      "extractionCoverageVerdict": "Coverage as expected for this drawing type",
+      "status": "Evaluated"
+    },
+    {
+      "documentId": "doc_890d57b4-73f1-4954-94d6-3b69b6b2b624",
+      "name": "2401232-PC-BOS-DR-T-94-ZZZ-001.pdf",
+      "documentType": "Drawing",
+      "intakeVersionId": "drawingIntake_2c128f94-b82e-4ca3-b861-09ee04adb176",
+      "drawingNumber": "2401232- PC- BOS- DR- T-94-ZZZ-001",
+      "revision": "0",
+      "sheetName": "FIRE ALARM SYSTEM CAUSE AND EFFECT",
+      "drawingType": "Cause & Effect",
+      "drawingTypeConfidence": 85,
+      "drawingTypeEvidence": "Explicit sheet title: \"FIRE ALARM SYSTEM CAUSE AND EFFECT\"",
+      "typeSpecificProposals": {
+        "headers": 4,
+        "relationships": 0
+      },
+      "primaryIntelligenceTypesExpected": [
+        "MatrixRelationshipCandidate"
+      ],
+      "equipmentSchedulesDetected": 0,
+      "equipmentProposals": 0,
+      "callouts": 0,
+      "excludedCallouts": 0,
+      "panelCandidates": 0,
+      "unresolvedAmbiguous": 0,
+      "structuralRegions": "Not Found (structural parsing not yet run)",
+      "governedStatusCounts": {
+        "verified": 0,
+        "verifiedWithAssumption": 0,
+        "needsReview": 4,
+        "conflict": 0,
+        "notFound": 0
+      },
+      "proposalsExtracted": 4,
+      "crossSheetReferences": [
+        {
+          "referencedDrawingNumber": "2401232-PC-AMS-T-00-ZZZ-002",
+          "resolvedTargetDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+          "status": "Resolved",
+          "applicableSystem": "ELV",
+          "applicabilityStatus": "Scoped to ELV drawings"
+        }
+      ],
+      "resolvedReferenceCount": 1,
+      "unresolvedReferenceCount": 0,
+      "engineerQuestions": [],
+      "extractionCoverageVerdict": "Coverage as expected for this drawing type",
+      "status": "Evaluated"
+    },
+    {
+      "documentId": "doc_b78fe987-8fc2-470f-bcb8-c22510c9ba01",
+      "name": "2401232-PC-GRS-DR-T-93-ZZZ-005.pdf",
+      "documentType": "Drawing",
+      "intakeVersionId": "drawingIntake_d0afe982-9c8a-486a-add5-c4b95d088ad5",
+      "drawingNumber": "2401232- PC- GRS- DR- T-93-ZZZ-005",
+      "revision": "1",
+      "sheetName": "FIRE DETECTION & ALARM SCHEMATIC",
+      "drawingType": "Schematic / Single-Line",
+      "drawingTypeConfidence": 85,
+      "drawingTypeEvidence": "Explicit sheet title: \"FIRE DETECTION & ALARM SCHEMATIC\"",
+      "typeSpecificProposals": {
+        "loops": 7,
+        "cableSpecs": 4,
+        "systemInterfaces": 6,
+        "connectionCandidates": 1,
+        "deviceCodes": 11
+      },
+      "primaryIntelligenceTypesExpected": [
+        "LoopCandidate",
+        "CableSpecCandidate",
+        "SystemInterfaceCandidate",
+        "ConnectionCandidate"
+      ],
+      "equipmentSchedulesDetected": 0,
+      "equipmentProposals": 0,
+      "callouts": 0,
+      "excludedCallouts": 0,
+      "panelCandidates": 0,
+      "unresolvedAmbiguous": 0,
+      "structuralRegions": "Not Found (structural parsing not yet run)",
+      "governedStatusCounts": {
+        "verified": 7,
+        "verifiedWithAssumption": 0,
+        "needsReview": 22,
+        "conflict": 0,
+        "notFound": 0
+      },
+      "proposalsExtracted": 29,
+      "crossSheetReferences": [
+        {
+          "referencedDrawingNumber": "2401232-PC-AMS-T-00-ZZZ-002",
+          "resolvedTargetDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+          "status": "Resolved",
+          "applicableSystem": "ELV",
+          "applicabilityStatus": "Scoped to ELV drawings"
+        }
+      ],
+      "resolvedReferenceCount": 1,
+      "unresolvedReferenceCount": 0,
+      "engineerQuestions": [],
+      "extractionCoverageVerdict": "Coverage as expected for this drawing type",
+      "status": "Evaluated"
+    },
+    {
+      "documentId": "doc_c836267c-b1c8-4807-8057-1a1e640107e7",
+      "name": "2401232-PC-GRS-DR-T-94-ZZZ-001.pdf",
+      "documentType": "Drawing",
+      "intakeVersionId": "drawingIntake_70d11369-3fd5-4ddd-8360-1fd9ea47d4fa",
+      "drawingNumber": "2401232- PC- GRS- DR- T-94-ZZZ-001",
+      "revision": "0",
+      "sheetName": "FIRE ALARM SYSTEM CAUSE AND EFFECT",
+      "drawingType": "Cause & Effect",
+      "drawingTypeConfidence": 85,
+      "drawingTypeEvidence": "Explicit sheet title: \"FIRE ALARM SYSTEM CAUSE AND EFFECT\"",
+      "typeSpecificProposals": {
+        "headers": 4,
+        "relationships": 0
+      },
+      "primaryIntelligenceTypesExpected": [
+        "MatrixRelationshipCandidate"
+      ],
+      "equipmentSchedulesDetected": 0,
+      "equipmentProposals": 0,
+      "callouts": 0,
+      "excludedCallouts": 0,
+      "panelCandidates": 0,
+      "unresolvedAmbiguous": 0,
+      "structuralRegions": "Not Found (structural parsing not yet run)",
+      "governedStatusCounts": {
+        "verified": 0,
+        "verifiedWithAssumption": 0,
+        "needsReview": 4,
+        "conflict": 0,
+        "notFound": 0
+      },
+      "proposalsExtracted": 4,
+      "crossSheetReferences": [
+        {
+          "referencedDrawingNumber": "2401232-PC-AMS-T-00-ZZZ-002",
+          "resolvedTargetDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+          "status": "Resolved",
+          "applicableSystem": "ELV",
+          "applicabilityStatus": "Scoped to ELV drawings"
+        }
+      ],
+      "resolvedReferenceCount": 1,
+      "unresolvedReferenceCount": 0,
+      "engineerQuestions": [],
+      "extractionCoverageVerdict": "Coverage as expected for this drawing type",
+      "status": "Evaluated"
+    },
+    {
+      "documentId": "doc_f7e45eba-f10e-4be2-8bb9-315e22ceb821",
+      "name": "2401232-PC-KGS-DR-T-91-ZZZ-002.pdf",
+      "documentType": "Drawing",
+      "intakeVersionId": "drawingIntake_3a925186-4053-492e-bfb4-44ce54c2bc26",
+      "drawingNumber": "2401232- PC- KGS- DR- T-91-ZZZ-002",
+      "revision": "0",
+      "sheetName": "FCC ROOM DETAILS",
+      "drawingType": "Detail / Enlarged Detail",
+      "drawingTypeConfidence": 85,
+      "drawingTypeEvidence": "Explicit sheet title: \"FCC ROOM DETAILS\"",
+      "typeSpecificProposals": {
+        "installationRequirements": 0,
+        "detailNumbers": 0
+      },
+      "primaryIntelligenceTypesExpected": [
+        "InstallationRequirementCandidate",
+        "DetailNumberCandidate"
+      ],
+      "equipmentSchedulesDetected": 14,
+      "equipmentProposals": 15,
+      "callouts": 15,
+      "excludedCallouts": 2,
+      "panelCandidates": 1,
+      "unresolvedAmbiguous": 0,
+      "structuralRegions": 11,
+      "governedStatusCounts": {
+        "verified": 15,
+        "verifiedWithAssumption": 0,
+        "needsReview": 16,
+        "conflict": 0,
+        "notFound": 0
+      },
+      "proposalsExtracted": 31,
+      "crossSheetReferences": [
+        {
+          "referencedDrawingNumber": "2401232-PC-AMS-T-00-ZZZ-002",
+          "resolvedTargetDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+          "status": "Resolved",
+          "applicableSystem": "ELV",
+          "applicabilityStatus": "Scoped to ELV drawings"
+        }
+      ],
+      "resolvedReferenceCount": 1,
+      "unresolvedReferenceCount": 0,
+      "engineerQuestions": [],
+      "extractionCoverageVerdict": "Coverage as expected for this drawing type",
+      "status": "Evaluated"
+    },
+    {
+      "documentId": "doc_4ac2950e-0053-4f25-8554-a9dcb906c418",
+      "name": "2401232-PC-KGS-DR-T-93-ZZZ-005.pdf",
+      "documentType": "Drawing",
+      "intakeVersionId": "drawingIntake_be6596c0-7855-40d4-bafa-55d37182d894",
+      "drawingNumber": "2401232- PC- KGS- DR- T-93-ZZZ-005",
+      "revision": "1",
+      "sheetName": "FIRE DETECTION & ALARM SCHEMATIC",
+      "drawingType": "Schematic / Single-Line",
+      "drawingTypeConfidence": 85,
+      "drawingTypeEvidence": "Explicit sheet title: \"FIRE DETECTION & ALARM SCHEMATIC\"",
+      "typeSpecificProposals": {
+        "loops": 7,
+        "cableSpecs": 4,
+        "systemInterfaces": 6,
+        "connectionCandidates": 2,
+        "deviceCodes": 11
+      },
+      "primaryIntelligenceTypesExpected": [
+        "LoopCandidate",
+        "CableSpecCandidate",
+        "SystemInterfaceCandidate",
+        "ConnectionCandidate"
+      ],
+      "equipmentSchedulesDetected": 0,
+      "equipmentProposals": 0,
+      "callouts": 0,
+      "excludedCallouts": 0,
+      "panelCandidates": 0,
+      "unresolvedAmbiguous": 0,
+      "structuralRegions": "Not Found (structural parsing not yet run)",
+      "governedStatusCounts": {
+        "verified": 7,
+        "verifiedWithAssumption": 0,
+        "needsReview": 23,
+        "conflict": 0,
+        "notFound": 0
+      },
+      "proposalsExtracted": 30,
+      "crossSheetReferences": [
+        {
+          "referencedDrawingNumber": "2401232-PC-AMS-T-00-ZZZ-002",
+          "resolvedTargetDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+          "status": "Resolved",
+          "applicableSystem": "ELV",
+          "applicabilityStatus": "Scoped to ELV drawings"
+        }
+      ],
+      "resolvedReferenceCount": 1,
+      "unresolvedReferenceCount": 0,
+      "engineerQuestions": [],
+      "extractionCoverageVerdict": "Coverage as expected for this drawing type",
+      "status": "Evaluated"
+    },
+    {
+      "documentId": "doc_3f857096-3152-408f-9c86-9296e4142ced",
+      "name": "2401232-PC-WLC-DR-T-93-ZZZ-005.pdf",
+      "documentType": "Drawing",
+      "intakeVersionId": "drawingIntake_af0a3268-dc81-44c6-bd24-b039cd2bd804",
+      "drawingNumber": "2401232- PC- WLC- DR- T-93-ZZZ-005",
+      "revision": "Not Found",
+      "sheetName": "FIRE DETECTION & ALARM SCHEMATIC",
+      "drawingType": "Schematic / Single-Line",
+      "drawingTypeConfidence": 85,
+      "drawingTypeEvidence": "Explicit sheet title: \"FIRE DETECTION & ALARM SCHEMATIC\"",
+      "typeSpecificProposals": {
+        "loops": 5,
+        "cableSpecs": 4,
+        "systemInterfaces": 6,
+        "connectionCandidates": 1,
+        "deviceCodes": 11
+      },
+      "primaryIntelligenceTypesExpected": [
+        "LoopCandidate",
+        "CableSpecCandidate",
+        "SystemInterfaceCandidate",
+        "ConnectionCandidate"
+      ],
+      "equipmentSchedulesDetected": 0,
+      "equipmentProposals": 0,
+      "callouts": 0,
+      "excludedCallouts": 0,
+      "panelCandidates": 0,
+      "unresolvedAmbiguous": 0,
+      "structuralRegions": 1,
+      "governedStatusCounts": {
+        "verified": 5,
+        "verifiedWithAssumption": 0,
+        "needsReview": 22,
+        "conflict": 0,
+        "notFound": 0
+      },
+      "proposalsExtracted": 27,
+      "crossSheetReferences": [],
+      "resolvedReferenceCount": 0,
+      "unresolvedReferenceCount": 0,
+      "engineerQuestions": [],
+      "extractionCoverageVerdict": "Coverage as expected for this drawing type",
+      "status": "Evaluated"
+    },
+    {
+      "documentId": "doc_d3c89077-7a6f-4e2e-858e-0bb753e8674c",
+      "name": "2401232-PC-WLC-DR-T-94-ZZZ-001.pdf",
+      "documentType": "Drawing",
+      "intakeVersionId": "drawingIntake_cbf276f4-dfe2-4e0f-b008-e13feb2ba432",
+      "drawingNumber": "2401232- PC- WLC- DR- T-94-ZZZ-001",
+      "revision": "Not Found",
+      "sheetName": "FIRE ALARM SYSTEM CAUSE AND EFFECT MATRIX",
+      "drawingType": "Cause & Effect",
+      "drawingTypeConfidence": 85,
+      "drawingTypeEvidence": "Explicit sheet title: \"FIRE ALARM SYSTEM CAUSE AND EFFECT MATRIX\"",
+      "typeSpecificProposals": {
+        "headers": 0,
+        "relationships": 0
+      },
+      "primaryIntelligenceTypesExpected": [
+        "MatrixRelationshipCandidate"
+      ],
+      "equipmentSchedulesDetected": 0,
+      "equipmentProposals": 0,
+      "callouts": 0,
+      "excludedCallouts": 0,
+      "panelCandidates": 0,
+      "unresolvedAmbiguous": 0,
+      "structuralRegions": "Not Found (structural parsing not yet run)",
+      "governedStatusCounts": {
+        "verified": 0,
+        "verifiedWithAssumption": 0,
+        "needsReview": 0,
+        "conflict": 0,
+        "notFound": 0
+      },
+      "proposalsExtracted": 0,
+      "crossSheetReferences": [],
+      "resolvedReferenceCount": 0,
+      "unresolvedReferenceCount": 0,
+      "engineerQuestions": [],
+      "extractionCoverageVerdict": "Coverage as expected for this drawing type",
+      "status": "Evaluated"
+    },
+    {
+      "documentId": "doc_ab1cb6b5-cd0f-441e-b28b-c48786e859d8",
+      "name": "28 46 00 - Fire Detection and Alarm System - Rev 1.pdf",
+      "documentType": "Technical Specification",
+      "status": "Not a Drawing document (Drawing Intake does not apply)"
+    },
+    {
+      "documentId": "doc_624df96f-9754-4523-a285-d2d5edf1e7d4",
+      "name": "BOQ.xlsx",
+      "documentType": "BOQ",
+      "status": "Not a Drawing document (Drawing Intake does not apply)"
+    }
+  ],
+  "totals": {
+    "documentsEvaluated": 13,
+    "documentsTotal": 15,
+    "byDrawingType": {
+      "Legend / Notes": 2,
+      "Riser Diagram": 1,
+      "Schematic / Single-Line": 5,
+      "Cause & Effect": 4,
+      "Detail / Enlarged Detail": 1
+    },
+    "totalProposals": 276,
+    "totalGovernedStatusCounts": {
+      "verified": 66,
+      "verifiedWithAssumption": 0,
+      "needsReview": 210,
+      "conflict": 0,
+      "notFound": 0
+    },
+    "totalResolvedReferences": 6,
+    "totalUnresolvedReferences": 0
+  }
+}

@@ -1,0 +1,559 @@
+{
+  "candidateDocumentId": "doc_0de6f58b-7b48-46a2-92d3-aaef230c92b0",
+  "candidateDocumentVersionId": "ver_47d5b443-74a1-4643-a29f-c8f7b4fdc5e6",
+  "wlcDocumentVersionId": "ver_dcb96313-8fc2-4b60-bba7-59b600742593",
+  "pageNumber": 1,
+  "visuallyExtractedRevision": "1",
+  "entries": [
+    {
+      "id": "fa-row-01",
+      "sequence": 1,
+      "entry_type": "Symbol",
+      "label": "S",
+      "description": "SMOKE DETECTOR",
+      "qualifiers": "",
+      "imageIndex": 0,
+      "boundingBox": {
+        "x": 556.0500000000001,
+        "y": 897.9177777777778,
+        "width": 19.096666666666668,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 556.0500000000001,
+        "y": 943.6,
+        "width": 19.096666666666668,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-02",
+      "sequence": 2,
+      "entry_type": "Symbol",
+      "label": "H",
+      "description": "HEAT DETECTOR",
+      "qualifiers": "",
+      "imageIndex": 1,
+      "boundingBox": {
+        "x": 575.8955555555556,
+        "y": 897.9177777777778,
+        "width": 19.096666666666668,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 575.8955555555556,
+        "y": 943.6,
+        "width": 19.096666666666668,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-03",
+      "sequence": 3,
+      "entry_type": "Symbol",
+      "label": "S + D",
+      "description": "DUCT DETECTOR",
+      "qualifiers": "",
+      "imageIndex": 2,
+      "boundingBox": {
+        "x": 595.7411111111112,
+        "y": 897.9177777777778,
+        "width": 19.096666666666668,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 595.7411111111112,
+        "y": 943.6,
+        "width": 19.096666666666668,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-04",
+      "sequence": 4,
+      "entry_type": "Symbol",
+      "label": "S + H",
+      "description": "SMOKE AND HEAT COMBINED DETECTOR",
+      "qualifiers": "",
+      "imageIndex": 3,
+      "boundingBox": {
+        "x": 615.5866666666667,
+        "y": 897.9177777777778,
+        "width": 19.096666666666668,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 615.5866666666667,
+        "y": 943.6,
+        "width": 19.096666666666668,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-05",
+      "sequence": 5,
+      "entry_type": "Symbol",
+      "label": "F",
+      "description": "FIRE ALARM MANUAL STATION",
+      "qualifiers": "",
+      "imageIndex": 4,
+      "boundingBox": {
+        "x": 635.4322222222222,
+        "y": 897.9177777777778,
+        "width": 19.471111111111114,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 635.4322222222222,
+        "y": 943.6,
+        "width": 19.471111111111114,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-06",
+      "sequence": 6,
+      "entry_type": "Symbol",
+      "label": "F (dashed enclosure)",
+      "description": "FIRE ALARM MANUAL STATION (WEATHER PROOF)",
+      "qualifiers": "(WEATHER PROOF)",
+      "imageIndex": 5,
+      "boundingBox": {
+        "x": 655.6522222222222,
+        "y": 897.9177777777778,
+        "width": 17.59888888888889,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 655.6522222222222,
+        "y": 943.6,
+        "width": 17.59888888888889,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-07",
+      "sequence": 7,
+      "entry_type": "Symbol",
+      "label": "",
+      "description": "LOOP POWERED STROBE",
+      "qualifiers": "",
+      "imageIndex": 6,
+      "boundingBox": {
+        "x": 674.0,
+        "y": 897.9177777777778,
+        "width": 20.594444444444445,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 674.0,
+        "y": 943.6,
+        "width": 20.594444444444445,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-08",
+      "sequence": 8,
+      "entry_type": "Symbol",
+      "label": "",
+      "description": "LOOP POWERED STROBE WITH SOUNDER",
+      "qualifiers": "",
+      "imageIndex": 7,
+      "boundingBox": {
+        "x": 695.3433333333334,
+        "y": 897.9177777777778,
+        "width": 18.722222222222225,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 695.3433333333334,
+        "y": 943.6,
+        "width": 18.722222222222225,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-09",
+      "sequence": 9,
+      "entry_type": "Symbol",
+      "label": "WP",
+      "description": "LOOP POWERED STROBE WITH SOUNDER (WEATHER PROOF TYPE)",
+      "qualifiers": "(WEATHER PROOF TYPE)",
+      "imageIndex": 8,
+      "boundingBox": {
+        "x": 714.8144444444445,
+        "y": 897.9177777777778,
+        "width": 21.71777777777778,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 714.8144444444445,
+        "y": 943.6,
+        "width": 21.71777777777778,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-10",
+      "sequence": 10,
+      "entry_type": "Symbol",
+      "label": "WP + C",
+      "description": "CEILING MOUNTED LOOP POWERED STROBE WITH SOUNDER (WEATHER PROOF TYPE)",
+      "qualifiers": "(WEATHER PROOF TYPE)",
+      "imageIndex": 9,
+      "boundingBox": {
+        "x": 737.2811111111112,
+        "y": 897.9177777777778,
+        "width": 22.46666666666667,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 737.2811111111112,
+        "y": 943.6,
+        "width": 22.46666666666667,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-11",
+      "sequence": 11,
+      "entry_type": "Symbol",
+      "label": "T",
+      "description": "FIREMAN TELEPHONE JACK",
+      "qualifiers": "",
+      "imageIndex": 10,
+      "boundingBox": {
+        "x": 760.4966666666667,
+        "y": 897.9177777777778,
+        "width": 21.71777777777778,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 760.4966666666667,
+        "y": 943.6,
+        "width": 21.71777777777778,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-12",
+      "sequence": 12,
+      "entry_type": "Symbol",
+      "label": "",
+      "description": "SPEAKER CEILING MOUNTED",
+      "qualifiers": "CEILING MOUNTED",
+      "imageIndex": 11,
+      "boundingBox": {
+        "x": 782.9633333333334,
+        "y": 897.9177777777778,
+        "width": 22.092222222222222,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 782.9633333333334,
+        "y": 943.6,
+        "width": 22.092222222222222,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-13",
+      "sequence": 13,
+      "entry_type": "Symbol",
+      "label": "",
+      "description": "SPEAKER WALL MOUNTED",
+      "qualifiers": "WALL MOUNTED",
+      "imageIndex": 12,
+      "boundingBox": {
+        "x": 805.8044444444445,
+        "y": 897.9177777777778,
+        "width": 21.71777777777778,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 805.8044444444445,
+        "y": 943.6,
+        "width": 21.71777777777778,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-14",
+      "sequence": 14,
+      "entry_type": "Symbol",
+      "label": "ZIM",
+      "description": "ZONE INTERFACE MODULE",
+      "qualifiers": "",
+      "imageIndex": 13,
+      "boundingBox": {
+        "x": 828.2711111111112,
+        "y": 897.9177777777778,
+        "width": 19.096666666666668,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 828.2711111111112,
+        "y": 943.6,
+        "width": 19.096666666666668,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-15",
+      "sequence": 15,
+      "entry_type": "Symbol",
+      "label": "FTCP",
+      "description": "FIREMAN TELEPHONE CONTROL PANEL",
+      "qualifiers": "",
+      "imageIndex": 14,
+      "boundingBox": {
+        "x": 848.1166666666667,
+        "y": 897.9177777777778,
+        "width": 21.71777777777778,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 848.1166666666667,
+        "y": 943.6,
+        "width": 21.71777777777778,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-16",
+      "sequence": 16,
+      "entry_type": "Symbol",
+      "label": "FARP",
+      "description": "FIRE ALARM REPEATER PANEL",
+      "qualifiers": "",
+      "imageIndex": 15,
+      "boundingBox": {
+        "x": 870.5833333333334,
+        "y": 897.9177777777778,
+        "width": 22.092222222222222,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 870.5833333333334,
+        "y": 943.6,
+        "width": 22.092222222222222,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-17",
+      "sequence": 17,
+      "entry_type": "Symbol",
+      "label": "MFACP",
+      "description": "MAIN FIRE ALARM CONTROL PANEL",
+      "qualifiers": "",
+      "imageIndex": 16,
+      "boundingBox": {
+        "x": 893.4244444444445,
+        "y": 897.9177777777778,
+        "width": 21.71777777777778,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 893.4244444444445,
+        "y": 943.6,
+        "width": 21.71777777777778,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-18",
+      "sequence": 18,
+      "entry_type": "Symbol",
+      "label": "CE + C",
+      "description": "INTERFACE MODULE CONTROL",
+      "qualifiers": "",
+      "imageIndex": 17,
+      "boundingBox": {
+        "x": 915.8911111111112,
+        "y": 897.9177777777778,
+        "width": 19.096666666666668,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 915.8911111111112,
+        "y": 943.6,
+        "width": 19.096666666666668,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-19",
+      "sequence": 19,
+      "entry_type": "Symbol",
+      "label": "CE + M",
+      "description": "INTERFACE MODULE MONITORING",
+      "qualifiers": "",
+      "imageIndex": 18,
+      "boundingBox": {
+        "x": 935.7366666666667,
+        "y": 897.9177777777778,
+        "width": 19.096666666666668,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 935.7366666666667,
+        "y": 943.6,
+        "width": 19.096666666666668,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    },
+    {
+      "id": "fa-row-20",
+      "sequence": 20,
+      "entry_type": "Symbol",
+      "label": "DC",
+      "description": "DOOR CONTACT",
+      "qualifiers": "",
+      "imageIndex": 19,
+      "boundingBox": {
+        "x": 955.5822222222223,
+        "y": 897.9177777777778,
+        "width": 19.471111111111114,
+        "height": 366.2066666666667,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "symbolBoundingBox": {
+        "x": 955.5822222222223,
+        "y": 943.6,
+        "width": 19.471111111111114,
+        "height": 41.18888888888889,
+        "pageWidth": 2384,
+        "pageHeight": 3370
+      },
+      "section": "FIRE ALARM SYSTEM"
+    }
+  ],
+  "comparisons": [
+    {
+      "id": "smoke",
+      "legendEntryId": "fa-row-01",
+      "wlcImageIndex": 21,
+      "legendImageIndex": 0,
+      "comparisonImageIndex": 22
+    },
+    {
+      "id": "manual-weatherproof",
+      "legendEntryId": "fa-row-06",
+      "wlcImageIndex": 23,
+      "legendImageIndex": 5,
+      "comparisonImageIndex": 24
+    },
+    {
+      "id": "control-interface",
+      "legendEntryId": "fa-row-18",
+      "wlcImageIndex": 25,
+      "legendImageIndex": 17,
+      "comparisonImageIndex": 26
+    },
+    {
+      "id": "square-s-unmatched",
+      "legendEntryId": "fa-row-01",
+      "wlcImageIndex": 27,
+      "legendImageIndex": 0,
+      "comparisonImageIndex": 28
+    }
+  ]
+}

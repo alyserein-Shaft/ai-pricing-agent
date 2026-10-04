@@ -11,6 +11,11 @@ const { d1, r2 } = hostingConfig;
 const goldenE2e = process.env.GOLDEN_E2E === "1";
 const boqAiModel =
   process.env.BOQ_AI_MODEL || "@cf/meta/llama-3.1-8b-instruct-fast";
+// Provider selection is runtime configuration, exactly like the model above, so
+// the hosted NVIDIA NIM path in worker/boq-understanding-provider.mjs can be
+// selected without editing source. Defaults to the existing Workers AI binding,
+// so unset environments are byte-for-byte unchanged.
+const boqAiProvider = process.env.BOQ_AI_PROVIDER || "cloudflare";
 
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
@@ -19,7 +24,7 @@ const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
   vars: {
-    BOQ_AI_PROVIDER: "cloudflare",
+    BOQ_AI_PROVIDER: boqAiProvider,
     BOQ_AI_MODEL: boqAiModel,
     BOQ_AI_MODEL_VERSION: boqAiModel,
     BOQ_AI_ESCALATION_MODEL: process.env.BOQ_AI_ESCALATION_MODEL || "@cf/meta/llama-3.3-70b-instruct-fp8-fast",

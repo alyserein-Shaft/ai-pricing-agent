@@ -1,0 +1,1 @@
+- [DEC-2026-10-03-close31] NTR 35 -> 14 closed, 10 remaining (cable 5 + jack 3 + combined 2); server DOWN prevents jack/UL38/UL521 closures; runtime-blocked state documented for Agent 1 resume; CR seq 35 elevation accounted.

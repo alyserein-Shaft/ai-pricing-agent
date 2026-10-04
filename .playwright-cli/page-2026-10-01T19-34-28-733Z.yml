@@ -1,0 +1,850 @@
+- generic [ref=f11e7]:
+  - complementary "Primary navigation" [ref=f11e8]:
+    - generic [ref=f11e14]:
+      - strong [ref=f11e15]: AI Pricing Agent
+      - generic [ref=f11e16]: وكيل التسعير الذكي
+    - navigation "Global navigation" [ref=f11e18]:
+      - button "Home" [ref=f11e20] [cursor=pointer]:
+        - generic [aria-hidden] [ref=f11e21]: ⌂
+        - text: Home
+      - button "Projects" [ref=f11e23] [cursor=pointer]:
+        - generic [aria-hidden] [ref=f11e24]: ▦
+        - text: Projects
+      - generic [ref=f11e25]:
+        - button "Knowledge" [expanded] [ref=f11e26] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f11e27]: ▤
+          - text: Knowledge
+          - generic [aria-hidden] [ref=f11e28]: ⌃
+        - generic [ref=f11e185]:
+          - button "Sources" [active] [ref=f11e186] [cursor=pointer]
+          - button "Products" [ref=f11e187] [cursor=pointer]
+          - button "Review" [ref=f11e188] [cursor=pointer]
+          - button "Search" [ref=f11e189] [cursor=pointer]
+          - button "System Packs" [ref=f11e191] [cursor=pointer]:
+            - text: System Packs
+            - generic [aria-hidden] [ref=f11e192]: ⌄
+          - button "Case Studies" [ref=f11e193] [cursor=pointer]
+      - button "Reports" [ref=f11e30] [cursor=pointer]:
+        - generic [aria-hidden] [ref=f11e31]: ▥
+        - text: Reports
+      - button "Administration" [ref=f11e33] [cursor=pointer]:
+        - generic [aria-hidden] [ref=f11e34]: ⚙
+        - text: Administration
+    - region "Authenticated account" [ref=f11e71]:
+      - generic [ref=f11e72]: LD
+      - generic [ref=f11e73]:
+        - strong [ref=f11e74]: Development session
+        - generic [ref=f11e75]: local@development.invalid
+        - generic [ref=f11e76]: Administrator
+        - generic [ref=f11e77]: BD-Shaft Internal Pilot · Organization Owner / Organization Administrator
+      - button "Sign out" [ref=f11e79]
+  - main [ref=f11e80]:
+    - generic [ref=f11e194]:
+      - generic [aria-hidden] [ref=f11e195]: ▤
+      - generic [ref=f11e196]:
+        - generic [ref=f11e197]: ORGANIZATION KNOWLEDGE
+        - strong [ref=f11e198]: Knowledge
+    - generic [ref=f11e97]:
+      - navigation "Knowledge administration" [ref=f11e199]:
+        - navigation "Knowledge sections" [ref=f11e200]:
+          - button "Sources" [ref=f11e201]
+          - button "Products" [ref=f11e202]
+          - button "Facts" [ref=f11e203]
+          - button "Review" [ref=f11e204]
+          - button "Conflicts" [ref=f11e205]
+          - button "Lifecycle" [ref=f11e206]
+          - button "System Packs" [ref=f11e207]
+          - button "Learning" [ref=f11e208]
+          - button "Diagnostics" [ref=f11e209]
+      - generic [ref=f11e210]:
+        - generic [ref=f11e211]:
+          - generic [ref=f11e212]:
+            - text: KNOWLEDGE · UPLOAD → LEARN → ORGANIZE → USE
+            - heading "Sources" [level=1] [ref=f11e213]
+            - paragraph [ref=f11e214]: Searchable, source-backed company engineering knowledge.
+          - generic [ref=f11e215]: ＋ Upload knowledge
+        - generic [ref=f11e216]:
+          - strong [ref=f11e217]: Learning is automatic · promotion is governed
+          - generic [ref=f11e218]: Learned facts and product candidates never enter approved use on their own. Product approval, price approval, and reusable knowledge remain separate and require explicit human review.
+        - generic [ref=f11e219]:
+          - generic [ref=f11e220]:
+            - generic [ref=f11e221]:
+              - generic [ref=f11e222]: SOURCES
+              - strong [ref=f11e223]: "41"
+            - generic [ref=f11e224]:
+              - generic [ref=f11e225]: NEED ATTENTION
+              - strong [ref=f11e226]: "31"
+            - generic [ref=f11e227]:
+              - generic [ref=f11e228]: DISCOVERY ONLY
+              - strong [ref=f11e229]: "30"
+            - generic [ref=f11e230]:
+              - generic [ref=f11e231]: REUSABLE
+              - strong [ref=f11e232]: "11"
+          - generic [ref=f11e233]: Sources is the full register; the other three counts cover the 41 sources in the current view.
+        - tablist "Source views" [ref=f11e234]:
+          - generic [ref=f11e235]: View
+          - tab "All sources" [selected] [ref=f11e236] [cursor=pointer]
+          - tab "Needs attention (31)" [ref=f11e237] [cursor=pointer]
+          - tab "Discovery only (30)" [ref=f11e238] [cursor=pointer]
+          - tab "Reusable (11)" [ref=f11e239] [cursor=pointer]
+        - generic [ref=f11e240]:
+          - generic [ref=f11e241]: Search sources
+          - textbox "Search sources" [ref=f11e242]
+        - generic [ref=f11e243]:
+          - generic [ref=f11e244]: Type
+          - group "Source type filter" [ref=f11e245]:
+            - button "All types" [ref=f11e246] [cursor=pointer]
+            - button "Price Lists" [ref=f11e247] [cursor=pointer]
+        - generic [ref=f11e250]:
+          - row [ref=f11e251]:
+            - columnheader "Source" [ref=f11e252]
+            - columnheader "Type" [ref=f11e253]
+            - columnheader "Governance" [ref=f11e254]
+            - columnheader "Observed" [ref=f11e255]
+            - columnheader "Attention" [ref=f11e256]
+            - columnheader "Permitted use" [ref=f11e257]
+            - columnheader "Added" [ref=f11e258]
+          - row [ref=f11e259] [cursor=pointer]:
+            - cell "L-LED-Announcement-23.2SS.pdf 37 extracted facts · 312 KB" [ref=f11e260]:
+              - button "L-LED-Announcement-23.2SS.pdf" [ref=f11e261]
+              - generic [ref=f11e262]: 37 extracted facts · 312 KB
+            - cell "Product Catalogue Price List" [ref=f11e263]:
+              - generic [ref=f11e264]: Product Catalogue
+              - generic [ref=f11e265]: Price List
+            - cell "Needs Review" [ref=f11e266]
+            - cell [ref=f11e267]:
+              - list [ref=f11e268]:
+                - listitem [ref=f11e269]:
+                  - strong [ref=f11e270]: "26"
+                  - text: part numbers
+                - listitem [ref=f11e271]:
+                  - strong [ref=f11e272]: "2"
+                  - text: manufacturers
+                - listitem [ref=f11e273]:
+                  - strong [ref=f11e274]: "1"
+                  - text: standard
+            - cell [ref=f11e275]:
+              - button "2 need review" [ref=f11e276]
+            - cell "Reusable Knowledge" [ref=f11e277]
+            - cell "01 Oct 2026" [ref=f11e278]
+          - row [ref=f11e279] [cursor=pointer]:
+            - cell "L-SGWL_351574.pdf 50 extracted facts · 387 KB" [ref=f11e280]:
+              - button "L-SGWL_351574.pdf" [ref=f11e281]
+              - generic [ref=f11e282]: 50 extracted facts · 387 KB
+            - cell "Product Catalogue Product Datasheet" [ref=f11e283]:
+              - generic [ref=f11e284]: Product Catalogue
+              - generic [ref=f11e285]: Product Datasheet
+            - cell "Needs Review" [ref=f11e286]
+            - cell [ref=f11e287]:
+              - list [ref=f11e288]:
+                - listitem [ref=f11e289]:
+                  - strong [ref=f11e290]: "30"
+                  - text: part numbers
+                - listitem [ref=f11e291]:
+                  - strong [ref=f11e292]: "3"
+                  - text: manufacturers
+                - listitem [ref=f11e293]:
+                  - strong [ref=f11e294]: "4"
+                  - text: standards
+            - cell [ref=f11e295]:
+              - button "2 need review" [ref=f11e296]
+            - cell "Reusable Knowledge" [ref=f11e297]
+            - cell "01 Oct 2026" [ref=f11e298]
+          - row [ref=f11e299] [cursor=pointer]:
+            - cell "35028_pull.pdf 48 extracted facts · 237 KB" [ref=f11e300]:
+              - button "35028_pull.pdf" [ref=f11e301]
+              - generic [ref=f11e302]: 48 extracted facts · 237 KB
+            - cell "Product Datasheet Cost Sheet" [ref=f11e303]:
+              - generic [ref=f11e304]: Product Datasheet
+              - generic [ref=f11e305]: Cost Sheet
+            - cell "Needs Review" [ref=f11e306]
+            - cell [ref=f11e307]:
+              - list [ref=f11e308]:
+                - listitem [ref=f11e309]:
+                  - strong [ref=f11e310]: "24"
+                  - text: part numbers
+                - listitem [ref=f11e311]:
+                  - strong [ref=f11e312]: "3"
+                  - text: manufacturers
+                - listitem [ref=f11e313]:
+                  - strong [ref=f11e314]: "2"
+                  - text: standards
+            - cell [ref=f11e315]:
+              - button "2 need review" [ref=f11e316]
+            - cell "Reusable Knowledge" [ref=f11e317]
+            - cell "01 Oct 2026" [ref=f11e318]
+          - row [ref=f11e319] [cursor=pointer]:
+            - cell "ID-HEAT_351630-A.pdf 82 extracted facts · 148 KB" [ref=f11e320]:
+              - button "ID-HEAT_351630-A.pdf" [ref=f11e321]
+              - generic [ref=f11e322]: 82 extracted facts · 148 KB
+            - cell "Product Datasheet Product Catalogue" [ref=f11e323]:
+              - generic [ref=f11e324]: Product Datasheet
+              - generic [ref=f11e325]: Product Catalogue
+            - cell "Needs Review" [ref=f11e326]
+            - cell [ref=f11e327]:
+              - list [ref=f11e328]:
+                - listitem [ref=f11e329]:
+                  - strong [ref=f11e330]: "52"
+                  - text: part numbers
+                - listitem [ref=f11e331]:
+                  - strong [ref=f11e332]: "3"
+                  - text: manufacturers
+                - listitem [ref=f11e333]:
+                  - strong [ref=f11e334]: "2"
+                  - text: standards
+            - cell [ref=f11e335]:
+              - button "2 need review" [ref=f11e336]
+            - cell "Reusable Knowledge" [ref=f11e337]
+            - cell "01 Oct 2026" [ref=f11e338]
+          - row [ref=f11e339] [cursor=pointer]:
+            - cell "6500RSE_Manual_I56-4446-001_B.pdf 44 extracted facts · 2409 KB" [ref=f11e340]:
+              - button "6500RSE_Manual_I56-4446-001_B.pdf" [ref=f11e341]
+              - generic [ref=f11e342]: 44 extracted facts · 2409 KB
+            - cell "BOQ Cost Sheet · Product Datasheet · Product Catalogue" [ref=f11e343]:
+              - generic [ref=f11e344]: BOQ
+              - generic [ref=f11e345]: Cost Sheet · Product Datasheet · Product Catalogue
+            - cell "Needs Review" [ref=f11e346]
+            - cell [ref=f11e347]:
+              - list [ref=f11e348]:
+                - listitem [ref=f11e349]:
+                  - strong [ref=f11e350]: "29"
+                  - text: part numbers
+                - listitem [ref=f11e351]:
+                  - strong [ref=f11e352]: "3"
+                  - text: manufacturers
+                - listitem [ref=f11e353]:
+                  - strong [ref=f11e354]: "3"
+                  - text: standards
+            - cell [ref=f11e355]:
+              - button "1 need review" [ref=f11e356]
+            - cell "Discovery Only" [ref=f11e357]
+            - cell "01 Oct 2026" [ref=f11e358]
+          - row [ref=f11e359] [cursor=pointer]:
+            - cell "6500RSE_DataSheet_DS-DET-501-EN-02.pdf 25 extracted facts · 595 KB" [ref=f11e360]:
+              - button "6500RSE_DataSheet_DS-DET-501-EN-02.pdf" [ref=f11e361]
+              - generic [ref=f11e362]: 25 extracted facts · 595 KB
+            - cell "BOQ Product Catalogue" [ref=f11e363]:
+              - generic [ref=f11e364]: BOQ
+              - generic [ref=f11e365]: Product Catalogue
+            - cell "Needs Review" [ref=f11e366]
+            - cell [ref=f11e367]:
+              - list [ref=f11e368]:
+                - listitem [ref=f11e369]:
+                  - strong [ref=f11e370]: "9"
+                  - text: part numbers
+                - listitem [ref=f11e371]:
+                  - strong [ref=f11e372]: "1"
+                  - text: manufacturer
+                - listitem [ref=f11e373]:
+                  - strong [ref=f11e374]: "5"
+                  - text: standards
+            - cell [ref=f11e375]:
+              - button "2 need review" [ref=f11e376]
+            - cell "Reusable Knowledge" [ref=f11e377]
+            - cell "01 Oct 2026" [ref=f11e378]
+          - row [ref=f11e379] [cursor=pointer]:
+            - cell "SystemSensor_2151_2151T_Manual_I56-2806-007R.pdf 31 extracted facts · 578 KB" [ref=f11e380]:
+              - button "SystemSensor_2151_2151T_Manual_I56-2806-007R.pdf" [ref=f11e381]
+              - generic [ref=f11e382]: 31 extracted facts · 578 KB
+            - cell "BOQ Project Context" [ref=f11e383]:
+              - generic [ref=f11e384]: BOQ
+              - generic [ref=f11e385]: Project Context
+            - cell "Needs Review" [ref=f11e386]
+            - cell [ref=f11e387]:
+              - list [ref=f11e388]:
+                - listitem [ref=f11e389]:
+                  - strong [ref=f11e390]: "20"
+                  - text: part numbers
+                - listitem [ref=f11e391]:
+                  - strong [ref=f11e392]: "2"
+                  - text: manufacturers
+                - listitem [ref=f11e393]:
+                  - strong [ref=f11e394]: "2"
+                  - text: standards
+            - cell [ref=f11e395]:
+              - button "2 need review" [ref=f11e396]
+            - cell "Reusable Knowledge" [ref=f11e397]
+            - cell "30 Sept 2026" [ref=f11e398]
+          - row [ref=f11e399] [cursor=pointer]:
+            - cell "Honeywell_Addressable_Devices_IDP_Booklet_120425.pdf 20 extracted facts · 218 KB" [ref=f11e400]:
+              - button "Honeywell_Addressable_Devices_IDP_Booklet_120425.pdf" [ref=f11e401]
+              - generic [ref=f11e402]: 20 extracted facts · 218 KB
+            - cell "Product Catalogue" [ref=f11e403]
+            - cell "Needs Review" [ref=f11e405]
+            - cell [ref=f11e406]:
+              - list [ref=f11e407]:
+                - listitem [ref=f11e408]:
+                  - strong [ref=f11e409]: "10"
+                  - text: part numbers
+                - listitem [ref=f11e410]:
+                  - strong [ref=f11e411]: "3"
+                  - text: manufacturers
+                - listitem [ref=f11e412]:
+                  - strong [ref=f11e413]: "2"
+                  - text: standards
+            - cell [ref=f11e414]:
+              - button "2 need review" [ref=f11e415]
+            - cell "Reusable Knowledge" [ref=f11e416]
+            - cell "30 Sept 2026" [ref=f11e417]
+          - row [ref=f11e418] [cursor=pointer]:
+            - cell "Honeywell_IDP-PHOTO-W-IV_DataSheet_351629-C.pdf 82 extracted facts · 167 KB" [ref=f11e419]:
+              - button "Honeywell_IDP-PHOTO-W-IV_DataSheet_351629-C.pdf" [ref=f11e420]
+              - generic [ref=f11e421]: 82 extracted facts · 167 KB
+            - cell "Product Catalogue Product Datasheet" [ref=f11e422]:
+              - generic [ref=f11e423]: Product Catalogue
+              - generic [ref=f11e424]: Product Datasheet
+            - cell "Needs Review" [ref=f11e425]
+            - cell [ref=f11e426]:
+              - list [ref=f11e427]:
+                - listitem [ref=f11e428]:
+                  - strong [ref=f11e429]: "49"
+                  - text: part numbers
+                - listitem [ref=f11e430]:
+                  - strong [ref=f11e431]: "3"
+                  - text: manufacturers
+                - listitem [ref=f11e432]:
+                  - strong [ref=f11e433]: "5"
+                  - text: standards
+            - cell [ref=f11e434]:
+              - button "2 need review" [ref=f11e435]
+            - cell "Reusable Knowledge" [ref=f11e436]
+            - cell "30 Sept 2026" [ref=f11e437]
+          - row [ref=f11e438] [cursor=pointer]:
+            - cell "Notifier_FSP-951_DataSheet_DN-60977-D.pdf 95 extracted facts · 114 KB" [ref=f11e439]:
+              - button "Notifier_FSP-951_DataSheet_DN-60977-D.pdf" [ref=f11e440]
+              - generic [ref=f11e441]: 95 extracted facts · 114 KB
+            - cell "Product Catalogue" [ref=f11e442]
+            - cell "Needs Review" [ref=f11e444]
+            - cell [ref=f11e445]:
+              - list [ref=f11e446]:
+                - listitem [ref=f11e447]:
+                  - strong [ref=f11e448]: "73"
+                  - text: part numbers
+                - listitem [ref=f11e449]:
+                  - strong [ref=f11e450]: "3"
+                  - text: manufacturers
+                - listitem [ref=f11e451]:
+                  - strong [ref=f11e452]: "5"
+                  - text: standards
+            - cell [ref=f11e453]:
+              - button "2 need review" [ref=f11e454]
+            - cell "Reusable Knowledge" [ref=f11e455]
+            - cell "30 Sept 2026" [ref=f11e456]
+          - row [ref=f11e457] [cursor=pointer]:
+            - cell "Honeywell_Farenhyt_IFP-2100_Manual_LS10143-001SK-E-C.pdf 1031 extracted facts · 13746 KB" [ref=f11e458]:
+              - button "Honeywell_Farenhyt_IFP-2100_Manual_LS10143-001SK-E-C.pdf" [ref=f11e459]
+              - generic [ref=f11e460]: 1031 extracted facts · 13746 KB
+            - cell "Cost Sheet Other · BOQ · Product Catalogue · RFQ · Product Datasheet · Compliance Document" [ref=f11e461]:
+              - generic [ref=f11e462]: Cost Sheet
+              - generic [ref=f11e463]: Other · BOQ · Product Catalogue · RFQ · Product Datasheet · Compliance Document
+            - cell "Needs Review" [ref=f11e464]
+            - cell [ref=f11e465]:
+              - list [ref=f11e466]:
+                - listitem [ref=f11e467]:
+                  - strong [ref=f11e468]: "967"
+                  - text: part numbers
+                - listitem [ref=f11e469]:
+                  - strong [ref=f11e470]: "5"
+                  - text: manufacturers
+                - listitem [ref=f11e471]:
+                  - strong [ref=f11e472]: "8"
+                  - text: standards
+            - cell [ref=f11e473]:
+              - button "2 need review" [ref=f11e474]
+            - cell "Reusable Knowledge" [ref=f11e475]
+            - cell "30 Sept 2026" [ref=f11e476]
+          - row [ref=f11e477] [cursor=pointer]:
+            - cell "Honeywell_Farenhyt_IFP-2100_DataSheet_351602-D.pdf 114 extracted facts · 348 KB" [ref=f11e478]:
+              - button "Honeywell_Farenhyt_IFP-2100_DataSheet_351602-D.pdf" [ref=f11e479]
+              - generic [ref=f11e480]: 114 extracted facts · 348 KB
+            - cell "Product Datasheet Compliance Document · Cost Sheet" [ref=f11e481]:
+              - generic [ref=f11e482]: Product Datasheet
+              - generic [ref=f11e483]: Compliance Document · Cost Sheet
+            - cell "Needs Review" [ref=f11e484]
+            - cell [ref=f11e485]:
+              - list [ref=f11e486]:
+                - listitem [ref=f11e487]:
+                  - strong [ref=f11e488]: "69"
+                  - text: part numbers
+                - listitem [ref=f11e489]:
+                  - strong [ref=f11e490]: "3"
+                  - text: manufacturers
+                - listitem [ref=f11e491]:
+                  - strong [ref=f11e492]: "9"
+                  - text: standards
+            - cell [ref=f11e493]:
+              - button "2 need review" [ref=f11e494]
+            - cell "Reusable Knowledge" [ref=f11e495]
+            - cell "30 Sept 2026" [ref=f11e496]
+          - row [ref=f11e497] [cursor=pointer]:
+            - cell "SO26-06-17-01.pdf 149 extracted facts · 290 KB" [ref=f11e498]:
+              - button "SO26-06-17-01.pdf" [ref=f11e499]
+              - generic [ref=f11e500]: 149 extracted facts · 290 KB
+            - cell "Supplier Quotation" [ref=f11e501]
+            - cell "Governed Supplier Intake" [ref=f11e503]
+            - cell [ref=f11e504]:
+              - list [ref=f11e505]:
+                - listitem [ref=f11e506]:
+                  - strong [ref=f11e507]: "35"
+                  - text: part numbers
+                - listitem [ref=f11e508]:
+                  - strong [ref=f11e509]: "38"
+                  - text: price observations
+            - cell "Clear" [ref=f11e510]
+            - cell "Discovery Only" [ref=f11e511]
+            - cell "12 Aug 2026" [ref=f11e512]
+          - row [ref=f11e513] [cursor=pointer]:
+            - cell "FA-RFQ-Farenhyt.xlsx 118 extracted facts · 14 KB" [ref=f11e514]:
+              - button "FA-RFQ-Farenhyt.xlsx" [ref=f11e515]
+              - generic [ref=f11e516]: 118 extracted facts · 14 KB
+            - cell "Supplier RFQ Clarification" [ref=f11e517]:
+              - generic [ref=f11e518]: Supplier RFQ
+              - generic [ref=f11e519]: Clarification
+            - cell "Reviewed" [ref=f11e520]
+            - cell [ref=f11e521]:
+              - list [ref=f11e522]:
+                - listitem [ref=f11e523]:
+                  - strong [ref=f11e524]: "52"
+                  - text: part numbers
+                - listitem [ref=f11e525]:
+                  - strong [ref=f11e526]: "2"
+                  - text: manufacturers
+                - listitem [ref=f11e527]:
+                  - strong [ref=f11e528]: "4"
+                  - text: standards
+            - cell "Clear" [ref=f11e529]
+            - cell "Discovery Only" [ref=f11e530]
+            - cell "04 Aug 2026" [ref=f11e531]
+          - row [ref=f11e532] [cursor=pointer]:
+            - cell "MCC__KAFD__V1_Deal_ID_85575734.xlsx 202 extracted facts · 65 KB" [ref=f11e533]:
+              - button "MCC__KAFD__V1_Deal_ID_85575734.xlsx" [ref=f11e534]
+              - generic [ref=f11e535]: 202 extracted facts · 65 KB
+            - cell "Price List BOQ" [ref=f11e536]:
+              - generic [ref=f11e537]: Price List
+              - generic [ref=f11e538]: BOQ
+            - cell "Classified" [ref=f11e539]
+            - cell [ref=f11e540]:
+              - list [ref=f11e541]:
+                - listitem [ref=f11e542]:
+                  - strong [ref=f11e543]: "83"
+                  - text: part numbers
+                - listitem [ref=f11e544]:
+                  - strong [ref=f11e545]: "32"
+                  - text: price observations
+                - listitem [ref=f11e546]:
+                  - strong [ref=f11e547]: "1"
+                  - text: manufacturer
+                - listitem [ref=f11e548]:
+                  - strong [ref=f11e549]: "2"
+                  - text: standards
+            - cell "Clear" [ref=f11e550]
+            - cell "Discovery Only" [ref=f11e551]
+            - cell "04 Aug 2026" [ref=f11e552]
+          - row [ref=f11e553] [cursor=pointer]:
+            - cell "83833 - Quote.xlsx 184 extracted facts · 23 KB" [ref=f11e554]:
+              - button "83833 - Quote.xlsx" [ref=f11e555]
+              - generic [ref=f11e556]: 184 extracted facts · 23 KB
+            - cell "Supplier Quotation BOQ" [ref=f11e557]:
+              - generic [ref=f11e558]: Supplier Quotation
+              - generic [ref=f11e559]: BOQ
+            - cell "Reviewed" [ref=f11e560]
+            - cell [ref=f11e561]:
+              - list [ref=f11e562]:
+                - listitem [ref=f11e563]:
+                  - strong [ref=f11e564]: "74"
+                  - text: part numbers
+                - listitem [ref=f11e565]:
+                  - strong [ref=f11e566]: "19"
+                  - text: manufacturers
+            - cell "Clear" [ref=f11e567]
+            - cell "Discovery Only" [ref=f11e568]
+            - cell "04 Aug 2026" [ref=f11e569]
+          - row [ref=f11e570] [cursor=pointer]:
+            - cell "BGM BOM.xlsx 28 extracted facts · 268 KB" [ref=f11e571]:
+              - button "BGM BOM.xlsx" [ref=f11e572]
+              - generic [ref=f11e573]: 28 extracted facts · 268 KB
+            - cell "BOQ Price List" [ref=f11e574]:
+              - generic [ref=f11e575]: BOQ
+              - generic [ref=f11e576]: Price List
+            - cell "Reviewed" [ref=f11e577]
+            - cell [ref=f11e578]:
+              - list [ref=f11e579]:
+                - listitem [ref=f11e580]:
+                  - strong [ref=f11e581]: "8"
+                  - text: part numbers
+                - listitem [ref=f11e582]:
+                  - strong [ref=f11e583]: "1"
+                  - text: manufacturer
+            - cell [ref=f11e584]:
+              - button "6 need review" [ref=f11e585]
+            - cell "Discovery Only" [ref=f11e586]
+            - cell "04 Aug 2026" [ref=f11e587]
+          - row [ref=f11e588] [cursor=pointer]:
+            - cell "KSA Gent Fire Price list Ver 22.3 Oct 2022 (1).xlsx 1808 extracted facts · 109 KB" [ref=f11e589]:
+              - button "KSA Gent Fire Price list Ver 22.3 Oct 2022 (1).xlsx" [ref=f11e590]
+              - generic [ref=f11e591]: 1808 extracted facts · 109 KB
+            - cell "Price List BOQ" [ref=f11e592]:
+              - generic [ref=f11e593]: Price List
+              - generic [ref=f11e594]: BOQ
+            - cell "Classified" [ref=f11e595]
+            - cell [ref=f11e596]:
+              - list [ref=f11e597]:
+                - listitem [ref=f11e598]:
+                  - strong [ref=f11e599]: "517"
+                  - text: part numbers
+                - listitem [ref=f11e600]:
+                  - strong [ref=f11e601]: "257"
+                  - text: price observations
+                - listitem [ref=f11e602]:
+                  - strong [ref=f11e603]: "2"
+                  - text: manufacturers
+                - listitem [ref=f11e604]:
+                  - strong [ref=f11e605]: "5"
+                  - text: standards
+            - cell "Clear" [ref=f11e606]
+            - cell "Discovery Only" [ref=f11e607]
+            - cell "04 Aug 2026" [ref=f11e608]
+          - row [ref=f11e609] [cursor=pointer]:
+            - cell "2.HCS MEA HIS Pricebook 2024 V12 (1).xlsx 763 extracted facts · 819 KB" [ref=f11e610]:
+              - button "2.HCS MEA HIS Pricebook 2024 V12 (1).xlsx" [ref=f11e611]
+              - generic [ref=f11e612]: 763 extracted facts · 819 KB
+            - cell "Price List Cost Sheet · Supplier Quotation · Other · BOQ" [ref=f11e613]:
+              - generic [ref=f11e614]: Price List
+              - generic [ref=f11e615]: Cost Sheet · Supplier Quotation · Other · BOQ
+            - cell "Classified" [ref=f11e616]
+            - cell [ref=f11e617]:
+              - list [ref=f11e618]:
+                - listitem [ref=f11e619]:
+                  - strong [ref=f11e620]: "34"
+                  - text: part numbers
+                - listitem [ref=f11e621]:
+                  - strong [ref=f11e622]: "324"
+                  - text: price observations
+                - listitem [ref=f11e623]:
+                  - strong [ref=f11e624]: "3"
+                  - text: manufacturers
+                - listitem [ref=f11e625]:
+                  - strong [ref=f11e626]: "1"
+                  - text: standard
+            - cell "Clear" [ref=f11e627]
+            - cell "Discovery Only" [ref=f11e628]
+            - cell "04 Aug 2026" [ref=f11e629]
+          - row [ref=f11e630] [cursor=pointer]:
+            - cell "1.HCS MEA Partner Pricebook 2024 V12.xlsx 2198 extracted facts · 1601 KB" [ref=f11e631]:
+              - button "1.HCS MEA Partner Pricebook 2024 V12.xlsx" [ref=f11e632]
+              - generic [ref=f11e633]: 2198 extracted facts · 1601 KB
+            - cell "Price List BOQ · Supplier Quotation · Cost Sheet · Other" [ref=f11e634]:
+              - generic [ref=f11e635]: Price List
+              - generic [ref=f11e636]: BOQ · Supplier Quotation · Cost Sheet · Other
+            - cell "Classified" [ref=f11e637]
+            - cell [ref=f11e638]:
+              - list [ref=f11e639]:
+                - listitem [ref=f11e640]:
+                  - strong [ref=f11e641]: "674"
+                  - text: part numbers
+                - listitem [ref=f11e642]:
+                  - strong [ref=f11e643]: "598"
+                  - text: price observations
+                - listitem [ref=f11e644]:
+                  - strong [ref=f11e645]: "1"
+                  - text: manufacturer
+                - listitem [ref=f11e646]:
+                  - strong [ref=f11e647]: "3"
+                  - text: standards
+            - cell "Clear" [ref=f11e648]
+            - cell "Discovery Only" [ref=f11e649]
+            - cell "04 Aug 2026" [ref=f11e650]
+          - row [ref=f11e651] [cursor=pointer]:
+            - cell "00361. 1712601000361 -Elmesbar-ِAmaad Phase 2.pdf 3 extracted facts · 341 KB" [ref=f11e652]:
+              - button "00361. 1712601000361 -Elmesbar-ِAmaad Phase 2.pdf" [ref=f11e653]
+              - generic [ref=f11e654]: 3 extracted facts · 341 KB
+            - cell "Unknown BOQ · Technical Specification · Product Catalogue · Product Datasheet · Price List" [ref=f11e655]:
+              - generic [ref=f11e656]: Unknown
+              - generic [ref=f11e657]: BOQ · Technical Specification · Product Catalogue · Product Datasheet · Price List
+            - cell "Needs Review" [ref=f11e658]
+            - cell "No observations yet" [ref=f11e659]
+            - cell [ref=f11e660]:
+              - button "1 need review" [ref=f11e661]
+            - cell "Discovery Only" [ref=f11e662]
+            - cell "04 Aug 2026" [ref=f11e663]
+          - row [ref=f11e664] [cursor=pointer]:
+            - cell "2202626041.pdf 3 extracted facts · 179 KB" [ref=f11e665]:
+              - button "2202626041.pdf" [ref=f11e666]
+              - generic [ref=f11e667]: 3 extracted facts · 179 KB
+            - cell "Unknown Technical Specification · Drawing · Product Catalogue · Product Datasheet · Price List" [ref=f11e668]:
+              - generic [ref=f11e669]: Unknown
+              - generic [ref=f11e670]: Technical Specification · Drawing · Product Catalogue · Product Datasheet · Price List
+            - cell "Needs Review" [ref=f11e671]
+            - cell "No observations yet" [ref=f11e672]
+            - cell [ref=f11e673]:
+              - button "1 need review" [ref=f11e674]
+            - cell "Discovery Only" [ref=f11e675]
+            - cell "04 Aug 2026" [ref=f11e676]
+          - row [ref=f11e677] [cursor=pointer]:
+            - cell "Almesbar - Q#5922.pdf 3 extracted facts · 264 KB" [ref=f11e678]:
+              - button "Almesbar - Q#5922.pdf" [ref=f11e679]
+              - generic [ref=f11e680]: 3 extracted facts · 264 KB
+            - cell "Unknown Technical Specification · Drawing · Product Catalogue · Product Datasheet · Price List" [ref=f11e681]:
+              - generic [ref=f11e682]: Unknown
+              - generic [ref=f11e683]: Technical Specification · Drawing · Product Catalogue · Product Datasheet · Price List
+            - cell "Needs Review" [ref=f11e684]
+            - cell "No observations yet" [ref=f11e685]
+            - cell [ref=f11e686]:
+              - button "1 need review" [ref=f11e687]
+            - cell "Discovery Only" [ref=f11e688]
+            - cell "04 Aug 2026" [ref=f11e689]
+          - row [ref=f11e690] [cursor=pointer]:
+            - cell "Almespar - Q#6726.pdf 3 extracted facts · 255 KB" [ref=f11e691]:
+              - button "Almespar - Q#6726.pdf" [ref=f11e692]
+              - generic [ref=f11e693]: 3 extracted facts · 255 KB
+            - cell "Unknown Technical Specification · Drawing · Product Catalogue · Product Datasheet · Price List" [ref=f11e694]:
+              - generic [ref=f11e695]: Unknown
+              - generic [ref=f11e696]: Technical Specification · Drawing · Product Catalogue · Product Datasheet · Price List
+            - cell "Rejected" [ref=f11e697]
+            - cell "No observations yet" [ref=f11e698]
+            - cell "Clear" [ref=f11e699]
+            - cell "Discovery Only" [ref=f11e700]
+            - cell "04 Aug 2026" [ref=f11e701]
+          - row [ref=f11e702] [cursor=pointer]:
+            - cell "FW MCC RFQ BP760 Passive Data Network Datwyler .msg 2 extracted facts · 2674 KB" [ref=f11e703]:
+              - button "FW MCC RFQ BP760 Passive Data Network Datwyler .msg" [ref=f11e704]
+              - generic [ref=f11e705]: 2 extracted facts · 2674 KB
+            - cell "Supplier RFQ Unknown" [ref=f11e706]:
+              - generic [ref=f11e707]: Supplier RFQ
+              - generic [ref=f11e708]: Unknown
+            - cell "Needs Review" [ref=f11e709]
+            - cell "No observations yet" [ref=f11e710]
+            - cell [ref=f11e711]:
+              - button "1 need review" [ref=f11e712]
+            - cell "Discovery Only" [ref=f11e713]
+            - cell "04 Aug 2026" [ref=f11e714]
+          - row [ref=f11e715] [cursor=pointer]:
+            - cell "FW MCC RFQ Datwyler .msg 2 extracted facts · 4443 KB" [ref=f11e716]:
+              - button "FW MCC RFQ Datwyler .msg" [ref=f11e717]
+              - generic [ref=f11e718]: 2 extracted facts · 4443 KB
+            - cell "Supplier RFQ Unknown" [ref=f11e719]:
+              - generic [ref=f11e720]: Supplier RFQ
+              - generic [ref=f11e721]: Unknown
+            - cell "Needs Review" [ref=f11e722]
+            - cell "No observations yet" [ref=f11e723]
+            - cell [ref=f11e724]:
+              - button "1 need review" [ref=f11e725]
+            - cell "Discovery Only" [ref=f11e726]
+            - cell "04 Aug 2026" [ref=f11e727]
+          - row [ref=f11e728] [cursor=pointer]:
+            - cell "GAMMA Company Profile 2026.pdf 9 extracted facts · 4305 KB" [ref=f11e729]:
+              - button "GAMMA Company Profile 2026.pdf" [ref=f11e730]
+              - generic [ref=f11e731]: 9 extracted facts · 4305 KB
+            - cell "Unknown" [ref=f11e732]
+            - cell "Reviewed" [ref=f11e734]
+            - cell [ref=f11e735]:
+              - list [ref=f11e736]:
+                - listitem [ref=f11e737]:
+                  - strong [ref=f11e738]: "2"
+                  - text: part numbers
+                - listitem [ref=f11e739]:
+                  - strong [ref=f11e740]: "3"
+                  - text: price observations
+            - cell [ref=f11e741]:
+              - button "3 need review" [ref=f11e742]
+            - cell "Discovery Only" [ref=f11e743]
+            - cell "04 Aug 2026" [ref=f11e744]
+          - row [ref=f11e745] [cursor=pointer]:
+            - cell "QT-20260705125400 R0.pdf 3 extracted facts · 314 KB" [ref=f11e746]:
+              - button "QT-20260705125400 R0.pdf" [ref=f11e747]
+              - generic [ref=f11e748]: 3 extracted facts · 314 KB
+            - cell "Unknown" [ref=f11e749]
+            - cell "Needs Review" [ref=f11e751]
+            - cell "No observations yet" [ref=f11e752]
+            - cell [ref=f11e753]:
+              - button "1 need review" [ref=f11e754]
+            - cell "Discovery Only" [ref=f11e755]
+            - cell "04 Aug 2026" [ref=f11e756]
+          - row [ref=f11e757] [cursor=pointer]:
+            - cell "RE Passive Data System - RFQ - Datwyler.msg 2 extracted facts · 267 KB" [ref=f11e758]:
+              - button "RE Passive Data System - RFQ - Datwyler.msg" [ref=f11e759]
+              - generic [ref=f11e760]: 2 extracted facts · 267 KB
+            - cell "Supplier RFQ Unknown" [ref=f11e761]:
+              - generic [ref=f11e762]: Supplier RFQ
+              - generic [ref=f11e763]: Unknown
+            - cell "Needs Review" [ref=f11e764]
+            - cell "No observations yet" [ref=f11e765]
+            - cell [ref=f11e766]:
+              - button "1 need review" [ref=f11e767]
+            - cell "Discovery Only" [ref=f11e768]
+            - cell "04 Aug 2026" [ref=f11e769]
+          - row [ref=f11e770] [cursor=pointer]:
+            - cell "RE RFQ - Tripleplay.msg 2 extracted facts · 369 KB" [ref=f11e771]:
+              - button "RE RFQ - Tripleplay.msg" [ref=f11e772]
+              - generic [ref=f11e773]: 2 extracted facts · 369 KB
+            - cell "Supplier RFQ Unknown" [ref=f11e774]:
+              - generic [ref=f11e775]: Supplier RFQ
+              - generic [ref=f11e776]: Unknown
+            - cell "Needs Review" [ref=f11e777]
+            - cell "No observations yet" [ref=f11e778]
+            - cell [ref=f11e779]:
+              - button "1 need review" [ref=f11e780]
+            - cell "Discovery Only" [ref=f11e781]
+            - cell "04 Aug 2026" [ref=f11e782]
+          - row [ref=f11e783] [cursor=pointer]:
+            - cell "RITCO-SQ-018640-YAM-0626-1688.pdf 2 extracted facts · 683 KB" [ref=f11e784]:
+              - button "RITCO-SQ-018640-YAM-0626-1688.pdf" [ref=f11e785]
+              - generic [ref=f11e786]: 2 extracted facts · 683 KB
+            - cell "Unknown" [ref=f11e787]
+            - cell "Needs Review" [ref=f11e789]
+            - cell "No observations yet" [ref=f11e790]
+            - cell [ref=f11e791]:
+              - button "2 need review" [ref=f11e792]
+            - cell "Discovery Only" [ref=f11e793]
+            - cell "04 Aug 2026" [ref=f11e794]
+          - row [ref=f11e795] [cursor=pointer]:
+            - cell "RITCO-SQ-018865-YAM-0626-1952.pdf 2 extracted facts · 685 KB" [ref=f11e796]:
+              - button "RITCO-SQ-018865-YAM-0626-1952.pdf" [ref=f11e797]
+              - generic [ref=f11e798]: 2 extracted facts · 685 KB
+            - cell "Unknown" [ref=f11e799]
+            - cell "Needs Review" [ref=f11e801]
+            - cell "No observations yet" [ref=f11e802]
+            - cell [ref=f11e803]:
+              - button "2 need review" [ref=f11e804]
+            - cell "Discovery Only" [ref=f11e805]
+            - cell "04 Aug 2026" [ref=f11e806]
+          - row [ref=f11e807] [cursor=pointer]:
+            - cell "WTC-3909 (6).pdf 2 extracted facts · 83 KB" [ref=f11e808]:
+              - button "WTC-3909 (6).pdf" [ref=f11e809]
+              - generic [ref=f11e810]: 2 extracted facts · 83 KB
+            - cell "Unknown Technical Specification · Drawing · Product Catalogue · Product Datasheet · Price List" [ref=f11e811]:
+              - generic [ref=f11e812]: Unknown
+              - generic [ref=f11e813]: Technical Specification · Drawing · Product Catalogue · Product Datasheet · Price List
+            - cell "Needs Review" [ref=f11e814]
+            - cell "No observations yet" [ref=f11e815]
+            - cell [ref=f11e816]:
+              - button "1 need review" [ref=f11e817]
+            - cell "Discovery Only" [ref=f11e818]
+            - cell "04 Aug 2026" [ref=f11e819]
+          - row [ref=f11e820] [cursor=pointer]:
+            - cell "Westcon__AL MESPAR CONTRACTING CORP_King Abdullah Financial District De_Quote#_2026_07_25500222_en.xlsx 6 extracted facts · 2264 KB" [ref=f11e821]:
+              - button "Westcon__AL MESPAR CONTRACTING CORP_King Abdullah Financial District De_Quote#_2026_07_25500222_en.xlsx" [ref=f11e822]
+              - generic [ref=f11e823]: 6 extracted facts · 2264 KB
+            - cell "Supplier Quotation BOQ" [ref=f11e824]:
+              - generic [ref=f11e825]: Supplier Quotation
+              - generic [ref=f11e826]: BOQ
+            - cell "Classified" [ref=f11e827]
+            - cell [ref=f11e828]:
+              - list [ref=f11e829]:
+                - listitem [ref=f11e830]:
+                  - strong [ref=f11e831]: "1"
+                  - text: manufacturer
+            - cell "Clear" [ref=f11e832]
+            - cell "Discovery Only" [ref=f11e833]
+            - cell "04 Aug 2026" [ref=f11e834]
+          - row [ref=f11e835] [cursor=pointer]:
+            - cell "FW MCC RFQ BP474 Passive Network System Datwyler.msg 2 extracted facts · 2863 KB" [ref=f11e836]:
+              - button "FW MCC RFQ BP474 Passive Network System Datwyler.msg" [ref=f11e837]
+              - generic [ref=f11e838]: 2 extracted facts · 2863 KB
+            - cell "Supplier RFQ Unknown" [ref=f11e839]:
+              - generic [ref=f11e840]: Supplier RFQ
+              - generic [ref=f11e841]: Unknown
+            - cell "Needs Review" [ref=f11e842]
+            - cell "No observations yet" [ref=f11e843]
+            - cell [ref=f11e844]:
+              - button "1 need review" [ref=f11e845]
+            - cell "Discovery Only" [ref=f11e846]
+            - cell "04 Aug 2026" [ref=f11e847]
+          - row [ref=f11e848] [cursor=pointer]:
+            - cell "QE.10046.26.R00 - AC - King Khaled Airport.pdf 2 extracted facts · 579 KB" [ref=f11e849]:
+              - button "QE.10046.26.R00 - AC - King Khaled Airport.pdf" [ref=f11e850]
+              - generic [ref=f11e851]: 2 extracted facts · 579 KB
+            - cell "Unknown Technical Specification · Drawing · Product Catalogue · Product Datasheet · Price List" [ref=f11e852]:
+              - generic [ref=f11e853]: Unknown
+              - generic [ref=f11e854]: Technical Specification · Drawing · Product Catalogue · Product Datasheet · Price List
+            - cell "Needs Review" [ref=f11e855]
+            - cell "No observations yet" [ref=f11e856]
+            - cell [ref=f11e857]:
+              - button "1 need review" [ref=f11e858]
+            - cell "Discovery Only" [ref=f11e859]
+            - cell "04 Aug 2026" [ref=f11e860]
+          - row [ref=f11e861] [cursor=pointer]:
+            - cell "RE MCC RFQ BP816 Janadriyah Cultural Quarter Main Construction Works Package 2 Hospitality Assets CCTV System .msg 2 extracted facts · 485 KB" [ref=f11e862]:
+              - button "RE MCC RFQ BP816 Janadriyah Cultural Quarter Main Construction Works Package 2 Hospitality Assets CCTV System .msg" [ref=f11e863]
+              - generic [ref=f11e864]: 2 extracted facts · 485 KB
+            - cell "Supplier RFQ Unknown" [ref=f11e865]:
+              - generic [ref=f11e866]: Supplier RFQ
+              - generic [ref=f11e867]: Unknown
+            - cell "Needs Review" [ref=f11e868]
+            - cell "No observations yet" [ref=f11e869]
+            - cell [ref=f11e870]:
+              - button "1 need review" [ref=f11e871]
+            - cell "Discovery Only" [ref=f11e872]
+            - cell "04 Aug 2026" [ref=f11e873]
+          - row [ref=f11e874] [cursor=pointer]:
+            - cell "Ref.#QE.5000708.25.R00_ACS_LENEL_S2_KKIA_RAC_MCC_FUTURE_BUILDERS.pdf 5 extracted facts · 864 KB" [ref=f11e875]:
+              - button "Ref.#QE.5000708.25.R00_ACS_LENEL_S2_KKIA_RAC_MCC_FUTURE_BUILDERS.pdf" [ref=f11e876]
+              - generic [ref=f11e877]: 5 extracted facts · 864 KB
+            - cell "Unknown BOQ · Technical Specification · Product Catalogue · Product Datasheet · Price List" [ref=f11e878]:
+              - generic [ref=f11e879]: Unknown
+              - generic [ref=f11e880]: BOQ · Technical Specification · Product Catalogue · Product Datasheet · Price List
+            - cell "Needs Review" [ref=f11e881]
+            - cell [ref=f11e882]:
+              - list [ref=f11e883]:
+                - listitem [ref=f11e884]:
+                  - strong [ref=f11e885]: "1"
+                  - text: price observation
+            - cell [ref=f11e886]:
+              - button "2 need review" [ref=f11e887]
+            - cell "Discovery Only" [ref=f11e888]
+            - cell "04 Aug 2026" [ref=f11e889]
+          - row [ref=f11e890] [cursor=pointer]:
+            - cell "SAL-QTN-2026-01329 - KAFD Utility Tunnel Project.pdf 4 extracted facts · 293 KB" [ref=f11e891]:
+              - button "SAL-QTN-2026-01329 - KAFD Utility Tunnel Project.pdf" [ref=f11e892]
+              - generic [ref=f11e893]: 4 extracted facts · 293 KB
+            - cell "Unknown Technical Specification · Drawing · Product Catalogue · Product Datasheet · Price List" [ref=f11e894]:
+              - generic [ref=f11e895]: Unknown
+              - generic [ref=f11e896]: Technical Specification · Drawing · Product Catalogue · Product Datasheet · Price List
+            - cell "Needs Review" [ref=f11e897]
+            - cell [ref=f11e898]:
+              - list [ref=f11e899]:
+                - listitem [ref=f11e900]:
+                  - strong [ref=f11e901]: "1"
+                  - text: price observation
+            - cell [ref=f11e902]:
+              - button "2 need review" [ref=f11e903]
+            - cell "Discovery Only" [ref=f11e904]
+            - cell "04 Aug 2026" [ref=f11e905]
+          - row [ref=f11e906] [cursor=pointer]:
+            - cell "SAL-QTN-2026-01385 - MCC PROJECT - PAS.pdf 3 extracted facts · 279 KB" [ref=f11e907]:
+              - button "SAL-QTN-2026-01385 - MCC PROJECT - PAS.pdf" [ref=f11e908]
+              - generic [ref=f11e909]: 3 extracted facts · 279 KB
+            - cell "Unknown Other · BOQ · Technical Specification · Drawing · Product Catalogue" [ref=f11e910]:
+              - generic [ref=f11e911]: Unknown
+              - generic [ref=f11e912]: Other · BOQ · Technical Specification · Drawing · Product Catalogue
+            - cell "Needs Review" [ref=f11e913]
+            - cell "No observations yet" [ref=f11e914]
+            - cell [ref=f11e915]:
+              - button "2 need review" [ref=f11e916]
+            - cell "Discovery Only" [ref=f11e917]
+            - cell "04 Aug 2026" [ref=f11e918]
+          - row [ref=f11e919] [cursor=pointer]:
+            - cell "GW-FCI - Price List 2026 Jan 4 - KSA [2025.12.28].xlsx 1148 extracted facts · 44 KB" [ref=f11e920]:
+              - button "GW-FCI - Price List 2026 Jan 4 - KSA [2025.12.28].xlsx" [ref=f11e921]
+              - generic [ref=f11e922]: 1148 extracted facts · 44 KB
+            - cell "Price List BOQ" [ref=f11e923]:
+              - generic [ref=f11e924]: Price List
+              - generic [ref=f11e925]: BOQ
+            - cell "Classified" [ref=f11e926]
+            - cell [ref=f11e927]:
+              - list [ref=f11e928]:
+                - listitem [ref=f11e929]:
+                  - strong [ref=f11e930]: "429"
+                  - text: part numbers
+                - listitem [ref=f11e931]:
+                  - strong [ref=f11e932]: "249"
+                  - text: price observations
+                - listitem [ref=f11e933]:
+                  - strong [ref=f11e934]: "3"
+                  - text: manufacturers
+                - listitem [ref=f11e935]:
+                  - strong [ref=f11e936]: "4"
+                  - text: standards
+            - cell "Clear" [ref=f11e937]
+            - cell "Discovery Only" [ref=f11e938]
+            - cell "04 Aug 2026" [ref=f11e939]

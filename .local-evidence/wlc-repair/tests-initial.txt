@@ -1,0 +1,86 @@
+✔ GET before sync -- reports synced:false with no rows, does not error (23.355417ms)
+✔ persistence round-trip -- sync persists proposals, and a second sync is idempotent (same row count, no duplicates) (8.939375ms)
+✔ persisted proposal carries full provenance -- project/document/version/page/type/bbox/evidence/source refs/authority/status (5.807667ms)
+✔ review audit trail -- approving a schedule item writes actor/reason/old/new to the review_events table (5.870583ms)
+✔ a short/non-substantive reason is rejected with 422, and no row/audit change occurs (2.798583ms)
+✔ conflict state -- a proposal in Conflict cannot be approved directly (hard-review gate enforced server-side) (2.667167ms)
+✔ identity merge cannot be approved -- an EquipmentCandidate/PanelCandidate proposal blocks the approve action entirely (3.274959ms)
+✔ restore returns a proposal's review_status back to the system's own governed_status (2.85625ms)
+✔ Not Found behavior -- a document with no drawing intake yet reports 409, not a crash (1.772667ms)
+✔ a rerun after an engineer has already reviewed a proposal does not silently discard that human review_status (3.921666ms)
+✔ with no items at all, reports drawing identity as not yet established rather than fabricating a summary (2.126666ms)
+✖ an AI drawingIdentity finding, when present, is preferred over the bare classified type for 'what this explains' (0.536917ms)
+✖ falls back to the classified drawing type when no AI identity finding exists (1.379125ms)
+✔ a 'Not Found' finding (retired by a later AI rerun that did not reproduce it) is excluded from every count, same as a rejection (0.96175ms)
+✔ a rejected finding is excluded from every count -- an engineer's rejection is respected (0.913833ms)
+✔ real counts group by source type with real labels sampled, never inventing a fact (0.575791ms)
+✔ missingOrAmbiguous findings surface verbatim in needsClarification, and a Needs Review count is added generically (0.871958ms)
+✔ a Conflict-flagged finding is surfaced distinctly from a plain Needs Review count (0.265417ms)
+✔ hasAiFindings reflects whether any AI-sourced item is present (0.117166ms)
+✔ no configured AI provider -- reports the specific blocker (503), writes nothing (16.998ms)
+✔ missing images -- rejected explicitly, never a fabricated/empty-image call to the model (2.604541ms)
+✔ a real two-stage call (vision then structured synthesis) persists proposals reusing the existing table/contract, all Unsupported/Needs Review (12.571667ms)
+✔ the synthesis prompt treats drawing text as EVIDENCE, not instructions -- an imperative-sounding note is placed under the evidence block, and the system prompt says so explicitly (5.980833ms)
+✔ a rerun that finds FEWER circuits than a prior run supersedes prior outputs without changing their review status (4.184791ms)
+✔ a rerun never retires a proposal a human has already reviewed, even if the new run does not reproduce it (4.148166ms)
+✔ the response schema requires every category and forbids extra properties -- a partial/loose model response fails validation, not silently accepted (0.899875ms)
+✔ every finding-level schema requires a basis (Observed/Interpreted) or an evidence quote -- nothing can be reported ungrounded (0.117708ms)
+✔ every mapped proposal defaults to Unsupported/Needs Review regardless of what the model claimed -- confidence never grants approval (0.571375ms)
+✔ circuit spare status and role are preserved verbatim, never collapsed into a generic 'loop' label (0.375333ms)
+✔ cable specs stay grouped by unique specification with an occurrence count, not one proposal per physical mention (0.13375ms)
+✔ a cross-sheet reference finding preserves the literal referenced number even with no resolution attempted here (0.41925ms)
+✔ an equipment finding with no explicit location keeps that absence, never fabricating one (0.526542ms)
+✔ notes and missingOrAmbiguous are also turned into real proposals -- nothing validated by the model is silently dropped before persistence (0.332042ms)
+✔ a null/undefined result produces no proposals rather than throwing (0.59525ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 32
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 160.575083
+
+✖ failing tests:
+
+test at tests/drawing-understanding-summary.test.mjs:14:1
+✖ an AI drawingIdentity finding, when present, is preferred over the bare classified type for 'what this explains' (0.536917ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Fire detection and alarm schematic/. Input:
+  
+  'FIRE DETECTION & ALARM SCHEMATIC (DR-005). Engineering review is pending.'
+  
+      at TestContext.<anonymous> (file:///Users/serein-b/Documents/Codex/2026-07-31/referenced-chatgpt-conversation-this-is-an/tests/drawing-understanding-summary.test.mjs:17:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:385:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'FIRE DETECTION & ALARM SCHEMATIC (DR-005). Engineering review is pending.',
+    expected: /Fire detection and alarm schematic/,
+    operator: 'match',
+    diff: 'simple'
+  }
+
+test at tests/drawing-understanding-summary.test.mjs:22:1
+✖ falls back to the classified drawing type when no AI identity finding exists (1.379125ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /Detail \/ Enlarged Detail/. Input:
+  
+  'FCC ROOM DETAILS. Engineering review is pending.'
+  
+      at TestContext.<anonymous> (file:///Users/serein-b/Documents/Codex/2026-07-31/referenced-chatgpt-conversation-this-is-an/tests/drawing-understanding-summary.test.mjs:24:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1201:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:831:18)
+      at Test.postRun (node:internal/test_runner/test:1330:19)
+      at Test.run (node:internal/test_runner/test:1258:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:831:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'FCC ROOM DETAILS. Engineering review is pending.',
+    expected: /Detail \/ Enlarged Detail/,
+    operator: 'match',
+    diff: 'simple'
+  }

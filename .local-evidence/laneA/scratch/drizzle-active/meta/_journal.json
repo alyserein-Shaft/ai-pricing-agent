@@ -1,0 +1,83 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "0",
+      "when": 1790286854162,
+      "tag": "0000_baseline_schema_0082",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "1",
+      "when": 1790288954363,
+      "tag": "0001_price_record_intake_lineage",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "2",
+      "when": 1790289018617,
+      "tag": "0002_governing_source_fk",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "3",
+      "when": 1790332894938,
+      "tag": "0003_review_decision_immutability",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "4",
+      "when": 1790333177885,
+      "tag": "0004_fire_alarm_panel_sizing_snapshots",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1790336431862,
+      "tag": "0005_document_revision_addendum",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1790464167016,
+      "tag": "0006_project_effective_time_calendar",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790466259379,
+      "tag": "0007_project_calendar_evidence_repair",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "8",
+      "when": 1790512014937,
+      "tag": "0008_profile_applicability_source_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1790513627098,
+      "tag": "0009_profile_applicability_device_identity_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1790513670178,
+      "tag": "0010_requirement_intelligence_source_authority",
+      "breakpoints": true
+    }
+  ]
+}

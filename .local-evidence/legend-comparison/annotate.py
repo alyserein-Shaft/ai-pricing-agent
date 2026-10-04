@@ -1,0 +1,15 @@
+import sqlite3,json,datetime
+from pathlib import Path
+r=Path('.local-evidence/legend-comparison');data=json.loads((r/'result-zoom-retry.json').read_text());run=data['runId']
+notes={
+'smoke':('Provisional shape/text agreement','Both source symbols show S inside a circular outline. WLC shows the symbol beneath a schematic connector; the candidate row literally says SMOKE DETECTOR.','Candidate applicability and revision compatibility remain unconfirmed. No device model, quantity or circuit membership established.'),
+'manual-weatherproof':('Provisional shape/text agreement','Both show F in a solid square inside a dashed outer enclosure. The candidate row explicitly associates this form with FIRE ALARM MANUAL STATION (WEATHER PROOF).','Weather-proof meaning is candidate-derived only; neither actual enclosure rating nor authoritative applicability is established.'),
+'control-interface':('Provisional shape/text agreement','Both show CE inside a rounded outline with a separate C at lower right. The candidate control row differs from its monitoring row, whose qualifier is M.','Control meaning is provisional; the connected equipment, model and circuit membership are not established.'),
+'square-s-unmatched':('Unresolved shape/qualifier conflict','WLC shows S inside a square with an external C. The compared candidate SMOKE DETECTOR row shows S inside a circle without that qualifier. Abbreviation alone is insufficient.','No supported match to this row. The meaning of the square-S/C symbol remains unresolved; do not count it as a smoke detector based on this comparison.')}
+c=sqlite3.connect('.wrangler/state/v3/d1/miniflare-D1DatabaseObject/faaf2b0445ab934c3aac48ddf0cdfade8f9bac050be98993748742cdd2cb05fb.sqlite');c.row_factory=sqlite3.Row
+with c:
+ row=c.execute('SELECT * FROM drawing_visual_runs WHERE id=? AND document_id=? AND project_id=?',(run,'doc_3f857096-3152-408f-9c86-9296e4142ced','project_c0123d91-c30b-4956-87cb-e473ef53f89d')).fetchone();assert row['status']=='Completed';(r/'zoom-run-before-inspection.json').write_text(json.dumps(dict(row),indent=2));result=json.loads(row['result']);manifest=json.loads(row['input_manifest'])
+ for pair in result['comparisons']:
+  outcome,basis,ambiguity=notes[pair['id']];pair['assistantVisualInspection']={'observer':'Codex direct visual inspection of saved source crops; not a human engineering review','createdAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'outcome':outcome,'matchBasis':basis,'ambiguity':ambiguity,'reviewStatus':'Needs Review','reviewedBy':None,'modelAssessmentReliability':'Unreliable: returned description contradicts visible shapes or letters; not adopted as a verified match.','sourceImages':[{'index':i,'sha256':manifest['images'][i]['sha256']} for i in [pair['wlcImageIndex'],pair['legendImageIndex']]]}
+ result['inspectionNote']='Separate assistant image inspection added; all original provider responses and assessments remain unchanged. No engineering approval.'
+ c.execute('UPDATE drawing_visual_runs SET result=? WHERE id=?',(json.dumps(result),run));(r/'inspected-result.json').write_text(json.dumps(result,indent=2));print(run)

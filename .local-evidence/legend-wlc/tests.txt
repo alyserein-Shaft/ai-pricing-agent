@@ -1,0 +1,42 @@
+✔ with no page dimensions, returns nothing rather than guessing (2.080333ms)
+✔ real case: the LOOP-1..4/NAC LOOP cluster is isolated into its own tight region, not diluted by unrelated content (0.93575ms)
+✔ a region's bounds are clamped to the real page -- never extends past the MediaBox (0.298667ms)
+✔ assets with no bounding box or empty text are ignored, never crash the bucketing (2.1295ms)
+✔ fewer real clusters than maxRegions returns fewer regions, never padded/duplicated entries (0.283583ms)
+✔ regions are returned densest-first (0.295125ms)
+✔ cross-sheet explicit reference -- an explicit 'refer to DWG NO. X' note is detected with the real drawing number (1.409875ms)
+✔ no global legend propagation -- applicability is scoped to the named system, never 'applies to entire project' (1.007084ms)
+✔ legend applicability -- when no system is named, the reference is scoped only to the current sheet, not resolved as globally applicable (0.16325ms)
+✔ a reference is never auto-resolved to a target document id or auto-verified -- always Needs Review with resolution left to the caller (0.298667ms)
+✔ a sheet's own drawing number restating itself is not treated as a cross-sheet reference (0.101583ms)
+✔ plain text with no reference phrase produces no relationships (0.064583ms)
+✔ evidence preserves the source asset id and the exact note text -- provenance is never dropped (0.1665ms)
+✔ reversed order -- 'DWG NO. X' appearing BEFORE its '...REFER' note, separated by unrelated intervening text, is still detected with the real system and number (0.138ms)
+✔ a wide reversed-order search does not let an unrelated mention past the trigger word masquerade as the reference's system (0.104083ms)
+✔ resolution preserves DR and discipline segments, including stale resolution cleanup (0.224792ms)
+✔ resolution accepts harmless spacing and case without approving the entry (0.097958ms)
+✔ ambiguous or empty drawing numbers remain unresolved (0.088208ms)
+✔ GOLDEN SET 1/4 (FCC ROOM DETAILS) -- 14/14 schedule rows, safe callout behavior, no FACP/MFACP auto-merge, no false connectivity (5.794417ms)
+✔ GOLDEN SET 2/4 (Legend/Notes) -- real symbol/abbreviation proposals with scoped applicability, never global (2.978292ms)
+✔ GOLDEN SET 2/4 (Legend/Notes) -- explicit referenced-sheet behavior: the real FCC reference remains unresolved when the candidate adds DR (0.856667ms)
+✔ GOLDEN SET 3/4 (Riser/Schematic) -- real panel/device/loop/tag candidates, possible connectivity only with semantic evidence, never geometry-only (1.157125ms)
+✔ GOLDEN SET 3/4 (Riser/Schematic) -- no connection candidate is ever produced from geometry/proximity alone, only explicit text (0.44775ms)
+✔ GOLDEN SET 4/4 (Cause & Effect) -- mechanism is real and tested; blank/graphic-only matrix cells never become relationships (0.671083ms)
+✔ GOLDEN SET -- full test suite regressions remain intact across all four real sheets simultaneously (1.737875ms)
+✔ with no items at all, reports drawing identity as not yet established rather than fabricating a summary (2.607666ms)
+✔ source sheet identity is shown without substituting a model paraphrase (0.274875ms)
+✔ source sheet name remains visible without an AI identity (1.302333ms)
+✔ a legacy 'Not Found' finding with unresolved history is excluded from every count, same as a rejection (1.198792ms)
+✔ a rejected finding is excluded from every count -- an engineer's rejection is respected (0.353042ms)
+✔ real counts group by source type with real labels sampled, never inventing a fact (0.239416ms)
+✔ missingOrAmbiguous findings surface verbatim in needsClarification, and a Needs Review count is added generically (0.305125ms)
+✔ a Conflict-flagged finding is surfaced distinctly from a plain Needs Review count (0.143708ms)
+✔ hasAiFindings reflects whether any AI-sourced item is present (0.209333ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 95.177833

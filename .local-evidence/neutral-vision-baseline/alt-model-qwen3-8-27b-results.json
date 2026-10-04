@@ -1,0 +1,100 @@
+{
+  "purpose": "Stronger-model benchmark: same 4 saved composite images (sha256-verified), same exact neutral prompt, one call per image, no retries. Provider already configured/authorized (Cloudflare Workers AI, same env.AI binding / REST credentials already in use for the app's own AI features) -- no new terms accepted, no new credentials used.",
+  "providerSelectionNote": "Checked Cloudflare's current Workers AI model catalog (developers.cloudflare.com/workers-ai/models/) for vision-capable models beyond llava-1.5-7b-hf and llama-3.2-11b-vision-instruct. Also considered whether a non-Workers-AI provider might be stronger, per instruction not to restrict to Workers AI merely because it hosts the current models -- but no other provider (OpenAI/Anthropic/Google/etc.) has any credential configured anywhere in this checkout's .dev.vars, vite.config.ts, or worker code (checked directly). @cf/meta/llama-4-scout-17b-16e-instruct was also a candidate but requires its own separate Meta license agreement (confirmed via official docs) that was not pre-authorized for this pass, so it was not used. @cf/qwen/qwen3.8-27b was selected: vision-capable, no license/terms notice on its official docs page, and confirmed with a real account call to require no new agreement.",
+  "createdAt": "2026-09-15T16:18:13.286407Z",
+  "isolatedFromApplication": "Written only to .local-evidence/; no drawing_visual_runs row created, no drawing_extraction_proposals rows touched, no review status or candidate applicability changed, application default vision model (@cf/llava-hf/llava-1.5-7b-hf) not changed.",
+  "calls": [
+    {
+      "comparisonId": "smoke",
+      "compositeImageIndex": 22,
+      "sourceRun": "drawingCandidateRun_e0db2e73-d4a9-4556-bed0-5faf6a51b8a7",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "imageSha256": "18c640ae5eec980e096e50af967dcad668c5d0dd2337b026a5bd6507a2426ce5",
+      "httpStatus": 200,
+      "latencySeconds": 37.508966,
+      "requestShape": "OpenAI-compatible messages: [{role:user, content:[{type:text},{type:image_url,image_url:{url:data-uri}}]}], max_tokens:900. No image-detail/resize parameter is exposed by this endpoint; raw full-resolution PNG bytes sent as a base64 data URI -- same image bytes as the llama-3.2 call, different parameter shape than llava's raw image-byte-array call.",
+      "prompt": "This image shows two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them. Describe LEFT: its outline shape, any letters visible inside it, and any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it). Then describe RIGHT the same way. Then state what is visually similar between LEFT and RIGHT, and what is visually different -- if you see no real difference, say so explicitly rather than inventing one. If any part of either symbol is too small or unclear to read, say exactly which part is unreadable. Do not name or guess what kind of device either symbol represents, and do not use outside knowledge about what these symbols usually mean. Keep the answer under 150 words.",
+      "usage": {
+        "prompt_tokens": 522,
+        "completion_tokens": 560,
+        "total_tokens": 1082,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 184.2636260986328
+      },
+      "finishReason": "stop",
+      "reasoning": "The user wants a careful visual description of two symbols. Let me look closely.\n\nLEFT: There's a horizontal line that dips down in a V-shape (two diagonal lines meeting at a point) connecting to the top of a circle. Inside the circle is the letter \"S\". Below the circle, outside the outline, is the text \"6 Nos\". The label above reads \"LEFT: WLC\".\n\nRIGHT: A circle with the letter \"S\" inside. The label above reads \"RIGHT: CANDIDATE LEGEND\". There's no V-shape, no horizontal line, no \"6 Nos\" text.\n\nSimilarities: Both have a circle containing the letter \"S\". The circle on the right looks slightly rougher/sketchier outline but essentially same.\n\nDifferences: LEFT has the V-shaped connection with horizontal lines at top, and the \"6 Nos\" qualifier below. RIGHT lacks these.\n\nUnreadable parts: None really; all text legible. The \"6 Nos\" is clear. The S is clear.\n\nI must not name the device. Keep under 150 words.\n\nLet me draft concisely.\n\nLEFT: A horizontal line splits into a downward V (two diagonals) whose bottom vertex touches the top of a circle. Inside the circle is the letter \"S\". Below the circle, free-standing, is the text \"6 Nos\".\n\nRIGHT: A single circle (slightly irregular outline) with the letter \"S\" inside. No lines, no extra text.\n\nSimilar: both contain a circle with the letter S centered inside.\n\nDifferent: LEFT has the V/line attachment on top and the \"6 Nos\" label beneath; RIGHT has neither. RIGHT's circle outline is a bit rougher.\n\nUnreadable: none.\n\nWord count check\u2014keep tight.\n",
+      "response": "\n\nLEFT: A horizontal line breaks into a downward-pointing V (two diagonal strokes); the V's bottom vertex connects to the top of a circle. Inside the circle is the letter \"S\". Below the circle, separate from the outline, is the text \"6 Nos\".\n\nRIGHT: A single circle (outline slightly irregular/sketchy) containing the letter \"S\" in the center. No connecting lines and no extra text.\n\nSimilar: Both symbols consist of a circle with the letter \"S\" centered inside it.\n\nDifferent: LEFT has the V-shaped line attachment on top and the \"6 Nos\" qualifier beneath the circle; RIGHT has neither of these features. RIGHT's circle line is marginally rougher than LEFT's.\n\nUnreadable parts: None \u2014 the \"S\" in both and the \"6 Nos\" text are all clearly legible."
+    },
+    {
+      "comparisonId": "manual-weatherproof",
+      "compositeImageIndex": 24,
+      "sourceRun": "drawingCandidateRun_e0db2e73-d4a9-4556-bed0-5faf6a51b8a7",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "imageSha256": "05079b1579f758b3ddb8ffe609acb2a0fbc7c63ebb600ec706503f29d62b7854",
+      "httpStatus": 200,
+      "latencySeconds": 24.464339,
+      "requestShape": "OpenAI-compatible messages: [{role:user, content:[{type:text},{type:image_url,image_url:{url:data-uri}}]}], max_tokens:900. No image-detail/resize parameter is exposed by this endpoint; raw full-resolution PNG bytes sent as a base64 data URI -- same image bytes as the llama-3.2 call, different parameter shape than llava's raw image-byte-array call.",
+      "prompt": "This image shows two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them. Describe LEFT: its outline shape, any letters visible inside it, and any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it). Then describe RIGHT the same way. Then state what is visually similar between LEFT and RIGHT, and what is visually different -- if you see no real difference, say so explicitly rather than inventing one. If any part of either symbol is too small or unclear to read, say exactly which part is unreadable. Do not name or guess what kind of device either symbol represents, and do not use outside knowledge about what these symbols usually mean. Keep the answer under 150 words.",
+      "usage": {
+        "prompt_tokens": 522,
+        "completion_tokens": 515,
+        "total_tokens": 1037,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 171.17271423339844
+      },
+      "finishReason": "stop",
+      "reasoning": "The user wants a careful, constrained description. Let me look closely at the image.\n\nLEFT: There's a solid-line shape at the top resembling a V or chevron with horizontal lines extending outward from the top ends (like a wiring connection forming a V into the top of a box). Below that is a solid square outline containing the letter \"F\". Surrounding the solid square is a dashed square/box outline (the dashed lines extend on left, right, bottom, and the top dashed line is interrupted by the V tip touching it). Below the dashed box is the text \"2 Nos\".\n\nRIGHT: A solid square outline containing the letter \"F\", surrounded by a dashed square outline. No V shape, no text below.\n\nSimilarities: both have a solid square with \"F\" inside, both have a dashed box surrounding it.\n\nDifferences: LEFT has the V/chevron wire shape on top and the text \"2 Nos\" below; RIGHT has neither.\n\nCheck readability: all letters readable. The \"2 Nos\" is clear.\n\nWord count under 150. Let me draft concisely.\n\nLEFT: Top has a solid V-shaped line with horizontal segments extending left and right from its upper corners, the V's point touching the top of a solid square. Inside the square is the letter \"F\". A dashed square surrounds the solid square. Below it reads \"2 Nos\".\n\nRIGHT: A solid square with the letter \"F\" inside, surrounded by a dashed square. No top shape, no text below.\n\nSimilar: solid square with \"F\" and surrounding dashed box. Different: LEFT's top V-wire and the \"2 Nos\" label, absent on RIGHT. All text legible.\n\nCount words roughly: fine.\n",
+      "response": "\n\n**LEFT:** A solid V\u2011shaped line sits on top, with short horizontal segments extending outward from each upper corner; the V's point meets the top edge of a solid square. Inside that square is the letter \"F\". A dashed square surrounds the solid one. Below it is the readable text \"2 Nos\".\n\n**RIGHT:** A solid square containing the letter \"F\", enclosed by a dashed square. No line above, no text below.\n\n**Similar:** Both share a solid square holding \"F\" and an outer dashed box.\n\n**Different:** LEFT has the top V\u2011wire and the \"2 Nos\" caption; RIGHT has neither.\n\nAll visible text is legible; nothing is unreadable."
+    },
+    {
+      "comparisonId": "control-interface",
+      "compositeImageIndex": 26,
+      "sourceRun": "drawingCandidateRun_e0db2e73-d4a9-4556-bed0-5faf6a51b8a7",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "imageSha256": "a6acb3246c92c499ef2db7bb435bb661b5cda73389113170dee7df5f2db6f8eb",
+      "httpStatus": 200,
+      "latencySeconds": 11.856511,
+      "requestShape": "OpenAI-compatible messages: [{role:user, content:[{type:text},{type:image_url,image_url:{url:data-uri}}]}], max_tokens:900. No image-detail/resize parameter is exposed by this endpoint; raw full-resolution PNG bytes sent as a base64 data URI -- same image bytes as the llama-3.2 call, different parameter shape than llava's raw image-byte-array call.",
+      "prompt": "This image shows two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them. Describe LEFT: its outline shape, any letters visible inside it, and any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it). Then describe RIGHT the same way. Then state what is visually similar between LEFT and RIGHT, and what is visually different -- if you see no real difference, say so explicitly rather than inventing one. If any part of either symbol is too small or unclear to read, say exactly which part is unreadable. Do not name or guess what kind of device either symbol represents, and do not use outside knowledge about what these symbols usually mean. Keep the answer under 150 words.",
+      "usage": {
+        "prompt_tokens": 522,
+        "completion_tokens": 514,
+        "total_tokens": 1036,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 170.88180541992188
+      },
+      "finishReason": "stop",
+      "reasoning": "The user wants a careful visual description of two symbols, avoiding device identification or external meaning. I need to look closely at the image.\n\nLEFT symbol: A horizontal line at top, with two diagonal lines converging downward to a point (like a V or funnel shape) touching the top of a circle. Inside the circle are the letters \"CE\". To the lower right of the circle, outside it, is a letter \"C\". Below the circle is the text \"7 Nos\".\n\nRIGHT symbol: A circle (slightly more irregular/elliptical) containing \"CE\". To the right of the circle, outside it, is a letter \"C\". No lines above, no text below.\n\nSimilarities: Both have a circle with \"CE\" inside, and a standalone \"C\" positioned to the right/lower-right outside the circle.\n\nDifferences: LEFT has the horizontal line with two diagonal connectors (the V/funnel) above the circle, plus the text \"7 Nos\" below. RIGHT lacks the connecting lines and the \"7 Nos\" text. Also the circle on RIGHT looks a bit more elliptical/irregular, while LEFT's is more circular\u2014but that's minor; I'll mention shape difference carefully. Actually LEFT circle looks fairly round, RIGHT looks slightly squashed. I'll note it as a subtle difference but the main differences are the extra line structure and the \"7 Nos\" label.\n\nNo unreadable parts; all letters legible.\n\nKeep under 150 words. Let me draft concisely.\n",
+      "response": "\n\n**LEFT:** A horizontal line across the top with two diagonal lines slanting inward to a point (a V/funnel shape) that touches the top of a circle. Inside the circle are the letters \"CE\". Outside, at the lower-right of the circle, is a single letter \"C\". Below the circle is the text \"7 Nos\".\n\n**RIGHT:** A circle (slightly oval/irregular) containing the letters \"CE\". Outside, to the right of the circle, is a single letter \"C\". No lines above and no text below.\n\n**Similar:** Both show a circle enclosing \"CE\" with an extra standalone \"C\" placed outside on the right/lower-right.\n\n**Different:** LEFT additionally has the top horizontal line with two diagonal connectors and the label \"7 Nos\" underneath; RIGHT has neither. RIGHT's circle also appears a touch more elliptical.\n\nAll letters are legible; nothing is unreadable."
+    },
+    {
+      "comparisonId": "square-s-unmatched",
+      "compositeImageIndex": 28,
+      "sourceRun": "drawingCandidateRun_e0db2e73-d4a9-4556-bed0-5faf6a51b8a7",
+      "model": "@cf/qwen/qwen3.8-27b",
+      "imageSha256": "995fb7a9be81e1276d4e5c176cea1fb45ac22f873c61c83e46e1e2beacd6ee31",
+      "httpStatus": 200,
+      "latencySeconds": 25.230194,
+      "requestShape": "OpenAI-compatible messages: [{role:user, content:[{type:text},{type:image_url,image_url:{url:data-uri}}]}], max_tokens:900. No image-detail/resize parameter is exposed by this endpoint; raw full-resolution PNG bytes sent as a base64 data URI -- same image bytes as the llama-3.2 call, different parameter shape than llava's raw image-byte-array call.",
+      "prompt": "This image shows two separate black-and-white engineering symbols side by side, labeled LEFT and RIGHT above them. Describe LEFT: its outline shape, any letters visible inside it, and any qualifier mark positioned outside its main outline (for example a small attached letter, or a dashed box surrounding it). Then describe RIGHT the same way. Then state what is visually similar between LEFT and RIGHT, and what is visually different -- if you see no real difference, say so explicitly rather than inventing one. If any part of either symbol is too small or unclear to read, say exactly which part is unreadable. Do not name or guess what kind of device either symbol represents, and do not use outside knowledge about what these symbols usually mean. Keep the answer under 150 words.",
+      "usage": {
+        "prompt_tokens": 522,
+        "completion_tokens": 470,
+        "total_tokens": 992,
+        "prompt_tokens_details": {
+          "cached_tokens": 0
+        },
+        "neurons": 158.08180236816406
+      },
+      "finishReason": "stop",
+      "reasoning": "The user wants a strict visual description under 150 words. Let me look carefully at the image.\n\nLEFT: There's a square/rectangle outline. Inside it is the letter \"S\". Above the square, two diagonal lines go up-outward to horizontal lines (like a V shape with horizontal terminals). To the bottom-right of the square, there's a small dashed/curved mark that looks like a partial dashed loop or a small \"C\"-like dashed shape. Below the square is text \"24 Nos\".\n\nRIGHT: A circle (roughly hand-drawn) containing the letter \"S\". No outer marks, no text below.\n\nSimilarities: both contain the letter \"S\" centered inside a closed outline.\n\nDifferences: LEFT outline is a square with two diagonal lines and horizontal lines attached on top, plus a small dashed mark at bottom-right and text \"24 Nos\" below. RIGHT outline is a circle with no extra lines, no text, no dashed mark.\n\nUnreadable parts? The small dashed mark on LEFT is unclear\u2014it's a partial dashed curve, hard to identify as a specific letter. I'll note it's a small dashed/curved mark that's not clearly a letter. Everything else readable.\n\nDon't name device. Keep under 150 words.\n\nLet me draft concisely.\n",
+      "response": "\n\nLEFT: A square outline with the letter \"S\" centered inside. Two diagonal lines rise from the top corners to short horizontal lines (a V\u2011shaped lead). At the bottom\u2011right corner sits a small, partly dashed curved mark (a broken loop/C\u2011shape) that is too small/blurry to read as a definite letter. Below the square is the text \"24 Nos\".\n\nRIGHT: A rough circle outline with the letter \"S\" centered inside. No top leads, no side mark, no text.\n\nSimilar: both have a single centered \"S\" inside a closed geometric outline.\n\nDifferent: LEFT's outline is a square with attached top lines, a small dashed corner mark, and a text label; RIGHT's outline is a plain circle with none of those extras.\n\nUnreadable: the small dashed mark at LEFT's lower\u2011right is not clearly legible as a letter."
+    }
+  ]
+}

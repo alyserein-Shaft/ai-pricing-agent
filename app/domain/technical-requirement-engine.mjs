@@ -3,6 +3,7 @@ import { buildRequirementIntelligence, REQUIREMENT_INTELLIGENCE_VERSION } from "
 import { requiresDetectorBase, requiresPanelCompatibility } from "./system-knowledge-registry.mjs";
 import { normalizeStage4DrawingArchitectureContext } from "./stage4-drawing-architecture-context.mjs";
 import { statusAwareSourceAuthority } from "./drawing-authority-policy.mjs";
+import { classifyFireAlarmSlcItem, SLC_RESOURCE_CLASSIFIER_VERSION } from "./fire-alarm-slc-resource-classifier.mjs";
 
 // Source Fact Authority Slice 3 -- maps an Active engineering_facts row
 // (worker/spec-source-fact-promotion.mjs's fact_type="Source Fact" store)
@@ -66,6 +67,40 @@ export const REQUIREMENT_ENGINE_VERSION = "technical-requirement-engine-1.2.0";
 // the profile input fingerprint in worker/technical-requirement-api.mjs).
 export const REQUIREMENT_RULESET_VERSION = "requirement-rules-2026-09-27-fail-closed-panel-compat";
 export const REQUIREMENT_MODEL_VERSION = "deterministic-applicability-1.1.0";
+
+// ---------------------------------------------------------------------------
+// RESOURCE CLASSIFICATION AUTHORITY -- RULE VERSION.
+//
+// This is the version that owns RESOURCE POLICY, and it is deliberately a
+// separate constant from REQUIREMENT_RULESET_VERSION. That ruleset governs
+// requirement derivation (applicability, readiness, conflicts); it does not
+// describe how a device becomes DETECTOR / MODULE / NOT_SLC, nor how many
+// addresses a device consumes.
+//
+// It is the single owner of the four outputs below, and it is the value that
+// MUST appear in the address-demand fingerprint and currentness:
+//
+//   resourcePool                    <- classifyFireAlarmSlcItem (canonical)
+//   addressesPerUnit                <- classifyFireAlarmSlcItem (canonical)
+//   directSlcAddressState           <- derived from resourcePool
+//   secondaryInterfaceDemandState   <- secondary interface policy
+//
+// WHY IT IS NOT TAKEN FROM THE DRAWING QUANTITY AUTHORITY: the Drawing
+// Quantity Authority owns device COUNTS. It carries no resource-classification
+// policy and no resource rule version, so reading a resource rule version from
+// it yields a constant that can never invalidate. A resource-rule change must
+// invalidate on ITS OWN authority, otherwise a cached address demand silently
+// survives the very policy change meant to govern it.
+//
+// BUMP THIS WHENEVER the family maps, the addresses-per-unit map, or the
+// direct/secondary split policy change. It is deliberately NOT folded into
+// REQUIREMENT_RULESET_VERSION so a resource-policy change is visible as such.
+// WHY IT FOLDS IN THE SHARED CLASSIFIER VERSION. The ONE executable policy is
+// `classifyFireAlarmSlcItem` in app/domain/fire-alarm-slc-resource-classifier.mjs,
+// and that module carries its own version. A policy change there must invalidate
+// here as well, or a cached profile and a cached address demand would both keep
+// reporting CURRENT across a change to the rule that produced them.
+export const RESOURCE_CLASSIFICATION_RULESET_VERSION = `slc-resource-classification-1.1.0+${SLC_RESOURCE_CLASSIFIER_VERSION}`;
 export const APPLICABILITY_STATUSES = ["Confirmed Applicable", "Suggested Applicable", "Conditionally Applicable", "Not Applicable", "Rejected", "Needs Review", "Unknown", "Superseded"];
 export const READINESS_STATUSES = ["Ready for Matching", "Ready with Warnings", "Needs Technical Review", "Missing Critical Information", "Conflict Blocking", "Classification Required", "Not Applicable", "Rejected"];
 // Legacy flat precedence table -- kept unchanged for any caller that still
@@ -106,6 +141,163 @@ const keyOf = (requirement) => `${requirement.requirementCategory || requirement
 // per-category selection, unchanged).
 const SYSTEM_WIDE_REQUIREMENT_PATTERN = /\bentire\s+(?:\w+\s+){0,4}system\b/i;
 export const isSystemWideRequirementText = (value) => SYSTEM_WIDE_REQUIREMENT_PATTERN.test(String(value || ""));
+
+// ALL-COMPONENT SCOPE  ("Every/All/Each component of [SYSTEM] shall ...")
+//
+// WHY THIS IS A DIFFERENT SCOPE FROM `isSystemWideRequirementText` ABOVE, AND WHY
+// IT NEEDS ITS OWN RECOGNISER.
+//
+// `isSystemWideRequirementText` recognises ONE wording family: a demand asserted
+// of the SYSTEM AS A WHOLE ("the entire fire detection system shall be analogue
+// addressable"). `SYSTEM_WIDE_REQUIREMENT_PATTERN` requires the literal word
+// "entire", so it correctly refuses anything else.
+//
+// A real Al Mousa clause (28 46 00 / 1 GENERAL / P, sequence 100075) asserts
+// something categorically different:
+//
+//   "Every component of the fire alarm system shall be listed under a single
+//    manufacturer, approved by Underwriters Laboratories (UL), and clearly bear
+//    the UL certification."
+//
+// The PREDICATE ("shall be listed ... approved by UL") is asserted of each
+// COMPONENT, never of the system as an integrated whole. So this is not a
+// system-wide requirement that the existing recogniser was too narrow to see; it
+// is a different semantic class. Classifying it as system-wide would overstate
+// it -- a genuine system-wide demand can legitimately bear on non-product scope
+// (commissioning, installation, training), whereas "every COMPONENT" is by its
+// own subject a demand about PRODUCT EQUIPMENT and nothing else. That
+// distinction is the whole reason this is a separate recogniser rather than a
+// widened one.
+//
+// THE GAP THIS CLOSES, MEASURED. `buildLinkShortlist` reaches every applicability
+// candidate only through `scoreRequirementLink`, which is an EQUIPMENT-TYPE and
+// technical-term heuristic. A universal-component compliance clause names no
+// equipment type at all, so it scored 8 on the panel BOQ row (system +8,
+// "Equipment type unresolved" +0) against a threshold of 15, and could never be
+// proposed for applicability. Every distinctive term of the panel's description
+// ("alarm", "control", "panel") is in `genericLinkTerms`, so the technical-term
+// signal is filtered out too. The clause was real, applicable, and unreachable.
+//
+// WHAT IS DELIBERATELY NOT DONE HERE. The threshold is untouched.
+// `genericLinkTerms` is untouched. "panel"/"alarm"/"control" are NOT made
+// distinctive. `scoreRequirementLink` is untouched. There is no per-requirement
+// or per-item special case: the recogniser is a property of the CLAUSE'S OWN
+// TEXT, so any "Every/All/Each <component-word> of the <named system> shall/must"
+// clause is handled identically.
+//
+// SAFEGUARDS, EACH ONE A SEPARATE REFUSAL SO A REPORT CAN NAME THE FAILURE:
+//   * UNIVERSAL QUANTIFIER required -- "every", "all", "each". "Some" is not one.
+//   * COMPONENT SUBJECT required -- the demand must be about components/
+//     equipment/units/devices/elements/products, not about a person, a service,
+//     or the system as a whole.
+//   * OBLIGATION MODAL required -- "shall" or "must".
+//   * SYSTEM IDENTITY required AND EXACT -- the clause must name a system, and
+//     that identity must equal the BOQ row's own governed `system_value` after
+//     normalisation. This is what makes cross-system propagation impossible:
+//     a Fire Alarm clause can never reach a CCTV or Access Control row, because
+//     their system identities differ.
+//   * PARTIAL-SCOPE HEDGES VETO -- "where indicated", "as applicable", "some",
+//     "if used", "optional" and friends REFUSE the universal reading outright.
+//     A clause that limits itself to part of the system is not a universal
+//     component demand, and treating it as one would be exactly the over-broad
+//     propagation this must not cause.
+//   * PER-SENTENCE, NEVER CROSS-SENTENCE -- every condition must hold WITHIN ONE
+//     SENTENCE. The real clause P has three sentences (100074 networking, 100075
+//     listing, 100076 "All control equipment must be certified accordingly"); a
+//     quantifier in one sentence and a system identity in another must never be
+//     combined into a scope that the specification never stated.
+//   * DISAGREEMENT FAILS CLOSED -- if two sentences assert universal component
+//     scope over DIFFERENT systems, the result is ambiguous and yields no scope.
+//   * PURE TEXT CLASSIFICATION -- this function decides TEXT SHAPE only. It
+//     creates no link, confirms nothing, and grants no authority: the caller
+//     still only ever produces a `Suggested` row that a human must confirm.
+export const ALL_COMPONENTS_REQUIREMENT_SCOPE = "ALL_COMPONENTS";
+
+const UNIVERSAL_QUANTIFIER = /\b(?:every|all|each)\b/i;
+const COMPONENT_SUBJECT = /\b(?:components?|equipment|units?|devices?|elements?|products?|goods)\b/i;
+const OBLIGATION_MODAL = /\b(?:shall|must)\b/i;
+// A hedge or partial-scope qualifier REFUTES the universal reading. Listed first
+// and checked first so a hedged clause can never be rescued by another sentence.
+const PARTIAL_SCOPE_HEDGE = /\b(?:where\s+(?:indicated|specified|shown|applicable|required|used|stated)|some\s+(?:components?|equipment|units?|devices?|elements?|products?)|as\s+(?:applicable|required|specified)|if\s+(?:used|applicable|required|specified)|where\s+used|optional|optionally|nominated|selected\s+by|prefer(?:red|ably)?)\b/i;
+// The named system identity: a DETERMINER, then the system name, then the literal
+// word "system". Captures "fire alarm" from "the fire alarm system".
+//
+// The determiner is required and is what keeps the system name clean. An earlier
+// draft also allowed a quantifier here ("every|all|each"), which in the real
+// clause matched the quantifier that governs the COMPONENT subject instead --
+// "Every component of the fire alarm system" -- and captured
+// "component of the fire alarm". That is not a system identity at all; it is the
+// subject noun plus the connector. Anchoring on the article is both simpler and
+// the only reading under which the capture is a governed system name.
+const NAMED_SYSTEM_PHRASE = /\b(?:the|entire|whole)\s+([a-z][a-z0-9]*(?:[\s-][a-z0-9]+){0,4}?)\s+system\b/i;
+
+/**
+ * Canonical comparison key for a governed system identity: lowercase, single
+ * spaces, alphanumeric only. "Fire Alarm" and "the fire alarm" therefore agree,
+ * while "Fire" and "Fire Alarm" do not -- which is what keeps an exact-identity
+ * check exact.
+ */
+export const systemIdentityKey = (value) => String(value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+/**
+ * Classify a requirement's OWN text as an all-component obligation over a named
+ * governed system.
+ *
+ * @returns {{scope: string|null, systemKey: string|null, reason: string}}
+ *   `scope` is ALL_COMPONENTS_REQUIREMENT_SCOPE or null. `reason` always names
+ *   the refusal so a reviewer can see exactly which safeguard withheld a scope.
+ */
+export const classifyAllComponentsScope = (value) => {
+  const text = String(value || "").trim();
+  if (!text) return { scope: null, systemKey: null, reason: "EMPTY_TEXT" };
+  if (PARTIAL_SCOPE_HEDGE.test(text)) return { scope: null, systemKey: null, reason: "REFUSED_PARTIAL_OR_HEDGED_SCOPE" };
+  const sentences = text.split(/(?<=[.;:])\s+/).map((entry) => entry.trim()).filter(Boolean);
+  const matched = [];
+  let sawQuantifier = false;
+  let sawSubject = false;
+  let sawModal = false;
+  let sawSystem = false;
+  for (const sentence of sentences) {
+    const quantifier = UNIVERSAL_QUANTIFIER.test(sentence);
+    const subject = COMPONENT_SUBJECT.test(sentence);
+    const modal = OBLIGATION_MODAL.test(sentence);
+    const systemMatch = sentence.match(NAMED_SYSTEM_PHRASE);
+    sawQuantifier ||= quantifier;
+    sawSubject ||= subject;
+    sawModal ||= modal;
+    sawSystem ||= Boolean(systemMatch);
+    // Every condition must hold in THIS sentence. Combining a quantifier from one
+    // sentence with a system identity from another would invent a scope.
+    if (!(quantifier && subject && modal && systemMatch)) continue;
+    const systemKey = systemIdentityKey(systemMatch[1]);
+    if (systemKey) matched.push(systemKey);
+  }
+  if (!matched.length) {
+    // Report the FIRST missing safeguard, in the order they are defined, so the
+    // reason is the most specific available rather than a generic "no".
+    if (!sawQuantifier) return { scope: null, systemKey: null, reason: "REFUSED_NO_UNIVERSAL_QUANTIFIER" };
+    if (!sawSubject) return { scope: null, systemKey: null, reason: "REFUSED_NO_COMPONENT_SUBJECT" };
+    if (!sawModal) return { scope: null, systemKey: null, reason: "REFUSED_NO_OBLIGATION_MODAL" };
+    if (!sawSystem) return { scope: null, systemKey: null, reason: "REFUSED_NO_NAMED_SYSTEM_IDENTITY" };
+    return { scope: null, systemKey: null, reason: "REFUSED_CONDITIONS_SPLIT_ACROSS_SENTENCES" };
+  }
+  const distinct = [...new Set(matched)];
+  if (distinct.length > 1) return { scope: null, systemKey: null, reason: "REFUSED_CONFLICTING_SYSTEM_IDENTITIES" };
+  return { scope: ALL_COMPONENTS_REQUIREMENT_SCOPE, systemKey: distinct[0], reason: "UNIVERSAL_COMPONENT_OBLIGATION_OVER_NAMED_SYSTEM" };
+};
+
+/**
+ * True only when the requirement's own text is an all-component obligation over
+ * EXACTLY the system the BOQ row belongs to. Any other system identity, and any
+ * hedged or partial-scope clause, is false -- which is what prevents cross-system
+ * and over-broad propagation.
+ */
+export const isAllComponentsScopeForSystem = (requirementText, boqSystemValue) => {
+  const itemKey = systemIdentityKey(boqSystemValue);
+  if (!itemKey) return false;
+  const classified = classifyAllComponentsScope(requirementText);
+  return classified.scope === ALL_COMPONENTS_REQUIREMENT_SCOPE && classified.systemKey === itemKey;
+};
 
 // Fire Alarm E2E fix (requirement applicability, follow-up) -- real Central
 // Kitchen - Makkah gap: propagating "the entire fire detection system shall
@@ -165,7 +357,20 @@ const rankOf = (entry, precedence) => (typeof precedence === "function" ? Number
 export const consolidateRequirements = (requirements, precedence = statusAwareSourceAuthority) => {
   const groups = new Map();
   for (const requirement of requirements) { const key = keyOf(requirement); const current = groups.get(key) || []; current.push(requirement); groups.set(key, current); }
-  return [...groups.entries()].map(([key, sources]) => { const ordered = [...sources].sort((left, right) => rankOf(right, precedence) - rankOf(left, precedence)); const governing = ordered[0]; return { id: `consolidated:${key}`, key, normalizedRequirement: governing.normalizedRequirement || governing.originalText, requirementCategory: governing.requirementCategory || governing.category, requirementType: governing.requirementType, priority: requirementPriority(governing), governingSourceId: governing.id, sources: ordered.map((entry) => ({ requirementId: entry.id, sourceType: entry.sourceType, source: entry.source, confidence: entry.confidence })), attributes: ordered.flatMap((entry) => entry.attributes || []), standards: ordered.flatMap((entry) => entry.standards || []), manufacturers: ordered.flatMap((entry) => entry.manufacturers || []), compatibility: ordered.flatMap((entry) => entry.compatibility || []), accessories: ordered.flatMap((entry) => entry.accessories || []), confidence: mean(ordered.map((entry) => entry.confidence)) }; });
+  return [...groups.entries()].map(([key, sources]) => { const ordered = [...sources].sort((left, right) => rankOf(right, precedence) - rankOf(left, precedence)); const governing = ordered[0]; return { id: `consolidated:${key}`, key, normalizedRequirement: governing.normalizedRequirement || governing.originalText, requirementCategory: governing.requirementCategory || governing.category, requirementType: governing.requirementType, priority: requirementPriority(governing), governingSourceId: governing.id, sources: ordered.map((entry) => ({ requirementId: entry.id, sourceType: entry.sourceType, source: entry.source, confidence: entry.confidence })), attributes: ordered.flatMap((entry) => entry.attributes || []), // Approved, governed canonical capability claims (requirement_intelligence_facts of the form
+// "Capability: <key>"), carried alongside attributes so product-matching-engine.mjs can give a
+// qualitative capability requirement ONE machine-comparable dimension instead of reporting it
+// as unstructured missing evidence. Aggregated from every source in the group exactly like
+// attributes/standards, and never derived here.
+capabilities: ordered.flatMap((entry) => entry.capabilities || []), // Approved, governed LISTING AUTHORITY claims (requirement_intelligence_facts of fact type
+// "Listing Authority", value `{ authority, required }`). A project requirement to be UL LISTED
+// names an authority and no number, so it is a structured dimension in its own right: carried
+// alongside attributes/capabilities so product-matching-engine.mjs can evaluate it against the
+// product's governed certification evidence. Deliberately SEPARATE from `standards`, because a
+// numbered standard is satisfied only by that exact number and an unnumbered one is correctly
+// refused as unfalsifiable; collapsing the two would either fabricate a number or manufacture a
+// false failure. Aggregated from every source in the group, never derived here.
+listingRequirements: ordered.flatMap((entry) => entry.listingRequirements || []), standards: ordered.flatMap((entry) => entry.standards || []), manufacturers: ordered.flatMap((entry) => entry.manufacturers || []), compatibility: ordered.flatMap((entry) => entry.compatibility || []), accessories: ordered.flatMap((entry) => entry.accessories || []), confidence: mean(ordered.map((entry) => entry.confidence)) }; });
 };
 
 // detectRequirementConflicts only compares attributes WITHIN one consolidated
@@ -253,10 +458,10 @@ export const calculateReadiness = ({ boqItem, requirements, missing, conflicts, 
   return { status: "Ready for Matching", blockingReasons: [], approved: true, approvalRequired: false };
 };
 
-export const buildTechnicalRequirementProfile = ({ boqItem, links = [], requirements = [], knowledgeFacts = [], relationships = [], sourceFacts = [], sourceFactConflicts = [], projectPrecedence = statusAwareSourceAuthority, previousVersion = 0, drawingArchitectureContext = null }) => {
+export const buildTechnicalRequirementProfile = ({ boqItem, links = [], requirements = [], knowledgeFacts = [], relationships = [], sourceFacts = [], sourceFactConflicts = [], projectPrecedence = statusAwareSourceAuthority, previousVersion = 0, drawingArchitectureContext = null, sourcePageTexts = null }) => {
   const applicable = requirements.map((requirement) => { const link = links.find((entry) => entry.requirementId === requirement.id); const applicability = resolveApplicability({ boqItem, link, requirement }); return { ...requirement, applicability, priority: requirementPriority(requirement) }; }).filter((requirement) => !["Rejected", "Not Applicable", "Unknown"].includes(requirement.applicability.status));
   const confirmed = applicable.filter((requirement) => requirement.applicability.status === "Confirmed Applicable"); const suggested = applicable.filter((requirement) => requirement.applicability.status !== "Confirmed Applicable");
-  const intelligence = buildRequirementIntelligence(confirmed);
+  const intelligence = buildRequirementIntelligence(confirmed, sourcePageTexts);
   const requirementRelationships = relationships.filter((item) => {
     const scopeType = item.scopeType || item.scope_type || null;
     const scopeId = item.scopeId || item.scope_id || null;
@@ -317,7 +522,8 @@ export const buildTechnicalRequirementProfile = ({ boqItem, links = [], requirem
   // records this evidence cleanly -- never a blocking issue of its own,
   // since it never overwrote or satisfied compatibilityTarget.
   const sourceFactCompatibility = authoritativeSourceFacts.filter((fact) => fact.predicate === "protocol_compatibility").map((fact) => ({ relationshipType: "Protocol Compatibility", value: fact.value, confidence: fact.confidence, source: "Source Fact", factId: fact.factId, severity: "Informational", blocking: false, status: "Evidence" }));
-  const consolidated = consolidateRequirements(confirmed, projectPrecedence); const conflicts = [...detectRequirementConflicts(consolidated), ...detectAttributeValueConflicts(consolidated), ...sourceFactConflictEntries]; const standards = [...consolidated.flatMap((item) => item.standards), ...sourceFactStandards]; const manufacturers = consolidated.flatMap((item) => item.manufacturers); const compatibility = [...consolidated.flatMap((item) => item.compatibility), ...requirementRelationships.filter((item) => /compatible|interface|protocol/i.test(item.relationshipType || "")), ...sourceFactCompatibility]; const accessories = [...consolidated.flatMap((item) => item.accessories), ...requirementRelationships.filter((item) => /requires|includes|mounted|installed/i.test(item.relationshipType || ""))]; const missing = detectMissingInformation({ boqItem, consolidated, standards, compatibility }); const derived = generateDerivedRequirements({ boqItem, consolidated }); const assumptions = createAssumptions(missing, boqItem);
+  const consolidated = consolidateRequirements(confirmed, projectPrecedence); const conflicts = [...detectRequirementConflicts(consolidated), ...detectAttributeValueConflicts(consolidated), ...sourceFactConflictEntries]; const standards = [...consolidated.flatMap((item) => item.standards), ...sourceFactStandards]; // Approved, governed listing-authority requirements (project demands an authority by NAME with no standard number). Kept as their own profile dimension, NOT folded into `standards`: they are evaluated against the product's governed certification evidence, and merging them would make a generic "UL Listed" look like a numbered standard citation. Deduplicated by authority so a group of equivalent requirements yields ONE comparison.
+const listingRequirements = [...new Map(consolidated.flatMap((item) => (item.listingRequirements || []).map((claim) => [String(claim.authority || "").trim().toLowerCase(), claim])).values())]; const manufacturers = consolidated.flatMap((item) => item.manufacturers); const compatibility = [...consolidated.flatMap((item) => item.compatibility), ...requirementRelationships.filter((item) => /compatible|interface|protocol/i.test(item.relationshipType || "")), ...sourceFactCompatibility]; const accessories = [...consolidated.flatMap((item) => item.accessories), ...requirementRelationships.filter((item) => /requires|includes|mounted|installed/i.test(item.relationshipType || ""))]; const missing = detectMissingInformation({ boqItem, consolidated, standards, compatibility }); const derived = generateDerivedRequirements({ boqItem, consolidated }); const assumptions = createAssumptions(missing, boqItem);
   const confidence = {
     itemClassification: clamp(boqItem.classificationConfidence),
     requirementExtraction: mean(confirmed.map((item) => item.confidence)),
@@ -354,14 +560,500 @@ export const buildTechnicalRequirementProfile = ({ boqItem, links = [], requirem
     ...requiredConfidenceDimensions.map((name) => confidence[name]),
   );
   const readiness = calculateReadiness({ boqItem, requirements: consolidated, missing, conflicts, confidence });
-  return { engineVersion: REQUIREMENT_ENGINE_VERSION, rulesetVersion: REQUIREMENT_RULESET_VERSION, modelVersion: REQUIREMENT_MODEL_VERSION, intelligenceVersion: REQUIREMENT_INTELLIGENCE_VERSION, versionNumber: previousVersion + 1, boqItem, applicableRequirements: confirmed, suggestedRequirements: suggested, consolidatedRequirements: consolidated, intelligence, standards, manufacturers, compatibility, accessories, derivedRequirements: derived, assumptions, missingInformation: missing, conflicts,
+  return { engineVersion: REQUIREMENT_ENGINE_VERSION, rulesetVersion: REQUIREMENT_RULESET_VERSION, modelVersion: REQUIREMENT_MODEL_VERSION, intelligenceVersion: REQUIREMENT_INTELLIGENCE_VERSION, versionNumber: previousVersion + 1, boqItem, applicableRequirements: confirmed, suggestedRequirements: suggested, consolidatedRequirements: consolidated, intelligence, standards, listingRequirements, manufacturers, compatibility, accessories, derivedRequirements: derived, assumptions, missingInformation: missing, conflicts,
     // Source Fact Authority Slice 3 -- what the project Specification
     // establishes as a technical FACT (Active Source Facts), kept
     // structurally separate from applicableRequirements/
     // consolidatedRequirements (what the project REQUIRES). Never a
     // Mandatory obligation, never merged into the normative arrays above.
     technicalFacts,
+    // SLC Resource Classification -- intrinsic technical profile authority.
+    // Populated from governed BOQ item category and approved intelligence
+    // where evidence permits; remains null/UNRESOLVED when insufficient
+    // evidence exists (Agent 1 Drawing Quantity Authority not yet current).
+    // SLC Resource Classification -- intrinsic technical profile authority (Agent 3).
+    //
+    // Physical Quantity Authority (Agent 1) provides the count of devices.
+    // Resource Classification Authority (Agent 3) determines the resource pool:
+    //   DETECTOR_POOL, MODULE_POOL, NOT_SLC, or UNRESOLVED.
+    //
+    // Physical quantity MUST NOT override or determine resource pools.
+    // The dependency is:
+    //   PHYSICAL QUANTITY AUTHORITY + RESOURCE CLASSIFICATION AUTHORITY
+    //   → ADDRESS DEMAND.
+    //
+    // Only use category/description substring matching as last resort;
+    // fail closed when no governed evidence permits a classification.
+    slcResourceClassification: buildGovernedResourceClassification(boqItem),
     clarifications: [...missing.map((item) => ({ question: item.clarificationQuestion, reason: item.whyNeeded, impact: `${item.technicalImpact} ${item.commercialImpact}`, priority: item.blocking ? "High" : "Medium", suggestedRecipient: item.recommendedOwner, status: "Open", relatedField: item.field })), ...conflicts.map((item) => ({ question: `Please confirm the governing ${item.attribute} requirement and applicable source revision.`, reason: item.type, impact: `${item.technicalImpact} ${item.commercialImpact}`, priority: item.severity, suggestedRecipient: "Consultant / Technical Authority", status: "Open", conflictId: item.id }))], knowledgeFacts, confidence, readiness, drawingArchitectureContext: normalizeStage4DrawingArchitectureContext(drawingArchitectureContext), explanation: `This BOQ item is classified as ${boqItem.category || "an unconfirmed category"} under ${boqItem.system || "an unconfirmed system"}. ${confirmed.length} requirement source${confirmed.length === 1 ? " is" : "s are"} confirmed applicable. Matching readiness is ${readiness.status.toLowerCase()}${readiness.blockingReasons.length ? ` because ${readiness.blockingReasons[0]}` : "."}`, generatedAt: new Date().toISOString() };
 };
 
+// ONE EXECUTABLE RESOURCE POLICY. Both of the maps this block used to hold
+// are gone, deliberately:
+//
+//   * `resourcePoolMap` was DEAD -- never referenced by any executor -- while
+//     three finished reports cited it as canonical. Dead code described as
+//     canonical is a trap for the next lane, so it is removed rather than
+//     left to be re-read as authority.
+//   * `familyMap` / `familyUnitMap` were LIVE, but they were a SECOND, parallel
+//     taxonomy: nine lowercase keys (`detector`, `smoke`, `heat`, `module`,
+//     `manual call`, `pull station`, `fireman`, `door`, `telephone`) that matched
+//     no governed family name, and four state names of their own.
+//
+// `classifyFireAlarmSlcItem` is the policy that already existed, is keyed on the
+// governed family taxonomy, carries the manufacturer citations, is already the
+// input to `fire-alarm-preliminary-point-demand.mjs`, and is the vocabulary the
+// demand consumers (`project-point-demand-bridge.mjs`,
+// `calculation-requirement-engine.mjs`) already expect. The resource
+// classification on a profile is now produced by THAT policy and by nothing
+// else, so there is exactly one place a family can be mapped to a resource.
+//
+// NO RAW FALLBACK. `category`, `subcategory` and `description` are diagnostics
+// only. They are not passed as authority, and the classifier receives no field
+// it could derive a pool from except the governed product family and the
+// governed technical attributes. A governed category is still passed, because
+// the classifier has one documented, pre-existing material-scope rule keyed on
+// it (wiring/cable/conduit consumes no SLC address by physical necessity) and
+// that rule is an established encoded governed engineering rule, not a new one.
+const buildGovernedResourceClassification = (boqItem) => {
+  const classification = classifyFireAlarmSlcItem({
+    system: boqItem.governedSystem ?? boqItem.system,
+    family: boqItem.governedProductFamily ?? boqItem.productFamily ?? null,
+    category: boqItem.governedCategory ?? boqItem.category ?? null,
+    attributes: boqItem.governedTechnicalAttributes || {},
+    // Quantity is NOT this layer's concern. Physical quantity is the Drawing
+    // Quantity Authority's, so no quantity is supplied here and the classifier
+    // books demand as UNKNOWN rather than inventing one.
+    selectedQuantity: null,
+  });
+  return {
+    state: classification.state,
+    unitsPerDevice: classification.unitsPerDevice,
+    family: classification.family,
+    addressability: classification.addressability,
+    // The two axes are read from the classification itself, so they cannot
+    // drift apart from the state they were derived from.
+    directSlcAddressState: classification.directSlcPerDevice,
+    secondaryInterfaceDemandState: classification.secondaryInterface?.state ?? "UNRESOLVED",
+    secondaryInterface: classification.secondaryInterface,
+    slcRole: classification.slcRole,
+    classifierVersion: classification.classifierVersion,
+    reason: classification.reason,
+    provenance: { ...classification.provenance, governedProductFamily: boqItem.governedProductFamily ?? null, governedProductFamilyAuthority: boqItem.governedProductFamilyAuthority ?? null },
+  };
+};
+
+// Pure deterministic address-demand derivation engine.
+// Inputs are explicit authority objects; no DB reads, no lore, no agent reports.
+export const deriveAddressDemand = ({
+  boqItem,
+  physicalQuantityAuthority,
+  resourceClassificationAuthority,
+  productAuthority,
+  architectureDecision,
+  enabledChannelDecision,
+  interfaceDecision
+}) => {
+  // THE ONE POLICY, used identically whether or not a stored authority was
+  // handed in. The stored authority wins when present; otherwise the same
+  // canonical classifier runs from the same governed inputs. It is never a
+  // weaker second guess, and it never sees raw category/description as
+  // authority. State names are the canonical classifier's, not a local set:
+  // SLC_DETECTOR_POOL / SLC_MODULE_POOL / SLC_ROLE_ESTABLISHED / NOT_SLC /
+  // UNRESOLVED. The old DETECTOR / MODULE / RELAYMON names belonged to the
+  // deleted parallel map and are gone with it.
+  const derived = resourceClassificationAuthority
+    ? {
+        state: resourceClassificationAuthority.state ?? "UNRESOLVED",
+        unitsPerDevice: resourceClassificationAuthority.unitsPerDevice ?? null,
+        secondaryInterface: resourceClassificationAuthority.secondaryInterface ?? null,
+      }
+    : buildGovernedResourceClassification(boqItem);
+
+  const resourcePool = derived.state;
+  const addressesPerUnit = derived.unitsPerDevice ?? null;
+
+  // Direct SLC address demand: TOTAL, not per-device. A pool state multiplies
+  // the governed physical quantity by the governed addresses-per-unit. Unknown
+  // stays unknown -- `||` is never used on a governed count, because it would
+  // silently turn a proven zero into "absent".
+  const governedQuantity = physicalQuantityAuthority?.value
+    ?? (boqItem.numeric_quantity != null ? Number(boqItem.numeric_quantity) : null);
+  const poolDemand = (resourcePool === 'SLC_DETECTOR_POOL' || resourcePool === 'SLC_MODULE_POOL')
+    && addressesPerUnit !== null && addressesPerUnit > 0
+    && governedQuantity !== null && Number.isFinite(Number(governedQuantity))
+    ? Number(governedQuantity) * Number(addressesPerUnit)
+    : null;
+
+  const directSlcAddressDemand = resourcePool === 'NOT_SLC' ? 0 : poolDemand;
+
+  // SECONDARY INTERFACE DEMAND IS A SEPARATE AXIS. A proven direct SLC of zero
+  // is never a proven total of zero: the classification carries its own
+  // secondary-interface state, and the cases where that state is a separate
+  // required device are named rather than silently zeroed.
+  const secondaryInterfaceDemandState = derived.secondaryInterface?.state ?? "UNRESOLVED";
+
+  // Actual required address demand. Identical to the direct figure when a pool
+  // is proven; unresolved otherwise. It is NOT the sum of direct and secondary:
+  // a secondary device is a separately-quantified BOQ line, so adding it here
+  // would double count it once that line is itself classified.
+  const actualRequiredAddressDemand = poolDemand;
+
+  // Demand state
+  let demandState
+  if (actualRequiredAddressDemand !== null && actualRequiredAddressDemand > 0) {
+    demandState = 'PROVEN'
+  } else if (resourcePool === 'NOT_SLC') {
+    demandState = 'NOT_APPLICABLE'
+  } else if (actualRequiredAddressDemand === null) {
+    demandState = 'UNRESOLVED'
+  } else {
+    demandState = 'CONFLICT'
+  }
+
+  // Unresolved reason
+  let unresolvedReason
+  if (resourcePool === 'NOT_SLC' && directSlcAddressDemand === 0) {
+    unresolvedReason = 'NOT_SLC: direct SLC address = 0; secondary interface demand unresolved unless separately proven'
+  } else if (actualRequiredAddressDemand === null) {
+    unresolvedReason = 'Insufficient governed evidence to determine address demand'
+  } else if (demandState === 'CONFLICT') {
+    unresolvedReason = 'Notification architecture conflict or unresolved channel decision'
+  } else {
+    unresolvedReason = null
+  }
+
+  // Input fingerprint (for staleness detection — only upstream inputs)
+  const inputFingerprint = {
+    boqItemId: boqItem.id,
+    productFamily: boqItem.productFamily,
+    resourcePool,
+    addressesPerUnit,
+    physicalQuantity: physicalQuantityAuthority?.value,
+    architectureDecision,
+    enabledChannelDecision,
+    interfaceDecision
+  }
+
+  // Evidence references
+  const evidenceReferences = {
+    resourceClassification: 'requirement_profile_versions.profile.slcResourceClassification',
+    physicalQuantity: 'BOQ numeric_quantity or physicalQuantityAuthority',
+    product: productAuthority ? 'governed product evidence' : null
+  }
+
+  // Currentness — minimal: only upstream inputs that affect derivation.
+    // Includes resourceDemandRuleVersion so that a change in classification rules
+    // while all project inputs remain identical invalidates the fingerprint.
+    const currentness = {
+        resourcePool,
+        addressesPerUnit,
+        physicalQuantity: physicalQuantityAuthority?.value ? 'governed' : 'un governed',
+        productAuthority: productAuthority ? 'governed' : 'un governed',
+        architectureDecision,
+        enabledChannelDecision,
+        interfaceDecision,
+        resourceDemandRuleVersion: physicalQuantityAuthority?.ruleVersion ?? 'derived-from-engine'
+    }
+
+  return {
+    boqItemId: boqItem.id,
+    physicalQuantity: physicalQuantityAuthority?.value
+      || (boqItem.numeric_quantity != null ? Number(boqItem.numeric_quantity) : null),
+    physicalQuantityAuthorityId: 'derived-from-profile',
+    resourcePool,
+    addressesPerUnit,
+    directSlcAddressDemand,
+    secondaryInterfaceDemandState,
+    actualRequiredAddressDemand,
+    maxCapabilityAddressDemand,
+    demandState,
+    unresolvedReason,
+    inputFingerprint,
+    evidenceReferences,
+    currentness
+  }
+}
+
+// Do not remove — this is the export line
+
+// Canonical read for Agent 1: assembles current authorities + derives address demand.
+//
+// This function is the SOLE owner of address-demand semantics. It is pure: no
+// store access, no clock, no description matching. Callers resolve current
+// authorities and hand them in.
+//
+// ---------------------------------------------------------------------------
+// AUTHORITY OBJECT SHAPE (what callers pass)
+// ---------------------------------------------------------------------------
+//   resourceClassificationAuthority = {
+//     profileId?, id?,          persistent profile identity (null if none)
+//     version?,                 governed profile version
+//     state,                    DETECTOR | MODULE | NOT_SLC | UNRESOLVED
+//     unitsPerDevice,           governed addresses-per-device (null = unknown)
+//     inputFingerprint?,        the profile's own input fingerprint
+//     currentness?              'CURRENT' | 'STALE'  (absent = CURRENT)
+//   }
+//   physicalQuantityAuthority = {
+//     id?, claimId?,            persistent claim identity (null if none)
+//     version?,                 governed claim version
+//     value,                    the governed count. 0 IS A REAL VALUE.
+//     ruleVersion?,             QUANTITY rule version (NOT a resource version)
+//     maxAddresses?,            advisory capability only
+//     evidenceFingerprint?,     the claim's own fingerprint
+//     currentness?              'CURRENT' | 'STALE'  (absent = CURRENT)
+//   }
+//
+// CURRENCY IS EVALUATED BY THE CALLER, which owns the store and the fingerprint
+// rules. This function reports what it is told; it never re-derives currency.
+// `currentness` is therefore read from the authority, never invented here.
+//
+// IDENTITY IS NEVER FABRICATED. A caller that has no persistent id passes
+// nothing, and the corresponding field is null with an explicit authority state
+// beside it. No placeholder string is ever returned in an id field.
+
+export const getAgent1AddressDemandRead = ({
+  boqItemId,
+  // Current resource classification authority — from profile or governed source
+  resourceClassificationAuthority,
+  // Current physical quantity authority
+  physicalQuantityAuthority,
+  // Current architecture/channel/interface decisions
+  architectureDecision,
+  enabledChannelDecision,
+  interfaceDecision
+}) => {
+  const resource = resourceClassificationAuthority ?? null;
+  const quantity = physicalQuantityAuthority ?? null;
+
+  // ---- Authority presence and currency, resolved independently -------------
+  const quantityAbsent = quantity === null;
+  const quantityStale = !quantityAbsent && quantity.currentness === 'STALE';
+  const resourceAbsent = resource === null;
+  const resourceStale = !resourceAbsent && resource.currentness === 'STALE';
+
+  // ---- Governed values, read with NULLISH semantics ------------------------
+  // 0 is a real governed count. `null` means unavailable/unknown. Using `||`
+  // here would silently convert a governed zero into "unavailable", which is
+  // how a proven zero becomes an absence and then an unresolved demand.
+  const governedQuantity = quantity?.value ?? null;
+  // With no stored classification authority there is no governed family, so
+  // there is nothing to classify from. The previous code still CALLED the
+  // deleted classifier with three empty strings; that could only ever return
+  // UNRESOLVED / null, so stating that directly is behaviour-identical and
+  // removes a call that looked like a fallback but was not one.
+  const resourcePool = resource?.state ?? "UNRESOLVED";
+  const addressesPerUnit = resource?.unitsPerDevice ?? null;
+
+  // ---- Direct SLC address state ------------------------------------------
+  // A proven zero is only asserted for NOT_SLC. Every other pool is unknown
+  // until governed evidence proves otherwise.
+  const directSlcAddressState = resourcePool === 'NOT_SLC' ? 0 : null;
+
+  // ---- Secondary interface demand -----------------------------------------
+  // Read from the classification's own secondary-interface axis when a stored
+  // authority carries one. With no stored authority there is no governed
+  // family, so this is UNRESOLVED -- because the AUTHORITY IS MISSING, never
+  // because the demand is zero. A proven direct SLC of 0 does NOT imply a
+  // total downstream demand of 0.
+  const secondaryInterfaceDemandState = resource?.secondaryInterface?.state ?? "UNRESOLVED";
+
+  // ---- Actual required address demand -------------------------------------
+  // NULLISH, and only for a pool that actually consumes an SLC address. A
+  // governed 0 stays 0; an unavailable quantity stays null.
+  let actualRequiredAddressDemand = null;
+  if ((resourcePool === 'SLC_DETECTOR_POOL' || resourcePool === 'SLC_MODULE_POOL')
+      && addressesPerUnit !== null && addressesPerUnit > 0) {
+    actualRequiredAddressDemand = governedQuantity === null ? null : governedQuantity * addressesPerUnit;
+  }
+
+  // ---- Max capability address demand (advisory only) ----------------------
+  // The `RELAYMON ? 16` term belonged to the deleted parallel map. `RELAYMON`
+  // was never a canonical classification state, so the branch was unreachable;
+  // it is removed rather than translated, because inventing a per-family
+  // address capacity here is exactly the PRODUCT CAPABILITY FACT that must not
+  // be copied into a resource profile. Product capacity is carried by governed
+  // product authority or not at all.
+  const maxCapabilityAddressDemand = quantity?.maxAddresses ?? null;
+
+  // ---- Architecture conflict ----------------------------------------------
+  // Data-driven and deliberately narrow: a conflict is reported only when a
+  // decision actually DECLARES one. Nothing infers a conflict from a missing
+  // decision. No governed decision currently carries this signal, so
+  // ARCHITECTURE_CONFLICT is representable but unpopulated today -- which is
+  // itself the honest finding (the channel/interface authority layer is
+  // missing), not a value to be guessed at.
+  const declaresConflict = (decision) => Boolean(
+    decision && (decision.conflict === true || decision.state === 'CONFLICT'
+      || decision.conflictState === 'CONFLICT')
+  );
+  const architectureConflict = declaresConflict(architectureDecision)
+    || declaresConflict(enabledChannelDecision)
+    || declaresConflict(interfaceDecision);
+
+  // ---- Demand state --------------------------------------------------------
+  let demandState;
+  if (architectureConflict) {
+    demandState = 'CONFLICT';
+  } else if (resourcePool === 'NOT_SLC') {
+    // Proven direct zero. NOT a completed downstream outcome: what the device
+    // needs INSTEAD is unresolved.
+    demandState = 'NOT_APPLICABLE';
+  } else if (actualRequiredAddressDemand !== null) {
+    // Includes a governed zero. "Proven zero devices" is a proven demand of 0
+    // and must not be demoted to unresolved or conflict.
+    demandState = 'PROVEN';
+  } else {
+    demandState = 'UNRESOLVED';
+  }
+
+  // ---- WHY it cannot be calculated ----------------------------------------
+  // Every applicable reason is reported, in a fixed precedence order, so one
+  // cause is never masked by another and a consumer can always tell which
+  // authority layer is missing. The list is EMPTY exactly when the read is a
+  // complete, proven answer.
+  const unresolvedReasons = [];
+  if (quantityStale) unresolvedReasons.push('STALE_PHYSICAL_QUANTITY_AUTHORITY');
+  if (quantityAbsent) unresolvedReasons.push('MISSING_PHYSICAL_QUANTITY_AUTHORITY');
+  if (resourceStale) unresolvedReasons.push('STALE_RESOURCE_CLASSIFICATION_AUTHORITY');
+  if (resourceAbsent) unresolvedReasons.push('MISSING_RESOURCE_CLASSIFICATION_AUTHORITY');
+  if (architectureConflict) unresolvedReasons.push('ARCHITECTURE_CONFLICT');
+  // A proven direct SLC of zero ALWAYS leaves the secondary axis open. That is
+  // the whole point of keeping the two axes apart: NOT_SLC on this loop does
+  // not mean the project consumes nothing downstream (a passive telephone jack
+  // is fed by a separate Firephone Control Module line; a non-relay duct
+  // housing is fed by a separate detector head line).
+  if (resourcePool === 'NOT_SLC' && secondaryInterfaceDemandState === 'UNRESOLVED') {
+    unresolvedReasons.push('UNRESOLVED_SECONDARY_INTERFACE');
+  }
+  if (unresolvedReasons.length === 0
+      && (resourcePool === 'SLC_DETECTOR_POOL' || resourcePool === 'SLC_MODULE_POOL')
+      && addressesPerUnit === null) {
+    unresolvedReasons.push('UNRESOLVED_ADDRESSES_PER_UNIT');
+  }
+  if (unresolvedReasons.length === 0 && actualRequiredAddressDemand === null
+      && resourcePool !== 'NOT_SLC') {
+    unresolvedReasons.push('UNRESOLVED_RESOURCE_CLASSIFICATION');
+  }
+
+  // ---- Read outcome --------------------------------------------------------
+  // `boqItemCurrentness` names the single most fundamental reason the read
+  // cannot produce a demand, so a consumer can branch on one value. It is
+  // 'CURRENT' only when no authority-level cause exists (missing or stale).
+  const authorityBlocked = quantityStale || quantityAbsent || resourceStale || resourceAbsent;
+  const boqItemCurrentness = quantityStale ? 'STALE_PHYSICAL_QUANTITY_AUTHORITY'
+    : quantityAbsent ? 'MISSING_PHYSICAL_QUANTITY_AUTHORITY'
+    : resourceStale ? 'STALE_RESOURCE_CLASSIFICATION_AUTHORITY'
+    : resourceAbsent ? 'MISSING_RESOURCE_CLASSIFICATION_AUTHORITY'
+    : 'CURRENT';
+
+  // ---- Unresolved reason (human-readable primary) -------------------------
+  const REASON_TEXT = {
+    MISSING_PHYSICAL_QUANTITY_AUTHORITY:
+      'Physical quantity authority absent; cannot derive address demand. Agent 1 Drawing Quantity Authority not yet current/persisted.',
+    MISSING_RESOURCE_CLASSIFICATION_AUTHORITY:
+      'Resource classification authority absent; the resource pool cannot be governed, so no address demand can be derived.',
+    STALE_PHYSICAL_QUANTITY_AUTHORITY:
+      'Physical quantity authority is present but no longer current; it was not consumed.',
+    STALE_RESOURCE_CLASSIFICATION_AUTHORITY:
+      'Resource classification authority is present but no longer current; it was not consumed.',
+    ARCHITECTURE_CONFLICT:
+      'A governed architecture/channel/interface decision declares a conflict; address demand cannot be resolved while it stands.',
+    UNRESOLVED_SECONDARY_INTERFACE:
+      'NOT_SLC: direct SLC address = 0; secondary interface demand unresolved unless separately proven',
+    UNRESOLVED_ADDRESSES_PER_UNIT:
+      'Resource pool is governed but addresses-per-unit is unresolved; address demand cannot be derived.',
+    UNRESOLVED_RESOURCE_CLASSIFICATION:
+      'Insufficient governed evidence to determine address demand'
+  };
+  const unresolvedReason = unresolvedReasons.length ? REASON_TEXT[unresolvedReasons[0]] : null;
+
+  // ---- Input fingerprint ---------------------------------------------------
+  // Contains ONLY upstream inputs that affect derivation, plus the resource rule
+  // version that governs resourcePool / addressesPerUnit / the direct-secondary
+  // split. `resourceDemandRuleVersion` is the RESOURCE CLASSIFICATION ruleset
+  // version -- never a quantity-authority field -- so a resource-policy change
+  // invalidates this fingerprint on its own authority.
+  const addressDemandInputFingerprint = {
+    boqItemId,
+    resourcePool,
+    addressesPerUnit,
+    physicalQuantity: governedQuantity,
+    resourceClassificationAuthorityVersion: resource?.version ?? null,
+    physicalQuantityAuthorityVersion: quantity?.version ?? null,
+    resourceDemandRuleVersion: RESOURCE_CLASSIFICATION_RULESET_VERSION,
+    architectureDecision: architectureDecision?.decisionId ?? architectureDecision ?? null,
+    enabledChannelDecision,
+    interfaceDecision
+  };
+
+  // ---- Evidence references -------------------------------------------------
+  const evidenceReferences = {
+    resourceClassification: resource
+      ? `requirement_profile_versions#${resource.profileId ?? resource.id ?? 'unversioned-row'}@v${resource.version ?? 'unknown'}`
+      : 'unavailable',
+    physicalQuantity: quantity
+      ? `drawing_quantity_claims#${quantity.id ?? quantity.claimId ?? 'unversioned-row'}@v${quantity.version ?? 'unknown'}`
+      : 'unavailable',
+    product: quantity ? 'governed' : 'un governed'
+  };
+
+  // ---- Currentness ---------------------------------------------------------
+  const currentness = {
+    resourcePool,
+    addressesPerUnit,
+    physicalQuantity: quantityStale ? 'not-current'
+      : governedQuantity !== null ? 'governed'
+      : quantity ? 'governed-authority-value-unavailable'
+      : 'un governed',
+    productAuthority: quantity ? 'governed' : 'un governed',
+    resourceClassificationAuthority: resourceAbsent ? 'ABSENT' : (resourceStale ? 'STALE' : 'CURRENT'),
+    physicalQuantityAuthority: quantityAbsent ? 'ABSENT' : (quantityStale ? 'STALE' : 'CURRENT'),
+    architectureDecision,
+    enabledChannelDecision,
+    interfaceDecision,
+    // OWNERSHIP FIX: this is the resource-classification ruleset version, which
+    // is the authority that actually governs resourcePool, addressesPerUnit,
+    // directSlcAddressState and secondaryInterfaceDemandState.
+    resourceDemandRuleVersion: RESOURCE_CLASSIFICATION_RULESET_VERSION,
+    // The quantity rule version is reported separately, under its own name, so
+    // the two policies are never conflated.
+    physicalQuantityRuleVersion: quantity?.ruleVersion ?? null
+  };
+
+  return {
+    boqItemId,
+    boqItemCurrentness,
+    // REAL identities. null when the upstream authority has no persistent id.
+    physicalQuantity: governedQuantity,
+    physicalQuantityAuthorityId: quantity?.id ?? quantity?.claimId ?? null,
+    physicalQuantityAuthorityVersion: quantity?.version ?? null,
+    physicalQuantityAuthorityFingerprint: quantity?.evidenceFingerprint ?? null,
+    physicalQuantityCurrentness: quantityAbsent ? 'ABSENT' : (quantityStale ? 'STALE' : 'CURRENT'),
+    resourceProfileId: resource?.profileId ?? resource?.id ?? null,
+    resourceProfileVersion: resource?.version ?? null,
+    resourceProfileFingerprint: resource?.inputFingerprint ?? null,
+    resourcePool,
+    addressesPerUnit,
+    directSlcAddressState,
+    secondaryInterfaceDemandState,
+    resourceAuthorityCurrentness: resourceAbsent ? 'ABSENT' : (resourceStale ? 'STALE' : 'CURRENT'),
+    actualRequiredAddressDemand,
+    maxCapabilityAddressDemand,
+    demandState,
+    unresolvedReason,
+    unresolvedReasons,
+    authorityBlocked,
+    addressDemandInputFingerprint,
+    architectureDecisionReferences: architectureDecision
+      ? [{
+          decisionId: architectureDecision?.decisionId ?? null,
+          decision: architectureDecision,
+          source: 'governed'
+        }]
+      : [],
+    evidenceReferences,
+    currentness
+  }
+};
 export const normalizeProfileAttribute = (attribute) => attribute.originalUnit ? { ...attribute, normalization: normalizeMeasurement({ value: attribute.parsedValue, unit: attribute.originalUnit, targetUnit: attribute.normalizedUnit || undefined }) } : attribute;

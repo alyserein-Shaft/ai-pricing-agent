@@ -1,0 +1,2 @@
+- [DEC-2026-10-04-est01] PREFLIGHT SAFETY GATE: the authoritative overflow check is the UTF-8 byte-length upper bound against the governed input budget. bytes/4 is informational telemetry only and must never gate safety. The bound may overestimate (fail closed on compressible input) but cannot underestimate.
+- [DEC-2026-10-04-est02] NO NEW TOKENIZER DEPENDENCY: no model tokenizer is available without adding a disproportionate dependency; the byte-length bound is dependency-free, deterministic, and provably conservative for BPE-family tokenization.

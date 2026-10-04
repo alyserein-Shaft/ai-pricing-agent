@@ -75,8 +75,27 @@ Do not treat these scripts as interchangeable. Run the narrowest relevant suite 
 - Do not commit, push, deploy, stash, reset, revert, or clean unless explicitly requested.
 - Keep generated files, local runtime directories, caches, screenshots, and temporary outputs out of unrelated changes.
 
+## Final-state re-read (before reporting live state)
+
+- A read taken at task start is a **planning snapshot**, never a reportable result. Another lane may change canonical authority while you work.
+- Before a FINAL REPORT states live counts, readiness, current approvals, the current selected candidate, current blocker totals, or pricing/quotation state, **re-read the relevant canonical authority immediately before reporting**:
+  - BOQ counts -> `currentBoqEvidenceCounts` / `diagnoseBoqEvidence` in `worker/current-evidence-scope.mjs`
+  - technical eligibility -> the current technical authority for that item
+  - pricing state -> `CURRENT_PRICING_PREDICATE` consumers in `worker/pricing-authority.mjs`
+  - drawing state -> the governed drawing authority for that document version
+- If that final read cannot be completed, report `CURRENTNESS_STATUS = UNPROVEN` and label the figures as a start-of-task snapshot. Never present a stale count as current.
+
+## Lore authority boundary
+
+- `.lore/` is **history, continuity, and an evidence index**. It is NOT live project authority.
+- A lore fact may be reused to locate evidence or understand a prior decision.
+- Before citing a **mutable live-state fact** (counts, status, current approval, current selected candidate, current document version, pricing run state, readiness), re-read the live authority.
+- **LORE NEVER OVERRIDES CURRENT CANONICAL AUTHORITY.**
+- Never delete or rewrite superseded lore history; superseding entries coexist and the newer entry wins.
+
 ## Project continuity (fresh sessions)
 
 - For any non-trivial task, follow `.agents/skills/ai-pricing-agent-workflow/`.
 - At session start, perform its once-per-session Lore bootstrap (workflow §21): read `.lore/SUMMARY.md`, query the relevant entries, inspect tree state, work only the smallest delta.
 - Before repeating a substantial test, oracle, audit, runtime check, Playwright validation, benchmark, or investigation, check `.lore/EVIDENCE.md`; reuse VALID covering evidence instead of rerunning.
+- **Lore write ownership:** bootstrap READS shared continuity; a task agent then writes ONLY its own shard under `.lore/runs/<run-id>/*.delta.md`. Never replace a shared `.lore` ledger from an in-memory snapshot. Merge only via `node scripts/lore-consolidate.mjs --run <run-id> [--apply]`, which re-reads, preserves foreign additions, fails closed on conflict, and verifies nothing disappeared. Full rule: workflow §21.4.1.

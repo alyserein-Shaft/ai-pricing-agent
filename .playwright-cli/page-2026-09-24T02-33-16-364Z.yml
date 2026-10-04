@@ -1,0 +1,99 @@
+- generic [ref=e7]:
+  - complementary "Primary navigation" [ref=e8]:
+    - generic [ref=e14]:
+      - strong [ref=e15]: AI Pricing Agent
+      - generic [ref=e16]: وكيل التسعير الذكي
+    - navigation "Global navigation" [ref=e18]:
+      - button "Home" [ref=e20] [cursor=pointer]:
+        - generic [aria-hidden] [ref=e21]: ⌂
+        - text: Home
+      - button "Projects" [ref=e23] [cursor=pointer]:
+        - generic [aria-hidden] [ref=e24]: ▦
+        - text: Projects
+      - generic [ref=e25]:
+        - button "Knowledge" [expanded] [active] [ref=e26] [cursor=pointer]:
+          - generic [aria-hidden] [ref=e27]: ▤
+          - text: Knowledge
+          - generic [aria-hidden] [ref=e28]: ⌃
+        - generic [ref=e103]:
+          - button "Files" [ref=e104] [cursor=pointer]
+          - button "Products" [ref=e105] [cursor=pointer]
+          - button "Manufacturers" [ref=e106] [cursor=pointer]
+          - button "Standards" [ref=e107] [cursor=pointer]
+          - button "Search" [ref=e108] [cursor=pointer]
+          - button "Product Identities" [ref=e109] [cursor=pointer]
+          - button "Prices" [ref=e110] [cursor=pointer]
+          - button "Case Studies" [ref=e111] [cursor=pointer]
+          - button "Fire Alarm" [ref=e112] [cursor=pointer]
+          - button "CCTV" [ref=e113] [cursor=pointer]
+      - button "Reports" [ref=e30] [cursor=pointer]:
+        - generic [aria-hidden] [ref=e31]: ▥
+        - text: Reports
+      - button "Administration" [ref=e33] [cursor=pointer]:
+        - generic [aria-hidden] [ref=e34]: ⚙
+        - text: Administration
+    - region "Authenticated account" [ref=e35]:
+      - generic [ref=e36]: LD
+      - generic [ref=e37]:
+        - strong [ref=e38]: Local Development User
+        - generic [ref=e39]: local@development.invalid
+        - generic [ref=e40]: Administrator
+        - generic [ref=e41]: BD-Shaft Internal Pilot · Organization Owner / Organization Administrator
+      - link "Sign out" [ref=e42] [cursor=pointer]:
+        - /url: /signout-with-chatgpt?return_to=/
+  - main [ref=e43]:
+    - generic [ref=e45]:
+      - generic [aria-hidden] [ref=e46]: ⌂
+      - generic [ref=e47]:
+        - generic [ref=e48]: ORGANIZATION OVERVIEW
+        - strong [ref=e49]: Home
+    - generic [ref=e51]:
+      - generic [ref=e52]:
+        - heading "BD-Shaft Internal Pilot" [level=1] [ref=e54]
+        - button "＋ New project" [ref=e55] [cursor=pointer]
+      - generic [ref=e56]:
+        - button "Active projects 17" [ref=e57]:
+          - generic [ref=e58]: Active projects
+          - strong [ref=e59]: "17"
+        - button "Blocked 2" [ref=e60]:
+          - generic [ref=e61]: Blocked
+          - strong [ref=e62]: "2"
+        - button "Ready for quotation 0" [ref=e63]:
+          - generic [ref=e64]: Ready for quotation
+          - strong [ref=e65]: "0"
+        - button "Overdue 2" [ref=e66]:
+          - generic [ref=e67]: Overdue
+          - strong [ref=e68]: "2"
+      - generic [ref=e70]:
+        - generic [ref=e71]: PRIORITY PROJECTS
+        - strong [ref=e72]: Projects needing attention
+      - generic [ref=e73]:
+        - article [ref=e74]:
+          - generic [ref=e75]:
+            - generic [ref=e76]:
+              - strong [ref=e77]: Al Mousa School — Clean Golden Run
+              - generic [ref=e78]: Active
+            - generic [ref=e79]: BOQ and specification extraction · 25%
+          - generic [ref=e80]:
+            - button "Review 9 extraction issues — Al Mousa School — Clean Golden Run" [ref=e81] [cursor=pointer]: Review 9 extraction issues
+            - button "Open Al Mousa School — Clean Golden Run project" [ref=e82] [cursor=pointer]: Open →
+        - article [ref=e83]:
+          - generic [ref=e84]:
+            - generic [ref=e85]:
+              - strong [ref=e86]: JAK
+              - generic [ref=e87]: Active
+            - generic [ref=e88]: BOQ and specification extraction · 19%
+          - generic [ref=e89]:
+            - button "Review extracted BOQ and specification evidence — JAK" [ref=e90] [cursor=pointer]: Review extracted BOQ and specification evidence
+            - button "Open JAK project" [ref=e91] [cursor=pointer]: Open →
+        - article [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e94]:
+              - strong [ref=e95]: Al Mousa School
+              - generic [ref=e96]: Active
+            - generic [ref=e97]: Requirement intelligence and classification · 40%
+          - generic [ref=e98]:
+            - button "Technical review required — Al Mousa School" [ref=e99] [cursor=pointer]: Technical review required
+            - button "Open Al Mousa School project" [ref=e100] [cursor=pointer]: Open →
+      - button "View all projects →" [ref=e101] [cursor=pointer]
+      - paragraph [ref=e102]: 1 legacy project is excluded from organization metrics.

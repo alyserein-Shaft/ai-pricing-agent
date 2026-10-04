@@ -1,0 +1,6 @@
+- main [ref=f17e2]:
+  - generic [ref=f17e3]:
+    - generic [ref=f17e4]: ◌
+    - text: VERIFIED ACCESS
+    - heading "Checking your authenticated session" [level=1] [ref=f17e5]
+    - paragraph [ref=f17e6]: The workspace will open after your server identity and permissions are confirmed.

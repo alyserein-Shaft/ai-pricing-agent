@@ -1,0 +1,285 @@
+[
+  {
+    "step": "landing",
+    "at": "2026-09-24T03:51:03.602Z",
+    "resolveAffordance": "Resolve 9 possible duplicates",
+    "filterLabels": [
+      "Possible Duplicates (9)"
+    ],
+    "facts": {
+      "boqItems": 90,
+      "extractionReview": 9,
+      "possibleDuplicates": 9,
+      "extractionConfirmed": 81,
+      "extractionStage": "Needs Review",
+      "extractionBlockers": [
+        "9 BOQ item(s) require review.",
+        "9 possible duplicate(s) require resolution."
+      ],
+      "workflowStage": "BOQ and specification extraction",
+      "readyForQuotation": false,
+      "currentStageId": "extraction"
+    }
+  },
+  {
+    "step": "duplicate-filter-open",
+    "at": "2026-09-24T03:51:05.397Z",
+    "visibleRows": 9
+  },
+  {
+    "step": "merge",
+    "at": "2026-09-24T03:51:05.747Z",
+    "sourceRow": 103,
+    "intoRow": 59,
+    "item": "D",
+    "status": 200,
+    "survivorStatus": "Needs Review",
+    "survivorFlag": null
+  },
+  {
+    "step": "merge",
+    "at": "2026-09-24T03:51:07.951Z",
+    "sourceRow": 105,
+    "intoRow": 61,
+    "item": "E",
+    "status": 200,
+    "survivorStatus": "Needs Review",
+    "survivorFlag": null
+  },
+  {
+    "step": "merge",
+    "at": "2026-09-24T03:51:10.106Z",
+    "sourceRow": 109,
+    "intoRow": 65,
+    "item": "G",
+    "status": 200,
+    "survivorStatus": "Needs Review",
+    "survivorFlag": null
+  },
+  {
+    "step": "merge",
+    "at": "2026-09-24T03:51:12.261Z",
+    "sourceRow": 111,
+    "intoRow": 67,
+    "item": "H",
+    "status": 200,
+    "survivorStatus": "Needs Review",
+    "survivorFlag": null
+  },
+  {
+    "step": "merge",
+    "at": "2026-09-24T03:51:14.412Z",
+    "sourceRow": 113,
+    "intoRow": 69,
+    "item": "J",
+    "status": 200,
+    "survivorStatus": "Needs Review",
+    "survivorFlag": null
+  },
+  {
+    "step": "merge",
+    "at": "2026-09-24T03:51:16.597Z",
+    "sourceRow": 115,
+    "intoRow": 71,
+    "item": "K",
+    "status": 200,
+    "survivorStatus": "Needs Review",
+    "survivorFlag": null
+  },
+  {
+    "step": "merge",
+    "at": "2026-09-24T03:51:18.745Z",
+    "sourceRow": 117,
+    "intoRow": 73,
+    "item": "L",
+    "status": 200,
+    "survivorStatus": "Needs Review",
+    "survivorFlag": null
+  },
+  {
+    "step": "merge",
+    "at": "2026-09-24T03:51:20.894Z",
+    "sourceRow": 119,
+    "intoRow": 75,
+    "item": "M",
+    "status": 200,
+    "survivorStatus": "Needs Review",
+    "survivorFlag": null
+  },
+  {
+    "step": "after-merges",
+    "at": "2026-09-24T03:51:22.720Z",
+    "visibleRows": 1,
+    "facts": {
+      "boqItems": 90,
+      "extractionReview": 9,
+      "possibleDuplicates": 1,
+      "extractionConfirmed": 73,
+      "extractionStage": "Needs Review",
+      "extractionBlockers": [
+        "9 BOQ item(s) require review.",
+        "1 possible duplicate(s) require resolution."
+      ],
+      "workflowStage": "BOQ and specification extraction",
+      "readyForQuotation": false,
+      "currentStageId": "extraction"
+    }
+  },
+  {
+    "step": "not-duplicate",
+    "at": "2026-09-24T03:51:23.399Z",
+    "sourceRow": 156,
+    "modalTitle": "Not Duplicate",
+    "status": 200,
+    "flagAfter": "STILL-SET",
+    "reviewStatus": "Needs Review"
+  },
+  {
+    "step": "after-not-duplicate",
+    "at": "2026-09-24T03:51:25.240Z",
+    "visibleRows": 0,
+    "facts": {
+      "boqItems": 90,
+      "extractionReview": 9,
+      "possibleDuplicates": 0,
+      "extractionConfirmed": 73,
+      "extractionStage": "Needs Review",
+      "extractionBlockers": [
+        "9 BOQ item(s) require review."
+      ],
+      "workflowStage": "BOQ and specification extraction",
+      "readyForQuotation": false,
+      "currentStageId": "extraction"
+    }
+  },
+  {
+    "step": "approve-panel",
+    "at": "2026-09-24T03:51:27.795Z",
+    "sourceRow": 156,
+    "modalTitle": "Confirm Extraction",
+    "status": 200
+  },
+  {
+    "step": "bulk-approve",
+    "at": "2026-09-24T03:51:31.822Z",
+    "needsReviewBeforePanel": 17,
+    "needsReviewRowsBeforeBulk": 16,
+    "selectedLabel": "8 selected",
+    "status": 200,
+    "reviewed": 8,
+    "extractionStatus": "Completed"
+  },
+  {
+    "step": "final-facts",
+    "at": "2026-09-24T03:51:34.842Z",
+    "boqItems": 90,
+    "extractionReview": 0,
+    "possibleDuplicates": 0,
+    "extractionConfirmed": 82,
+    "extractionStage": "Completed",
+    "extractionBlockers": [],
+    "workflowStage": "Requirement intelligence and classification",
+    "readyForQuotation": false,
+    "currentStageId": "requirements"
+  },
+  {
+    "step": "final-ui",
+    "at": "2026-09-24T03:51:37.959Z",
+    "duplicateFilterRows": 0,
+    "resolveAffordanceGone": true,
+    "filterLabelsAfter": [
+      "Possible Duplicates (0)"
+    ]
+  },
+  {
+    "step": "overview",
+    "at": "2026-09-24T03:51:41.195Z",
+    "extractionStage": null,
+    "duplicateStat": null,
+    "needsReviewStat": null,
+    "nextActionText": null
+  },
+  {
+    "step": "runtime-hygiene",
+    "at": "2026-09-24T03:51:41.305Z",
+    "consoleErrors": [
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 404 (Not Found)",
+      "Failed to load resource: the server responded with a status of 409 (Conflict)"
+    ],
+    "failedRequests": [
+      "409 GET /api/boq-items/boqitem_717c0ac3-2060-42e1-844b-db5985f76038/requirement-profile",
+      "409 GET /api/boq-items/boqitem_ec0874a1-09b4-46d4-ae62-beef39037984/requirement-profile",
+      "409 GET /api/boq-items/boqitem_6ba1ade9-d539-4bec-b305-0bef7efbaabb/requirement-profile",
+      "409 GET /api/boq-items/boqitem_bf536ac8-2a62-4c80-a145-7edb51aac7af/requirement-profile",
+      "409 GET /api/boq-items/boqitem_68b7dde1-b5a7-443f-9121-2a0495adeab5/requirement-profile",
+      "409 GET /api/boq-items/boqitem_7218b8d7-b049-4336-9dce-3f4375c4caab/requirement-profile",
+      "409 GET /api/boq-items/boqitem_9ead7b88-235f-42c5-9d7a-d3aa959de0f5/requirement-profile",
+      "409 GET /api/boq-items/boqitem_b2f2b57b-5431-4623-964e-2301d79d675a/requirement-profile",
+      "409 GET /api/boq-items/boqitem_02e5f0ec-bb52-4056-a3af-ced6cacca5de/requirement-profile",
+      "409 GET /api/boq-items/boqitem_dbc7ed73-d0b2-4746-a6a6-8315c7679f19/requirement-profile",
+      "409 GET /api/boq-items/boqitem_52e8b8c1-46af-44f3-b940-fcd64b27548c/requirement-profile",
+      "409 GET /api/boq-items/boqitem_68d4c69c-b18c-4084-ba4a-501077786620/requirement-profile"
+    ]
+  },
+  {
+    "step": "api-trail",
+    "at": "2026-09-24T03:51:41.305Z",
+    "calls": [
+      "GET 409 /api/boq-items/boqitem_b9fcbb71-36fb-4912-b023-2940d3619323/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_77cf1f90-d7af-444b-a03e-d112bdd4f492/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_b2f8526e-8e7e-4ff4-a00b-e066934ab426/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_9e58e68e-4eb6-494a-91e4-ee14cd3a1d45/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_b5ae127a-de8a-463e-9865-7df7194be5b2/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_67a0eec6-575f-4b01-a052-bbf58aaeaf2c/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_6fb917f5-369e-45b6-b686-654faa3a1599/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_2665a3c2-2af9-4827-b00e-bbb95b4a9874/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_638e0362-eb53-47c6-a895-2881f04b3194/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_faf5a954-e39e-47de-90a1-b1afab7852dd/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_e741459d-86c5-4f5d-8ea2-2518c6fbc86e/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_1c820fc5-9a2a-4763-986c-ce2bae41cee8/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_c91a2d1d-3a4a-4ec9-9214-a5d68128037c/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_2f29f080-9efc-46c8-b011-016427eadab5/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_f67b9725-203b-4c6e-9d6c-ae7403578752/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_992b9efd-4518-4c1a-97df-86293510ffb1/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_087d3144-4985-414a-b189-a258b0dd2bb6/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_37ec0640-222f-4ccb-bfdc-f1926e93ee9f/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_c7e66c78-ce70-40c7-88a2-fadde12d40cc/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_8df981dc-fea2-405d-9402-7ab02c73a745/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_f4a13264-dbbb-4f2a-b521-0cbee88d042e/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_fb6eea05-fc8a-4b07-84a5-bb21e94ddebc/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_5cb49e44-a059-4d8e-b46e-0be5eb696943/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_29707814-8fd0-47b7-b06e-cf4d17cc26d7/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_1475d474-fce7-41e5-bddb-340fa0585388/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_451dc77f-59a9-4c1c-a518-e5245040180f/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_b00be5df-e23a-495d-88ca-77056ab19085/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_201ddb27-871c-4681-a5cd-104539fa6068/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_40eebd13-c03b-43a4-9278-87d87c3a3ea4/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_49728377-7e2b-496a-88f6-12dac33ce198/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_56ee00e9-89d9-4591-94cd-f1de42d52550/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_5934f512-2b72-49bf-b820-7eb61e0202c7/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_534f049e-6bee-4cb3-9e4a-9b1f69914796/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_fe1cabbc-5aa3-4779-8cc7-98e60a6ec687/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_ab9e5d37-d6ad-43f1-8687-ce68ff2ed330/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_450c453b-f97a-483b-b4e5-74b0876e2818/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_14fc63e2-fcda-4e26-84e5-11f1adbcc0c7/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_9fccee93-6eaa-4348-a256-6b3fdf897bfa/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_8ecce8d4-5e89-4934-badf-a17739beafe4/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_3255c2ea-24fd-4972-b325-452ab3cb2647/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_fb5175a6-0309-45b5-ba6a-466f7fc8239a/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_07b9ab12-1be6-430c-8457-a38657deda6f/requirement-profile",
+      "GET 409 /api/boq-items/boqitem_42a18c17-c3c3-44a6-8071-b70a9f5cfef3/requirement-profile",
+      "GET 200 /api/dashboard/organization?hideTest=true",
+      "GET 200 /api/projects/project_ae501b85-9c12-4332-bf8e-787c90f2d388/dashboard"
+    ]
+  }
+]

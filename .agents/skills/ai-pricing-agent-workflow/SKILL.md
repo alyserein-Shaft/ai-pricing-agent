@@ -630,6 +630,181 @@ If local project/library evidence cannot resolve an engineering uncertainty, res
 
 ---
 
+# 9A. Automatic External Technical Research (MANDATORY DEFAULT)
+
+Established 2026-10-01. **The user must NOT have to request internet research in
+every prompt.** External manufacturer research is now a default behaviour for
+engineering work, not an opt-in extra.
+
+## 9A.1 Mandatory research trigger
+
+For ANY engineering-critical question involving uncertainty, incompleteness,
+conflict, or missing canonical truth, the agent MUST perform external research
+BEFORE concluding `Needs Investigation` or making a substantive engineering
+decision.
+
+This applies especially to:
+
+- product identity, manufacturer, brand
+- lifecycle and replacement/supersession
+- protocol and compatibility
+- address model and SLC/resource consumption
+- panel/device capacity and expansion limits
+- electrical current and environmental limits
+- accessories, bases and housings
+- certifications, standards and installation constraints
+- supported topology and manufacturer-specific engineering behaviour
+
+`Needs Investigation` means **research exhausted or evidence genuinely
+ambiguous**. It does NOT mean "the repository did not already contain the
+answer".
+
+## 9A.2 Evidence hierarchy for research
+
+Follow this order. Level 3 outranks Level 5; a later level never silently
+overrides an earlier one.
+
+| Level | Source | Role |
+|---|---|---|
+| **1** | Project evidence — BOQ, drawings, specifications, technical references, supplier quotations, project decisions | Determines *what the project asks for*. Does NOT establish universal manufacturer truth. |
+| **2** | Codes / standards / AHJ / consultant requirements | The governing regime |
+| **3** | **First-party manufacturer evidence** | Product truth. Prefer: exact-model installation manual → exact-model datasheet → exact-model technical manual → exact-model application guide → manufacturer product page → family-level document *only where exact-model applicability is explicit* |
+| **4** | Authoritative external — certification body, regulatory filing, authorized distributor, official regional manufacturer representative | Used when first-party is unavailable |
+| **5** | Secondary sources | Only when stronger evidence is unavailable. **Mark clearly as secondary. Never silently elevate to manufacturer authority.** |
+
+## 9A.3 Exact-SKU research
+
+When a part number/model exists, search the **exact identifier first**
+(`IDP-PHOTO-R-IV`, `B200S-LF-IV`, `IFP-2100HV`).
+
+- Do not stop at a generic family page when exact-model documentation exists.
+- Preserve punctuation and version suffixes. Never collapse `REL-4.7K` into
+  `REL-47K` or vice versa — they are distinct products.
+
+## 9A.4 Do not stop prematurely at "Needs Investigation"
+
+Before returning `Needs Investigation`, the report must state:
+
+- what was searched,
+- which authoritative sources were found,
+- which exact semantic remained unresolved.
+
+## 9A.5 Source disagreement
+
+Do NOT silently pick one. Record `SOURCE_SEMANTIC_CONFLICT` and compare exact
+SKU scope, document revision/date, installation manual vs marketing page,
+regional applicability, protocol/version, and whether the texts describe
+genuinely different semantics.
+
+A real encountered example: `B200S "unique device type"` vs a product page
+claiming `"unique separate sounder-base address"`. Determine whether the term
+means independent identity/control, an additional SLC address, a shared physical
+address, or another resource concept. **Never resolve semantic conflicts by
+phrase matching alone.**
+
+A manufacturer product page that contradicts the manufacturer's own datasheet
+and manual is a **known-bad source** — log it, and let the datasheet/manual set
+govern.
+
+## 9A.6 Research never bypasses governance
+
+External research may create evidence, research facts, proposed interpretations
+and decision packets. It must **NOT** directly create engineering canonical
+truth. The governed flow is unchanged:
+
+```text
+Research → Evidence → Knowledge Fact → Human Administrator Review
+→ Promotion → Canonical Truth → Consumer
+```
+
+If first-party evidence proves an exact product that does not exist canonically,
+use the governed Technical Product Creation workflow. Do not require commercial
+price or supplier evidence to establish *technical* identity, and do not create
+pricing or availability.
+
+Discontinued/legacy products are researched and stored normally. Lifecycle never
+excludes a product from research; availability, stock and project usability stay
+separate human/commercial decisions.
+
+## 9A.7 Label every conclusion
+
+Distinguish `PROJECT EVIDENCE` / `MANUFACTURER EVIDENCE` /
+`EXTERNAL AUTHORITATIVE EVIDENCE` / `SECONDARY EVIDENCE` / `ENGINEERING
+INFERENCE`. **Inference is never presented as manufacturer fact.**
+
+## 9A.8 Default enrichment wave
+
+For Knowledge enrichment batches the default is:
+
+```text
+canonical product → inspect Knowledge gaps → automatically search exact
+first-party sources → author research facts → decision packet →
+Administrator review → promotion → consumer verification
+```
+
+## 9A.9 Stopping rule
+
+Stop when exact authoritative evidence resolves the decision, when further
+sources are duplicative, or when the residual uncertainty cannot be resolved by
+available evidence. Prefer evidence **quality** over source quantity. Do not
+crawl indefinitely.
+
+## 9A.10 Paid research tools
+
+External model/API cost is **not** a reason to abandon a useful technical path.
+The project priority is `SHIP A RELIABLE MVP`. Prefer free endpoints where
+equivalent, but paid APIs are acceptable when they materially improve accuracy,
+reliability, research quality, document understanding or development speed.
+
+**Do not autonomously purchase credits or add billing.** Stop only at the
+actual credential/payment boundary and report it.
+
+## 9A.11 Delegation and authority limits
+
+For non-trivial research, delegate independent threads (exact-document search,
+standards verification, repository audit, conflict analysis). The primary agent
+reconciles. **Subagents must never independently write canonical truth** (see
+21.4).
+
+## 9A.12 This policy does NOT weaken governance
+
+It expands **evidence**, never **write authority**. Human review, source
+authority, promotion gates, canonical write controls, conflict handling,
+dirty-tree safety (section 1), continuity (section 21) and testing requirements
+all remain exactly as written above.
+
+## 9A.13 Measured AI-assisted research flow (NVIDIA advisory pilot, real project)
+
+Measured on the live `Al Mousa School — Clean Golden Run` Fire Alarm BOQ, read-only, five advisory items plus two from the remaining pool. This encodes **what was measured**, not what is hoped for.
+
+```text
+project evidence (level 1, incl. APPROVED spec clauses)
+→ AI first-pass classification against the closed governed vocabulary
+→ deterministic validation (governed taxonomy + attribute semantics)
+→ targeted external research ONLY for a named unresolved question
+→ deterministic evidence reconciliation
+→ advisory engineering result + explicit unknowns
+→ human/governed approval where required
+```
+
+**AI is a first-pass classifier, never an authority.** Measured: it was reliable at selecting in-vocabulary governed values once the closed vocabulary was supplied, and disciplined about declining manufacturer/model/quantity when instructed. Every materially useful engineering fact still came from first-party or project evidence.
+
+**Prohibited: `research bundle → full re-classification`.** Measured on the same pilot: feeding the research conclusions back for a second full classification made output *more assertive and less accurate* — it over-specified a manufacturer model the BOQ line did not establish, and contradicted supplied evidence outright. Do not do this.
+
+**Permitted: at most ONE additional call, scoped to ONE named question**, constrained to one field or one closed answer set, with no re-classification and no product selection. Measured: a narrowly-scoped question ("is any governed family fully supported here, or must it be null?") produced the **correct** answer where the full re-classification had produced a wrong one, because it asked rather than invited echo.
+
+**A closed vocabulary must never force a choice.** Supplying the governed vocabulary stopped off-taxonomy labels entirely, but in-vocabulary does **not** mean supported: `Addressable Smoke Detector` is governed yet asserts `addressing` that "Smoke detectors (above ceiling)" never states. Prefer `null`/UNKNOWN plus Needs Review over a forced nearest-family pick. `fireAlarmFamilyNameClaims` / `assessFireAlarmFamilySupport` detect this generically from the taxonomy's own family names and report `UNSUPPORTED_FAMILY_OVERCLAIM`.
+
+**Absence of a claim is unresolved, not a defect to be papered over.** Where the project's own **approved** clauses establish a dimension (Al Mousa: "the fire detection and alarm system shall be addressable"), pass them as `additionalEvidence` — the claim then resolves legitimately. Where only *unapproved* `Needs Review` clauses exist, it stays unresolved pending approval. Never resolve a project requirement by citing manufacturer capability.
+
+**Sanitized derived input only.** Send the minimum technical facts. Before every outbound packet, run the sanitisation check and record `sanitizedInput = true/false`; never send or persist project/client identity, commercial or quotation values, contacts or confidential filenames. Never print, log or persist the credential. A key exposed in plaintext requires rotation before unattended, client or production use.
+
+**Reconciliation over agreement.** When AI and evidence disagree, the evidence wins and the disagreement is reported. Example measured: the model classified standby batteries as conditional; reconciliation corrected the *need* to required (capacity stays unresolved without governed sizing).
+
+**Bounded retries only.** A transient provider failure gets bounded retry under existing policy. Rate limiting is not a signal to retry harder.
+
+---
+
 # 10. Project Test Data Policy
 
 For project-level experiments, Golden validation, live workflow tests, enrichment verification, and matching trials, use the designated Golden project:
@@ -641,6 +816,41 @@ Al Mousa School — Clean Golden Run
 Preserve the older Al Mousa School project as historical/reference data.
 
 Do not use unrelated projects for project-level experiments unless explicitly authorized.
+
+---
+
+# 10A. Fire Alarm Brand Strategy & Pre-Sales (mandatory layer)
+
+For any Fire Alarm work that touches brand selection, technical matching, product or panel
+selection, RFQ, commercial BOM, costing or quotation, read
+`docs/fire-alarm-brand-and-pre-sales-policy.md` BEFORE selecting anything.
+
+The agent must not jump from project requirements straight to product matching. The order is:
+
+```text
+project requirements
+→ mandatory-brand check
+→ standards regime
+→ total-point scale
+→ in-house brand strategy
+→ preliminary technical selection
+→ supplier-assisted detailed selection
+```
+
+In-house brands: Farenhyt (UL/FM, total system points <= 2000), Gamewell (UL/FM, > 2000),
+Gent by Honeywell (EN). A contractually mandatory Client/Consultant brand overrides the
+in-house preference; a manufacturer merely *named* in a specification is not a mandate.
+
+Other brands (e.g. NOTIFIER) remain technically valid alternatives and existing knowledge is
+never deleted, but they are not automatically the preferred project brand.
+
+The internal engineer/agent does not have to resolve 100% of exact P/Ns and accessories
+before RFQ; the supplier completes detailed selection and the engineer then reviews it.
+Supplier output is a proposal, never an automatic approval. An unclear final SLC loop
+distribution is a labelled preliminary assumption, not a reason to block pricing.
+
+This policy is Fire Alarm ONLY. Never auto-apply it to CCTV, PA/VA, Access Control or other
+systems.
 
 Scratch/unit tests that do not mutate project data may use isolated fixtures.
 
@@ -892,6 +1102,9 @@ Establish current authority
 ↓
 Challenge assumptions
 ↓
+Engineering uncertainty / conflict / missing canonical truth?
+    → research externally FIRST (§9A), do not need to be asked
+↓
 If READ-ONLY:
     report smallest sufficient repair
     STOP
@@ -936,6 +1149,10 @@ large implementation
 
 When evidence is insufficient, say so.
 
+But for engineering-critical uncertainty, "insufficient" is not established until
+§9A external research has been attempted. "Not in the repository" is a reason to
+research — never a conclusion.
+
 When the task is complete, stop.
 
 ---
@@ -947,6 +1164,10 @@ state instead of restarting work from zero.
 
 Canonical store: `.lore/` (single-scope project: `_global/` only). Digest:
 `.lore/SUMMARY.md`. Never invent continuity facts; uncertainty stays uncertainty.
+
+Bootstrap READS shared continuity. Task agents then write ONLY their own
+`.lore/runs/<run-id>/*.delta.md` shard and never replace a shared ledger from an
+in-memory snapshot — see §21.4.1 (Concurrent-agent write ownership).
 
 ## 21.1 Session bootstrap (once per session)
 
@@ -969,6 +1190,50 @@ a NEW project-specific session:
 
 Do not repeat this bootstrap mechanically later in the same session once the
 necessary context is loaded, unless repository state materially changes.
+
+## 21.1A Final-state re-read contract (before any final report)
+
+A read taken at task start is a **planning snapshot**. It is never a reportable
+result. In a multi-agent tree another lane can change canonical authority while
+you work, so a report built from the start-of-task read quotes superseded
+numbers — and nothing flags it, because a stale count is indistinguishable from
+a fresh one once written down.
+
+**Contract.** Immediately before a FINAL REPORT states any of live counts or
+totals, live readiness/eligibility, current approvals or current decisions, the
+current selected candidate, current blocker totals, pricing/discount/quotation
+state, or drawing/extraction state, you MUST re-read the relevant canonical
+authority and report that read.
+
+| Domain | Authority to re-read |
+|---|---|
+| BOQ counts | `currentBoqEvidenceCounts` / `diagnoseBoqEvidence` — `worker/current-evidence-scope.mjs` |
+| Governing document version | `documentVersionGoverningPredicate` — same module |
+| Technical eligibility | the current technical authority for the item |
+| Pricing / quotation | `worker/pricing-authority.mjs`, `app/domain/quotation-authority.mjs` |
+| Drawing / extraction | the governed drawing authority for that document version |
+
+**Fail closed.** If the final read cannot be completed, state
+`CURRENTNESS_STATUS = UNPROVEN`, label the figures explicitly as a start-of-task
+snapshot, and do not present them as current. A stale number reported as current
+is worse than a number reported as unproven.
+
+## 21.1B Lore authority boundary
+
+`.lore/` is **HISTORY / CONTINUITY / EVIDENCE INDEX**. It is not live project
+authority and must never be presented as such.
+
+- A lore fact may be reused to **locate evidence** or **understand a prior
+  decision**.
+- Before citing a **mutable live-state fact** — counts, status, current approval,
+  current selected candidate, current document version, pricing run state,
+  readiness — **re-read the live authority** (§21.1A).
+- **LORE NEVER OVERRIDES CURRENT CANONICAL AUTHORITY.**
+- Superseded entries are retained deliberately and coexist; the newer entry
+  wins. Never delete or rewrite lore history to remove a superseded claim.
+- §21.2 encourages evidence reuse. Apply that reuse to *tests, audits and
+  verified facts*; apply §21.1A to *live mutable state*. These are different
+  obligations and are not interchangeable.
 
 ## 21.2 Evidence reuse
 
@@ -1023,6 +1288,85 @@ revalidation (narrowest relevant suite first, per `AGENTS.md`).
   canonical continuity reconciliation belongs to the main agent.
 - Preserve unrelated dirty-tree work in all cases.
 
+### 21.4.1 Concurrent-agent write ownership (HARD RULE)
+
+"Single continuity owner" (§21.4) is a SERIALISATION RULE, not a licence to
+replace a shared ledger from memory. A designated owner reading a shared ledger
+at time T and writing that in-memory snapshot back at time T+n destroys every
+entry another agent appended in between. That is exactly how
+`.lore/EVIDENCE.md` lost 61 historical records and `.lore/SUMMARY.md` lost
+digest entries on 2026-10-02.
+
+The binding rule:
+
+> **Concurrent agents must never replace an entire shared `.lore` ledger from an
+> in-memory snapshot.**
+
+Enforcement, in order of preference:
+
+**1. Per-agent delta ownership (default).** Every agent/session writes ONLY its
+own shard under `.lore/runs/<run-id>/`, and never touches the shared ledgers.
+A shard reuses the TARGET ledger's native line format verbatim, so the delta is
+mergeable without any new schema:
+
+```text
+.lore/runs/<run-id>/ARCHITECTURE.delta.md   -> .lore/_global/ARCHITECTURE.md
+.lore/runs/<run-id>/DECISIONS.delta.md      -> .lore/_global/DECISIONS.md
+.lore/runs/<run-id>/CONVENTIONS.delta.md    -> .lore/_global/CONVENTIONS.md
+.lore/runs/<run-id>/EVIDENCE.delta.md       -> .lore/EVIDENCE.md
+.lore/runs/<run-id>/SUMMARY.delta.md        -> .lore/SUMMARY.md
+```
+
+The shard owns its own evidence additions, decision additions, convention
+additions, and summary/update notes. No second agent may write, edit, or delete
+another agent's shard. `SUMMARY.md` is a derived digest, not a ledger: a normal
+task agent does not rewrite it at all.
+
+**2. One controlled consolidation step.** Shared files are aggregation targets.
+Merging shards into the ledgers happens through exactly one conflict-aware step:
+
+```bash
+node scripts/lore-consolidate.mjs --run <run-id>            # dry run (default)
+node scripts/lore-consolidate.mjs --run <run-id> --apply    # merge
+```
+
+`node scripts/lore-concurrency-sim.mjs` is the focused A/B proof of this model
+(continuity tooling only; it is not an application test and imports no
+application code).
+
+Consolidation MUST, in order:
+
+- re-read the target IMMEDIATELY before mutation (never write from the read
+  taken during planning);
+- preserve every foreign addition found in that fresh read;
+- merge ONLY the current run's additive delta;
+- write atomically (temp file + rename in the same directory);
+- verify after the write that no pre-existing entry disappeared, and abort if
+  any did.
+
+**3. Conflict detection — fail closed.** Before any consolidation, detect and
+REFUSE (never silently resolve):
+
+- entry IDs already present in the target;
+- divergent duplicate IDs (same ID, different text) in target vs delta;
+- entries added by another agent since this run's initial read;
+- whole-file shrinkage relative to the run's `MANIFEST.json` baseline;
+- unidentifiable (ID-less) records in a delta shard;
+- any loss of historical records.
+
+An ambiguous merge FAILS CLOSED with a conflict packet naming the unresolved
+entry IDs. It never picks one agent's version and never guesses. Records are
+recovered from backups by ID-deduplicated MERGE
+(`current live content` + `records present in backup but absent live` +
+`current foreign additions`), never by overwriting the live file with a backup.
+
+**4. Stable IDs are authoritative.** Continuity records keep their existing
+`DEC-...` / `CONV-...` / `ARCH-...` / `EV-...` IDs. Never renumber historical
+entries. Deduplication and merge are keyed on that stable ID. For `SUMMARY.md`,
+whose prose lines may not carry their own ID, merge identity is the set of entry
+anchors the line cites (`[_global/DECISIONS.md#DEC-...]`); do not retrofit IDs
+onto historical summaries merely for formatting.
+
 ## 21.5 End-of-work continuity
 
 After a meaningful VERIFIED slice, the main agent reconciles durable knowledge
@@ -1039,8 +1383,11 @@ test, or report (e.g. `scripts/fire-alarm-golden-evaluation-gate.mjs`,
 Do NOT dump transient chain-of-thought, verbose execution logs, or every
 command into Lore. Never convert an unsupported conclusion into a durable fact.
 The main owner may also add/update the corresponding `.lore/EVIDENCE.md` index
-record (pointer only, per that file's schema); subagents READ the index but must
-not concurrently mutate canonical evidence memory.
+record (pointer only, per that file's schema) — by appending it to this run's
+`.lore/runs/<run-id>/EVIDENCE.delta.md` shard and consolidating (§21.4.1), never
+by editing the shared index directly. Subagents READ the index and may write
+only their own shard; they must not concurrently mutate canonical evidence
+memory.
 
 ## 21.6 Evidence-continuity gap (status 2026-09-29, updated)
 

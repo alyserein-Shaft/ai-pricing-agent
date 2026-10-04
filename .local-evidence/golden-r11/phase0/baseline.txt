@@ -1,0 +1,52 @@
+=== R11 MISSION BASELINE 2026-09-27T14:30:31Z ===
+--- migration chain ---
+0000_baseline_schema_0082.sql
+0001_price_record_intake_lineage.sql
+0002_governing_source_fk.sql
+0003_review_decision_immutability.sql
+0004_fire_alarm_panel_sizing_snapshots.sql
+0005_document_revision_addendum.sql
+0006_project_effective_time_calendar.sql
+0007_project_calendar_evidence_repair.sql
+0008_profile_applicability_source_authority.sql
+0009_profile_applicability_device_identity_authority.sql
+0010_requirement_intelligence_source_authority.sql
+0011_requirement_intelligence_constraint_restore.sql
+--- journal entries ---
+315
+--- Golden counters ---
+boq_current_authoritative|82
+understanding_interpretations_all|99
+approval_events|31
+review_versions_latest_approved|27
+links_active|Confirmed|68
+links_active|Needs Review|6
+links_active|Suggested|556
+profiles_current|Classification Required|44
+profiles_current|Missing Critical Information|6
+profiles_current|Needs Technical Review|18
+profiles_current|Ready with Warnings|14
+approved_for_matching|0
+source_facts|applicable_standard|Pending Review|10
+source_facts|fixed_temperature_setpoint|Pending Review|1
+source_facts|high_temp_alternative_available|Pending Review|1
+source_facts|rate_of_rise_sensitivity|Pending Review|1
+Error: in prepare, ambiguous column name: review_status
+  SELECT 'intelligence_facts', review_status, COUNT(*) FROM requirement_intellig
+                 error here ---^
+matching_runs|0
+pricing_lines|0
+quotation_revisions|0
+LS_rows_in_denominator|17
+--- schema: pricing_lines / project_quotation_lines notnull ---
+pricing_lines|candidate_id|1
+pricing_lines|product_id|1
+project_quotation_lines|candidate_id|1
+project_quotation_lines|product_id|1
+project_quotation_lines|manufacturer_name|1
+project_quotation_lines|part_number|1
+project_quotation_lines|pricing_line_id|1
+project_quotation_lines|commercial_approval_id|1
+--- git ---
+     722
+029b42637ac117f810e726b40c2e888c484c173b

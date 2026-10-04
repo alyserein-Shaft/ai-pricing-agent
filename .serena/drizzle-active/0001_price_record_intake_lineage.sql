@@ -1,0 +1,2 @@
+ALTER TABLE `price_records` ADD `source_intake_row_id` text REFERENCES supplier_quote_intake_rows(id);--> statement-breakpoint
+CREATE INDEX `price_records_source_intake_row_idx` ON `price_records` (`source_intake_row_id`);

@@ -1,5 +1,6 @@
 import {
   aggregateProjectPricing,
+  isTemporallyUsable,
   PRICING_ENGINE_VERSION,
   PRICING_RULESET_VERSION,
 } from "../app/domain/pricing-engine.mjs";
@@ -8,6 +9,11 @@ import {
   currentBoqEvidenceFrom,
   currentBoqItemPredicate,
 } from "./current-evidence-scope.mjs";
+
+import {
+  allowsExpiredOrMissingValidity,
+  resolvePriceValidityPolicy,
+} from "./commercial-validity-policy.mjs";
 
 const id = (prefix) => `${prefix}_${crypto.randomUUID()}`;
 
@@ -38,7 +44,7 @@ const moneyMinor = (value) =>
 
 export const loadPricingInput = async (
   db,
-  { projectId, boqItemId, candidateId, scenario, body },
+  { projectId, boqItemId, candidateId, scenario, body, allowExpiredOrMissingValidity: allowOption },
 ) => {
   const item = await db
     .prepare(`SELECT b.* FROM ${currentBoqEvidenceFrom("b")} WHERE b.id=? AND b.project_id=? AND ${currentBoqItemPredicate("b")}`)
@@ -91,10 +97,34 @@ export const loadPricingInput = async (
     ...parse(scenario.settings, {}),
     ...(body.settings || {}),
   };
+  // Temporal validity policy. The runtime derives the relaxation ONLY from a
+  // current governed commercial_conditions policy scoped to these price
+  // sources (fail-closed: no resolvable policy => strict). An explicit caller
+  // option is honoured because it is itself an authorisation the caller had to
+  // obtain; it is never inferred from a missing date, brand or file name.
+  const priceSourceIds = (records.results || [])
+    .map((entry) => entry.source_id)
+    .filter(Boolean);
+  const validityPolicy = await resolvePriceValidityPolicy(db, priceSourceIds);
+  const allowExpiredOrMissingValidity =
+    allowOption === true || validityPolicy.allows === true;
+  const temporalGate = (entry) =>
+    isTemporallyUsable(
+      {
+        status: entry.status || entry.validity_state,
+        supersededAt: entry.superseded_at ?? null,
+        validUntil: entry.valid_until,
+        effectiveFrom: entry.effective_from,
+      },
+      now(),
+      allowExpiredOrMissingValidity,
+    );
   return {
     projectId,
     productId: candidate.product_id,
     candidateId,
+    allowExpiredOrMissingValidity,
+    validityPolicy,
     selectedPriceSourceId: body.selectedPriceSourceId || null,
     manufacturer: candidate.manufacturer,
     quantity: item.numeric_quantity,
@@ -117,8 +147,7 @@ export const loadPricingInput = async (
               (entry) =>
                 entry.approval_status === "Approved" &&
                 entry.downstream_use === "Costing" &&
-                entry.valid_until &&
-                new Date(entry.valid_until) >= new Date() &&
+                temporalGate(entry) &&
                 entry.currency &&
                 entry.source_id
             )

@@ -1,0 +1,21 @@
+FIRE DETECTION & ALARM SCHEMATIC — revision 1 (2401232- PC- WLC- DR- T-93-ZZZ-005). Engineering review is pending.
+
+MAIN FINDINGS
+Cable specifications: 2 X 1.5 sq.mm CWZ CABLE (2 source text mentions; Unspecified); 2 X 2.5 sq.mm CWZ FIRE RESISTANT CABLE (2 source text mentions; Unspecified).
+Circuits: LOOP-1 (Fire alarm loop) — Unknown; LOOP-2 (Fire alarm loop) — Unknown; LOOP-3 (Fire alarm loop) — Unknown; LOOP-4 (Fire alarm loop) — Spare / Unpopulated; NAC LOOP — Unknown (tag found; status not established).
+Drawing references: → 2401232-PC-AMS-T-00-ZZZ-002.
+Equipment and locations: Fire alarm control panel — AT GROUND FLOOR SECURITY ROOM (00-026).
+Interfaces: Video surveillance system; INTERFACE TO IBMS SYSTEM; INTERFACE TO ACS SYSTEM; INTERFACE TO ELEVATORS; INTERFACE TO PUBLIC ADDRESS & VOICE ALARM SYSTEM; INTERFACE TO EMERGENCY LIGHTING SYSTEM.
+Possible connections: TO MFACP @ FCC ROOM KGS BUILDING.
+Notes: The drawing is not to scale (N.T.S).
+NEEDS CLARIFICATION
+Cable lengths
+Device models
+Connection details between devices
+Power supply details for each device
+Specific fire alarm system standards or codes compliance
+Unknown circuit status means insufficient evidence; connections and device assignments are not established.
+16 distinct current engineering candidates; 10 overlapping source interpretations grouped. 220 source fragments and 57 historical AI outputs are not additional engineering findings.
+1 additional model proposals need source clarification and are excluded from the engineering count.
+Drawing is not to scale. Cable specification mentions are not lengths or additional quantities.
+Human engineering approval remains pending.

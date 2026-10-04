@@ -1,0 +1,21 @@
+-- ONBOARDING RECOVERY D -- governed Contact Title.
+--
+-- Pure DDL, additive only, matches every prior migration in this schema:
+-- ONE new nullable column, no backfill, no default honorific. Existing
+-- rows (e.g. Al Mousa School's contact_name = "Mr. Ahmad", contact_title
+-- currently absent) stay exactly as they are -- contact_title is simply
+-- NULL for every historical row. No script in this repository parses or
+-- migrates a historical contact_name into contact_title: free-text
+-- historical data may contain titles, names, companies, roles or multiple
+-- people, and no safe deterministic split is proven (see the ONBOARDING
+-- RECOVERY D report's Part 16).
+--
+-- Allowed values are governed in code only (app/domain/project-npq-engine.mjs
+-- NPQ_CONTACT_TITLES: "Mr.", "Ms.", "Mrs.", "Miss", or NULL/empty) -- this
+-- column stores whatever normalizeNpQProfile() already validated, the same
+-- pattern every other governed NPQ text column (delivery_scope, manufacturer
+-- strategy, pricing strategy, ...) already uses; no CHECK constraint is
+-- added here, consistent with those existing columns.
+--
+-- THIS MIGRATION IS NOT APPLIED TO LIVE BUSINESS DATA IN THIS SLICE.
+ALTER TABLE `project_npq_profile_versions` ADD `contact_title` text;

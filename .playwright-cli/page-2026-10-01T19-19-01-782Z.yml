@@ -1,0 +1,13 @@
+- main [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]: "!"
+    - text: SIGN IN REQUIRED
+    - heading "Sign in to continue" [level=1] [ref=e7]
+    - paragraph [ref=e6]: Sign in to access commercial and project data.
+    - code [ref=e8]: R1_AUTHENTICATION_REQUIRED
+    - generic [ref=e9]:
+      - generic [ref=e10]:
+        - text: R1 access credential
+        - textbox "R1 access credential" [ref=e11]: local-development-user
+      - button "Sign in" [ref=e12]
+      - paragraph [ref=e13]: The supplied access credential is not valid.

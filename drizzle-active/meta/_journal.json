@@ -1,0 +1,174 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "0",
+      "when": 1790286854162,
+      "tag": "0000_baseline_schema_0082",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "1",
+      "when": 1790288954363,
+      "tag": "0001_price_record_intake_lineage",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "2",
+      "when": 1790289018617,
+      "tag": "0002_governing_source_fk",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "3",
+      "when": 1790332894938,
+      "tag": "0003_review_decision_immutability",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "4",
+      "when": 1790333177885,
+      "tag": "0004_fire_alarm_panel_sizing_snapshots",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1790336431862,
+      "tag": "0005_document_revision_addendum",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1790464167016,
+      "tag": "0006_project_effective_time_calendar",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790466259379,
+      "tag": "0007_project_calendar_evidence_repair",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "8",
+      "when": 1790512014937,
+      "tag": "0008_profile_applicability_source_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "9",
+      "when": 1790512091401,
+      "tag": "0009_profile_applicability_device_identity_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "10",
+      "when": 1790512091401,
+      "tag": "0010_requirement_intelligence_source_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "11",
+      "when": 1790515541078,
+      "tag": "0011_requirement_intelligence_constraint_restore",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "6",
+      "when": 1790521152726,
+      "tag": "0012_military_havok",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1790608881119,
+      "tag": "0013_specification_clause_admission_outcome",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "8",
+      "when": 1790613048470,
+      "tag": "0014_specification_clause_candidate_mechanism",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "9",
+      "when": 1790615000000,
+      "tag": "0015_pricing_quotation_scope_source_model",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "tag": "0016_specification_clause_candidate_decisions",
+      "when": 1790701400000,
+      "version": "9",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "tag": "0017_fire_alarm_preliminary_sizing_snapshots",
+      "when": 1790710000000,
+      "version": "9",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "tag": "0018_understanding_review_evidence_governing_repair",
+      "when": 1790800000000,
+      "version": "9",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1790894808036,
+      "tag": "0019_fixed_angel",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "6",
+      "when": 1791057143509,
+      "tag": "0020_drawing_quantity_claims",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "6",
+      "when": 1791143543509,
+      "tag": "0021_drawing_quantity_expected_scope",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "6",
+      "when": 1791229943509,
+      "tag": "0022_drawing_quantity_expected_scope_decision_group",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "6",
+      "when": 1791145199300,
+      "tag": "0023_drawing_quantity_semantic_adjudications",
+      "breakpoints": true
+    }
+  ]
+}

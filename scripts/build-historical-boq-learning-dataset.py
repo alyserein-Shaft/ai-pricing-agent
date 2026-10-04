@@ -13,12 +13,35 @@ ROOT = Path('/Users/serein-b/Downloads/projects')
 DB = Path('.wrangler/state/v3/d1/miniflare-D1DatabaseObject/faaf2b0445ab934c3aac48ddf0cdfade8f9bac050be98993748742cdd2cb05fb.sqlite')
 OUT = Path('outputs/historical-boq-learning')
 ACTOR = 'local-development-user'
+# The checksum cache lives in /tmp, so it can be written by a DIFFERENT run, a
+# different project checkout, or left over from an earlier state of the source
+# files. Reading it unconditionally meant a stale -- or poisoned -- cache
+# silently changed the dataset identity without any recomputation. The cache is
+# therefore fingerprinted against the CURRENT inputs and its identity, and is
+# ignored outright when they differ. It is never trusted as authoritative.
 CHECKSUM_CACHE = Path('/tmp/five-project-files.sha256')
+CHECKSUM_CACHE_IDENTITY = Path('/tmp/five-project-files.sha256.identity')
 CHECKSUMS = {}
-if CHECKSUM_CACHE.exists():
-    for line in CHECKSUM_CACHE.read_text(errors='ignore').splitlines():
-        if '  ' in line:
-            checksum, file_path = line.split('  ', 1); CHECKSUMS[file_path] = checksum
+
+
+def _current_inputs_identity() -> str:
+    """Identity of everything the cache is a function of: the script itself and
+    every project directory entry it could hash."""
+    parts = [f'script:{hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}']
+    try:
+        entries = sorted(str(p) for p in ROOT.iterdir() if p.is_dir())
+    except OSError:
+        entries = []
+    for name in entries:
+        try:
+            st = (ROOT / name).stat()
+            parts.append(f'dir:{name}:{int(st.st_mtime_ns)}')
+        except OSError:
+            continue
+    return hashlib.sha256('\n'.join(parts).encode()).hexdigest()
+
+
+_CACHE_TRUSTED = False
 
 PROJECTS = {
     'Bab Al khair - Makkah': ('Bab Al-Khair Hospital — Makkah', 'IHCC', ['Low Current', 'Fire Alarm', 'CCTV', 'Access Control', 'Data', 'UPS'], '2026-06-07', 'Partial Learning Pair'),
@@ -31,11 +54,48 @@ PROJECTS = {
 def stable(prefix: str, value: str) -> str:
     return f'{prefix}_{hashlib.sha256(value.encode()).hexdigest()[:24]}'
 
+_REFRESHED = False
+
+
+def _refresh_cache_trust() -> None:
+    """Re-derive cache trust from the CURRENT inputs, once, at first use.
+
+    Deliberately recomputes identity at use time rather than import time so the
+    identity covers every input the dataset actually depends on.
+    """
+    global _CACHE_TRUSTED, _REFRESHED, CHECKSUMS
+    if _REFRESHED: return
+    _REFRESHED = True
+    identity = _current_inputs_identity()
+    recorded = CHECKSUM_CACHE_IDENTITY.read_text().strip() if CHECKSUM_CACHE_IDENTITY.exists() else None
+    if recorded != identity:
+        # Identity differs -> the /tmp cache is from another run / checkout /
+        # input state. Discard it entirely rather than mixing stale checksums in.
+        _CACHE_TRUSTED = False
+        CHECKSUMS = {}
+        return
+    _CACHE_TRUSTED = True
+    CHECKSUMS = {}
+    for line in CHECKSUM_CACHE.read_text(errors='ignore').splitlines():
+        if '  ' in line:
+            checksum, file_path = line.split('  ', 1); CHECKSUMS[file_path] = checksum
+
+
+def persist_checksum_cache() -> None:
+    """Write the cache together with the identity it is valid for."""
+    CHECKSUM_CACHE.write_text(''.join(f'{v}  {k}\n' for k, v in sorted(CHECKSUMS.items())))
+    CHECKSUM_CACHE_IDENTITY.write_text(_current_inputs_identity())
+
+
 def sha(path: Path) -> str:
-    if str(path) in CHECKSUMS: return CHECKSUMS[str(path)]
+    # A cache hit is only honoured when the cache identity matches the current
+    # inputs; otherwise every file is re-hashed from the real bytes.
+    _refresh_cache_trust()
+    if _CACHE_TRUSTED and str(path) in CHECKSUMS: return CHECKSUMS[str(path)]
     h = hashlib.sha256()
     with path.open('rb') as f:
         while b := f.read(1024 * 1024): h.update(b)
+    CHECKSUMS[str(path)] = h.hexdigest()
     return h.hexdigest()
 
 def norm(value) -> str:

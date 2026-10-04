@@ -1,0 +1,11 @@
+-- Source-Backed Drawing Understanding pilot: Drawing Intake never captured a
+-- page's intrinsic PDF /Rotate value. Every extraction engine's bounding
+-- boxes are in the unrotated MediaBox frame (correct and self-consistent),
+-- but Visual Review always rendered the canvas at rotation 0 too, so a page
+-- with a real /Rotate 90/180/270 displayed sideways relative to any standard
+-- PDF viewer. This column lets Drawing Intake persist the real value so
+-- rendering and overlay mapping (both already rotation-aware in
+-- app/domain/drawing-coordinate-mapper.mjs) can use it. Defaults to 0
+-- (no rotation) for every already-ingested page, which is a safe, explicit
+-- "unknown/assume upright" default rather than a guess.
+ALTER TABLE `drawing_pages` ADD `rotation` integer DEFAULT 0 NOT NULL;

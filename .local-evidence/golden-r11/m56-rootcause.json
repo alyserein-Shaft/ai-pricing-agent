@@ -1,0 +1,1444 @@
+[
+  {
+    "id": "boqitem_717c0ac3-2060-42e1-844b-db5985f76038",
+    "desc": "Smoke detectors (above ceiling)",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE"
+    ]
+  },
+  {
+    "id": "boqitem_ec0874a1-09b4-46d4-ae62-beef39037984",
+    "desc": "Smoke detectors (below ceiling)",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE"
+    ]
+  },
+  {
+    "id": "boqitem_20c8fe0b-1353-43ae-92c2-f8368aeafec6",
+    "desc": "Heat detector",
+    "reviewStatus": "APPROVED",
+    "readiness": "Missing Critical Information",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Heat Detector",
+    "proposalCategory": "Detection Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Heat Detector",
+    "detCategory": "Detection Devices",
+    "eligible": true,
+    "reasons": [
+      "PRODUCT_FAMILY_DETERMINISTICALLY_REPRODUCED_FROM_RAW_TEXT",
+      "PARENT_TAXONOMY_CHAIN_CONFIRMED",
+      "SYSTEM_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT",
+      "NO_TECHNICAL_ATTRIBUTE_EXCEEDS_EVIDENCE",
+      "NO_POLICY_AMBIGUITY"
+    ]
+  },
+  {
+    "id": "boqitem_bf536ac8-2a62-4c80-a145-7edb51aac7af",
+    "desc": "Combined smoke and heat detector",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE",
+      "POLICY_AMBIGUITY_PRESENT:MULTI_FUNCTION_DETECTION_REQUIRES_REVIEW"
+    ]
+  },
+  {
+    "id": "boqitem_6ba1ade9-d539-4bec-b305-0bef7efbaabb",
+    "desc": "Door contact",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE"
+    ]
+  },
+  {
+    "id": "boqitem_68b7dde1-b5a7-443f-9121-2a0495adeab5",
+    "desc": "Duct detector",
+    "reviewStatus": "APPROVED",
+    "readiness": "Ready with Warnings",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Duct Detector",
+    "detCategory": "Detection Devices",
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE",
+      "PARENT_CATEGORY_MISMATCH",
+      "POLICY_AMBIGUITY_PRESENT:GOVERNED_CANDIDATE_KEY_MISSING"
+    ]
+  },
+  {
+    "id": "boqitem_7218b8d7-b049-4336-9dce-3f4375c4caab",
+    "desc": "Main Fire alarm control panel with all required hardware, interfaces, cabling, and accessories, for connectivity to the FACP panels installed in the individual school buildings and Welcome center",
+    "reviewStatus": "APPROVED",
+    "readiness": "Ready with Warnings",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Fire Alarm Control Panel",
+    "proposalCategory": "Control Equipment",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Fire Alarm Control Panel",
+    "detCategory": "Control Equipment",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:loop_compatibility",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:product_type",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:protocol"
+    ]
+  },
+  {
+    "id": "boqitem_b2f2b57b-5431-4623-964e-2301d79d675a",
+    "desc": "Fire alarm manual station",
+    "reviewStatus": "APPROVED",
+    "readiness": "Missing Critical Information",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Manual Call Point",
+    "proposalCategory": "Manual Initiation",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Manual Call Point",
+    "detCategory": "Manual Initiation",
+    "eligible": true,
+    "reasons": [
+      "PRODUCT_FAMILY_DETERMINISTICALLY_REPRODUCED_FROM_RAW_TEXT",
+      "PARENT_TAXONOMY_CHAIN_CONFIRMED",
+      "SYSTEM_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT",
+      "NO_TECHNICAL_ATTRIBUTE_EXCEEDS_EVIDENCE",
+      "NO_POLICY_AMBIGUITY"
+    ]
+  },
+  {
+    "id": "boqitem_02e5f0ec-bb52-4056-a3af-ced6cacca5de",
+    "desc": "Fire alarm manual station (weather proof)",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Manual Call Point",
+    "proposalCategory": "Manual Initiation",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Manual Call Point",
+    "detCategory": "Manual Initiation",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:indoor_outdoor"
+    ]
+  },
+  {
+    "id": "boqitem_9ead7b88-235f-42c5-9d7a-d3aa959de0f5",
+    "desc": "Fireman telephone jack",
+    "reviewStatus": "APPROVED",
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Firefighter Telephone",
+    "proposalCategory": "Control Equipment",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Firefighter Telephone",
+    "detCategory": "Control Equipment",
+    "eligible": true,
+    "reasons": [
+      "PRODUCT_FAMILY_DETERMINISTICALLY_REPRODUCED_FROM_RAW_TEXT",
+      "PARENT_TAXONOMY_CHAIN_CONFIRMED",
+      "SYSTEM_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT",
+      "NO_TECHNICAL_ATTRIBUTE_EXCEEDS_EVIDENCE",
+      "NO_POLICY_AMBIGUITY"
+    ]
+  },
+  {
+    "id": "boqitem_52e8b8c1-46af-44f3-b940-fcd64b27548c",
+    "desc": "Interface module control",
+    "reviewStatus": "APPROVED",
+    "readiness": "Ready with Warnings",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Interface Module",
+    "detCategory": "Modules and Interfaces",
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE",
+      "PARENT_CATEGORY_MISMATCH",
+      "POLICY_AMBIGUITY_PRESENT:GOVERNED_CANDIDATE_KEY_MISSING"
+    ]
+  },
+  {
+    "id": "boqitem_dbc7ed73-d0b2-4746-a6a6-8315c7679f19",
+    "desc": "Interface module monitor",
+    "reviewStatus": "APPROVED",
+    "readiness": "Ready with Warnings",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Interface Module",
+    "proposalCategory": "Modules and Interfaces",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Interface Module",
+    "detCategory": "Modules and Interfaces",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:product_type",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:protocol"
+    ]
+  },
+  {
+    "id": "boqitem_19dbc043-bb7b-4386-b232-e9aad60692fb",
+    "desc": "Loop powered strobes",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Strobe",
+    "proposalCategory": "Notification Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Strobe",
+    "detCategory": "Notification Devices",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:operating_voltage",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:protocol",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:product_type",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:loop_compatibility"
+    ]
+  },
+  {
+    "id": "boqitem_2e0ea260-e231-45f8-b9ed-dc0c14870c5e",
+    "desc": "Loop powered strobes with sounder",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Sounder/Strobe",
+    "proposalCategory": "Notification Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Sounder/Strobe",
+    "detCategory": "Notification Devices",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:operating_voltage"
+    ]
+  },
+  {
+    "id": "boqitem_4b781db4-1b67-4915-a051-099640b38e8d",
+    "desc": "Loop powered strobes with sounder (weatherproof)",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Sounder/Strobe",
+    "proposalCategory": "Notification Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Sounder/Strobe",
+    "detCategory": "Notification Devices",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:indoor_outdoor"
+    ]
+  },
+  {
+    "id": "boqitem_68d4c69c-b18c-4084-ba4a-501077786620",
+    "desc": "Control and monitor element as required for interfacing with access doors, sliding door, fire fighting and HVAC system for proper operation",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "UNAVAILABLE_OR_STALE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": null,
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "STALE_OR_UNAVAILABLE_PROPOSAL"
+    ]
+  },
+  {
+    "id": "boqitem_c5565848-16ea-4f5d-81b3-f9b1b6421a6f",
+    "desc": "Control of HVAC equipment, smoke exhaust fans, duct heaters and interfacing with BMS system",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "UNAVAILABLE_OR_STALE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": null,
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "STALE_OR_UNAVAILABLE_PROPOSAL"
+    ]
+  },
+  {
+    "id": "boqitem_f51b111f-6580-4fa2-b082-148f295b5cea",
+    "desc": "Signals to elevators with all required accessories",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "UNAVAILABLE_OR_STALE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": null,
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "STALE_OR_UNAVAILABLE_PROPOSAL"
+    ]
+  },
+  {
+    "id": "boqitem_f90e0e4e-b926-4a5f-a341-31297c366c3b",
+    "desc": "CWZ category fire resistant cable with all accessories",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE"
+    ]
+  },
+  {
+    "id": "boqitem_afeb23b4-33c3-4cc6-967c-4ac396e7a119",
+    "desc": "Smoke detectors (above ceiling) Smoke detectors (above ceiling)",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE"
+    ]
+  },
+  {
+    "id": "boqitem_e71161d4-997f-479b-ab2d-56bf40119bf4",
+    "desc": "Smoke detectors (below ceiling) Smoke detectors (below ceiling)",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE"
+    ]
+  },
+  {
+    "id": "boqitem_7b227a70-3bfe-437c-962b-656b87e1f482",
+    "desc": "Heat detector",
+    "reviewStatus": "APPROVED",
+    "readiness": "Missing Critical Information",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Heat Detector",
+    "proposalCategory": "Detection Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Heat Detector",
+    "detCategory": "Detection Devices",
+    "eligible": true,
+    "reasons": [
+      "PRODUCT_FAMILY_DETERMINISTICALLY_REPRODUCED_FROM_RAW_TEXT",
+      "PARENT_TAXONOMY_CHAIN_CONFIRMED",
+      "SYSTEM_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT",
+      "NO_TECHNICAL_ATTRIBUTE_EXCEEDS_EVIDENCE",
+      "NO_POLICY_AMBIGUITY"
+    ]
+  },
+  {
+    "id": "boqitem_b85c8e55-9623-4fa5-9cf1-6bbaa8bddebb",
+    "desc": "Combined smoke and heat sensor Combined smoke and heat sensor",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE",
+      "POLICY_AMBIGUITY_PRESENT:MULTI_FUNCTION_DETECTION_REQUIRES_REVIEW"
+    ]
+  },
+  {
+    "id": "boqitem_90cd5824-0e53-43ca-aa68-85dbd733601f",
+    "desc": "Door contact Door contact",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE"
+    ]
+  },
+  {
+    "id": "boqitem_3c5106ba-7136-4398-b2ac-5074ab285315",
+    "desc": "Duct detector Duct detector",
+    "reviewStatus": "APPROVED",
+    "readiness": "Ready with Warnings",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Duct Detector",
+    "detCategory": "Detection Devices",
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE",
+      "PARENT_CATEGORY_MISMATCH",
+      "POLICY_AMBIGUITY_PRESENT:GOVERNED_CANDIDATE_KEY_MISSING"
+    ]
+  },
+  {
+    "id": "boqitem_12c228fc-5336-4b46-b737-e53e93cd49a6",
+    "desc": "Fire alarm control panel with all accessories Fire alarm control panel with all accessories",
+    "reviewStatus": "APPROVED",
+    "readiness": "Missing Critical Information",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Fire Alarm Control Panel",
+    "proposalCategory": "Control Equipment",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Fire Alarm Control Panel",
+    "detCategory": "Control Equipment",
+    "eligible": true,
+    "reasons": [
+      "PRODUCT_FAMILY_DETERMINISTICALLY_REPRODUCED_FROM_RAW_TEXT",
+      "PARENT_TAXONOMY_CHAIN_CONFIRMED",
+      "SYSTEM_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT",
+      "NO_TECHNICAL_ATTRIBUTE_EXCEEDS_EVIDENCE",
+      "NO_POLICY_AMBIGUITY"
+    ]
+  },
+  {
+    "id": "boqitem_8722a4c9-dd0c-4e9b-9005-27182c74b369",
+    "desc": "Fire alarm manual station Fire alarm manual station",
+    "reviewStatus": "APPROVED",
+    "readiness": "Missing Critical Information",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Manual Call Point",
+    "proposalCategory": "Manual Initiation",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Manual Call Point",
+    "detCategory": "Manual Initiation",
+    "eligible": true,
+    "reasons": [
+      "PRODUCT_FAMILY_DETERMINISTICALLY_REPRODUCED_FROM_RAW_TEXT",
+      "PARENT_TAXONOMY_CHAIN_CONFIRMED",
+      "SYSTEM_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT",
+      "NO_TECHNICAL_ATTRIBUTE_EXCEEDS_EVIDENCE",
+      "NO_POLICY_AMBIGUITY"
+    ]
+  },
+  {
+    "id": "boqitem_53272ebd-dbac-4a5b-bdad-580b36df5f44",
+    "desc": "Fire alarm manual station (weather proof) Fire alarm manual station (weather proof)",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Manual Call Point",
+    "proposalCategory": "Manual Initiation",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Manual Call Point",
+    "detCategory": "Manual Initiation",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:indoor_outdoor",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:product_type"
+    ]
+  },
+  {
+    "id": "boqitem_b2113663-3d31-423f-9d81-9b57c9ab8c98",
+    "desc": "Fireman telephone jack",
+    "reviewStatus": "APPROVED",
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Firefighter Telephone",
+    "proposalCategory": "Control Equipment",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Firefighter Telephone",
+    "detCategory": "Control Equipment",
+    "eligible": true,
+    "reasons": [
+      "PRODUCT_FAMILY_DETERMINISTICALLY_REPRODUCED_FROM_RAW_TEXT",
+      "PARENT_TAXONOMY_CHAIN_CONFIRMED",
+      "SYSTEM_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT",
+      "NO_TECHNICAL_ATTRIBUTE_EXCEEDS_EVIDENCE",
+      "NO_POLICY_AMBIGUITY"
+    ]
+  },
+  {
+    "id": "boqitem_2afeabeb-d9f1-47d5-8390-b26c83813285",
+    "desc": "Interface module control",
+    "reviewStatus": "APPROVED",
+    "readiness": "Ready with Warnings",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Interface Module",
+    "detCategory": "Modules and Interfaces",
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE",
+      "PARENT_CATEGORY_MISMATCH",
+      "POLICY_AMBIGUITY_PRESENT:GOVERNED_CANDIDATE_KEY_MISSING"
+    ]
+  },
+  {
+    "id": "boqitem_c30dfc7e-ffbf-4436-9068-3225b9d7b53d",
+    "desc": "Interface module monitor",
+    "reviewStatus": "APPROVED",
+    "readiness": "Ready with Warnings",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Interface Module",
+    "proposalCategory": "Modules and Interfaces",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Interface Module",
+    "detCategory": "Modules and Interfaces",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:operating_voltage",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:protocol",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:product_type"
+    ]
+  },
+  {
+    "id": "boqitem_1f21dccb-aff0-411b-a6d6-70f5c04c48d4",
+    "desc": "Loop powered strobes",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Strobe",
+    "proposalCategory": "Notification Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Strobe",
+    "detCategory": "Notification Devices",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:operating_voltage",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:protocol",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:product_type",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:loop_compatibility"
+    ]
+  },
+  {
+    "id": "boqitem_77638975-918b-40af-8b7f-9e40179bf6c4",
+    "desc": "Loop powered strobes with sounder",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Sounder/Strobe",
+    "detCategory": "Notification Devices",
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE",
+      "PARENT_CATEGORY_MISMATCH",
+      "POLICY_AMBIGUITY_PRESENT:GOVERNED_CANDIDATE_KEY_MISSING"
+    ]
+  },
+  {
+    "id": "boqitem_a3662c29-a15e-4c65-9678-56f742a25a6e",
+    "desc": "Loop powered strobes with sounder (weatherproof)",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Sounder/Strobe",
+    "proposalCategory": "Notification Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Sounder/Strobe",
+    "detCategory": "Notification Devices",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:indoor_outdoor"
+    ]
+  },
+  {
+    "id": "boqitem_ff3994d5-60de-463a-9cea-1b2b250eb4d6",
+    "desc": "Control and monitor element as required for interfacing with access doors, sliding door, fire fighting and HVAC system for proper operation",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "UNAVAILABLE_OR_STALE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": null,
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "STALE_OR_UNAVAILABLE_PROPOSAL"
+    ]
+  },
+  {
+    "id": "boqitem_0a3d67ef-0d9b-4323-9f25-06e009c49c7a",
+    "desc": "Control of HVAC equipment, smoke exhaust fans, duct heaters and interfacing with BMS system",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "UNAVAILABLE_OR_STALE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": null,
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "STALE_OR_UNAVAILABLE_PROPOSAL"
+    ]
+  },
+  {
+    "id": "boqitem_cb6daf08-cce3-4758-ba80-7647b1d78cea",
+    "desc": "Signals to elevators with all required accessories",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "UNAVAILABLE_OR_STALE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": null,
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "STALE_OR_UNAVAILABLE_PROPOSAL"
+    ]
+  },
+  {
+    "id": "boqitem_ea32d5b0-6900-4580-bcce-c34b42fc450a",
+    "desc": "CWZ category fire resistant cable with all accessories",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE"
+    ]
+  },
+  {
+    "id": "boqitem_b9fcbb71-36fb-4912-b023-2940d3619323",
+    "desc": "Heat detector",
+    "reviewStatus": "APPROVED",
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Heat Detector",
+    "proposalCategory": "Detection Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Heat Detector",
+    "detCategory": "Detection Devices",
+    "eligible": true,
+    "reasons": [
+      "PRODUCT_FAMILY_DETERMINISTICALLY_REPRODUCED_FROM_RAW_TEXT",
+      "PARENT_TAXONOMY_CHAIN_CONFIRMED",
+      "SYSTEM_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT",
+      "NO_TECHNICAL_ATTRIBUTE_EXCEEDS_EVIDENCE",
+      "NO_POLICY_AMBIGUITY"
+    ]
+  },
+  {
+    "id": "boqitem_77cf1f90-d7af-444b-a03e-d112bdd4f492",
+    "desc": "Fireman telephone jack",
+    "reviewStatus": "APPROVED",
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Firefighter Telephone",
+    "proposalCategory": "Control Equipment",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Firefighter Telephone",
+    "detCategory": "Control Equipment",
+    "eligible": true,
+    "reasons": [
+      "PRODUCT_FAMILY_DETERMINISTICALLY_REPRODUCED_FROM_RAW_TEXT",
+      "PARENT_TAXONOMY_CHAIN_CONFIRMED",
+      "SYSTEM_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT",
+      "NO_TECHNICAL_ATTRIBUTE_EXCEEDS_EVIDENCE",
+      "NO_POLICY_AMBIGUITY"
+    ]
+  },
+  {
+    "id": "boqitem_1cb21202-4aba-4a84-8944-d8b483082d32",
+    "desc": "Interface module control",
+    "reviewStatus": "APPROVED",
+    "readiness": "Ready with Warnings",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Interface Module",
+    "proposalCategory": "Modules and Interfaces",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Interface Module",
+    "detCategory": "Modules and Interfaces",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:product_type",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:protocol"
+    ]
+  },
+  {
+    "id": "boqitem_b2f8526e-8e7e-4ff4-a00b-e066934ab426",
+    "desc": "Interface module monitor",
+    "reviewStatus": "APPROVED",
+    "readiness": "Ready with Warnings",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Interface Module",
+    "proposalCategory": "Modules and Interfaces",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Interface Module",
+    "detCategory": "Modules and Interfaces",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:product_type",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:protocol"
+    ]
+  },
+  {
+    "id": "boqitem_9e58e68e-4eb6-494a-91e4-ee14cd3a1d45",
+    "desc": "Loop powered strobes",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Strobe",
+    "proposalCategory": "Notification Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Strobe",
+    "detCategory": "Notification Devices",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:operating_voltage",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:loop_compatibility"
+    ]
+  },
+  {
+    "id": "boqitem_b5ae127a-de8a-463e-9865-7df7194be5b2",
+    "desc": "Loop powered strobes with sounder",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Sounder/Strobe",
+    "proposalCategory": "Notification Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Sounder/Strobe",
+    "detCategory": "Notification Devices",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:operating_voltage",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:compatible_panel_family"
+    ]
+  },
+  {
+    "id": "boqitem_6fb917f5-369e-45b6-b686-654faa3a1599",
+    "desc": "Loop powered strobes with sounder (weatherproof)",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Sounder/Strobe",
+    "proposalCategory": "Notification Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Sounder/Strobe",
+    "detCategory": "Notification Devices",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:indoor_outdoor"
+    ]
+  },
+  {
+    "id": "boqitem_2665a3c2-2af9-4827-b00e-bbb95b4a9874",
+    "desc": "Control and monitor element as required for interfacing with access doors, sliding door, fire fighting and HVAC system for proper operation",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "UNAVAILABLE_OR_STALE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": null,
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "STALE_OR_UNAVAILABLE_PROPOSAL"
+    ]
+  },
+  {
+    "id": "boqitem_67a0eec6-575f-4b01-a052-bbf58aaeaf2c",
+    "desc": "Control of HVAC equipment, smoke exhaust fans, duct heaters and interfacing with BMS system",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "UNAVAILABLE_OR_STALE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": null,
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "STALE_OR_UNAVAILABLE_PROPOSAL"
+    ]
+  },
+  {
+    "id": "boqitem_638e0362-eb53-47c6-a895-2881f04b3194",
+    "desc": "Signals to elevators with all required accessories",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "UNAVAILABLE_OR_STALE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": null,
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "STALE_OR_UNAVAILABLE_PROPOSAL"
+    ]
+  },
+  {
+    "id": "boqitem_faf5a954-e39e-47de-90a1-b1afab7852dd",
+    "desc": "Smoke detectors (above ceiling)",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE"
+    ]
+  },
+  {
+    "id": "boqitem_e741459d-86c5-4f5d-8ea2-2518c6fbc86e",
+    "desc": "Smoke detectors (below ceiling)",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE"
+    ]
+  },
+  {
+    "id": "boqitem_1c820fc5-9a2a-4763-986c-ce2bae41cee8",
+    "desc": "Heat detector",
+    "reviewStatus": "APPROVED",
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Heat Detector",
+    "proposalCategory": "Detection Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Heat Detector",
+    "detCategory": "Detection Devices",
+    "eligible": true,
+    "reasons": [
+      "PRODUCT_FAMILY_DETERMINISTICALLY_REPRODUCED_FROM_RAW_TEXT",
+      "PARENT_TAXONOMY_CHAIN_CONFIRMED",
+      "SYSTEM_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT",
+      "NO_TECHNICAL_ATTRIBUTE_EXCEEDS_EVIDENCE",
+      "NO_POLICY_AMBIGUITY"
+    ]
+  },
+  {
+    "id": "boqitem_f67b9725-203b-4c6e-9d6c-ae7403578752",
+    "desc": "Combined smoke and heat detector",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE",
+      "POLICY_AMBIGUITY_PRESENT:MULTI_FUNCTION_DETECTION_REQUIRES_REVIEW"
+    ]
+  },
+  {
+    "id": "boqitem_c91a2d1d-3a4a-4ec9-9214-a5d68128037c",
+    "desc": "Door contact",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE"
+    ]
+  },
+  {
+    "id": "boqitem_2f29f080-9efc-46c8-b011-016427eadab5",
+    "desc": "Duct detector",
+    "reviewStatus": "APPROVED",
+    "readiness": "Ready with Warnings",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Duct Detector",
+    "proposalCategory": "Detection Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Duct Detector",
+    "detCategory": "Detection Devices",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:protocol"
+    ]
+  },
+  {
+    "id": "boqitem_992b9efd-4518-4c1a-97df-86293510ffb1",
+    "desc": "Fire alarm control panel with all accessories",
+    "reviewStatus": "APPROVED",
+    "readiness": "Ready with Warnings",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Fire Alarm Control Panel",
+    "proposalCategory": "Control Equipment",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Fire Alarm Control Panel",
+    "detCategory": "Control Equipment",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:protocol",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:loop_compatibility"
+    ]
+  },
+  {
+    "id": "boqitem_c7e66c78-ce70-40c7-88a2-fadde12d40cc",
+    "desc": "Fire alarm manual station",
+    "reviewStatus": "APPROVED",
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Manual Call Point",
+    "detCategory": "Manual Initiation",
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE",
+      "PARENT_CATEGORY_MISMATCH",
+      "POLICY_AMBIGUITY_PRESENT:GOVERNED_CANDIDATE_KEY_MISSING"
+    ]
+  },
+  {
+    "id": "boqitem_087d3144-4985-414a-b189-a258b0dd2bb6",
+    "desc": "Fire alarm manual station (weather proof)",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Manual Call Point",
+    "proposalCategory": "Manual Initiation",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Manual Call Point",
+    "detCategory": "Manual Initiation",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:indoor_outdoor"
+    ]
+  },
+  {
+    "id": "boqitem_8df981dc-fea2-405d-9402-7ab02c73a745",
+    "desc": "Fireman telephone jack",
+    "reviewStatus": "APPROVED",
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Firefighter Telephone",
+    "proposalCategory": "Control Equipment",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Firefighter Telephone",
+    "detCategory": "Control Equipment",
+    "eligible": true,
+    "reasons": [
+      "PRODUCT_FAMILY_DETERMINISTICALLY_REPRODUCED_FROM_RAW_TEXT",
+      "PARENT_TAXONOMY_CHAIN_CONFIRMED",
+      "SYSTEM_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT",
+      "NO_TECHNICAL_ATTRIBUTE_EXCEEDS_EVIDENCE",
+      "NO_POLICY_AMBIGUITY"
+    ]
+  },
+  {
+    "id": "boqitem_f4a13264-dbbb-4f2a-b521-0cbee88d042e",
+    "desc": "Interface module control",
+    "reviewStatus": "APPROVED",
+    "readiness": "Ready with Warnings",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Interface Module",
+    "detCategory": "Modules and Interfaces",
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE",
+      "PARENT_CATEGORY_MISMATCH",
+      "POLICY_AMBIGUITY_PRESENT:GOVERNED_CANDIDATE_KEY_MISSING"
+    ]
+  },
+  {
+    "id": "boqitem_37ec0640-222f-4ccb-bfdc-f1926e93ee9f",
+    "desc": "Interface module monitor",
+    "reviewStatus": "APPROVED",
+    "readiness": "Ready with Warnings",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Interface Module",
+    "proposalCategory": "Modules and Interfaces",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Interface Module",
+    "detCategory": "Modules and Interfaces",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:product_type",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:protocol"
+    ]
+  },
+  {
+    "id": "boqitem_fb6eea05-fc8a-4b07-84a5-bb21e94ddebc",
+    "desc": "Loop powered strobes",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Strobe",
+    "proposalCategory": "Notification Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Strobe",
+    "detCategory": "Notification Devices",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:operating_voltage",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:protocol",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:product_type",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:loop_compatibility"
+    ]
+  },
+  {
+    "id": "boqitem_451dc77f-59a9-4c1c-a518-e5245040180f",
+    "desc": "Loop powered strobes with sounder",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Sounder/Strobe",
+    "proposalCategory": "Notification Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Sounder/Strobe",
+    "detCategory": "Notification Devices",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:operating_voltage",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:compatible_panel_family",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:loop_compatibility",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:protocol",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:product_type"
+    ]
+  },
+  {
+    "id": "boqitem_5cb49e44-a059-4d8e-b46e-0be5eb696943",
+    "desc": "Loop powered strobes with sounder (weatherproof)",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Sounder/Strobe",
+    "proposalCategory": "Notification Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Sounder/Strobe",
+    "detCategory": "Notification Devices",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:indoor_outdoor"
+    ]
+  },
+  {
+    "id": "boqitem_1475d474-fce7-41e5-bddb-340fa0585388",
+    "desc": "Control and monitor element as required for interfacing with access doors, sliding door, fire fighting and HVAC system for proper operation",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "UNAVAILABLE_OR_STALE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": null,
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "STALE_OR_UNAVAILABLE_PROPOSAL"
+    ]
+  },
+  {
+    "id": "boqitem_b00be5df-e23a-495d-88ca-77056ab19085",
+    "desc": "Control of HVAC equipment, smoke exhaust fans, duct heaters and interfacing with BMS system",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "UNAVAILABLE_OR_STALE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": null,
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "STALE_OR_UNAVAILABLE_PROPOSAL"
+    ]
+  },
+  {
+    "id": "boqitem_29707814-8fd0-47b7-b06e-cf4d17cc26d7",
+    "desc": "Signals to elevators with all required accessories",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "UNAVAILABLE_OR_STALE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": null,
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "STALE_OR_UNAVAILABLE_PROPOSAL"
+    ]
+  },
+  {
+    "id": "boqitem_201ddb27-871c-4681-a5cd-104539fa6068",
+    "desc": "Smoke detectors on slab",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": null,
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "SYSTEM_NOT_GOVERNED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE",
+      "SYSTEM_NOT_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT"
+    ]
+  },
+  {
+    "id": "boqitem_56ee00e9-89d9-4591-94cd-f1de42d52550",
+    "desc": "Fire alarm manual station (weather proof)",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Manual Call Point",
+    "proposalCategory": "Manual Initiation",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Manual Call Point",
+    "detCategory": "Manual Initiation",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:indoor_outdoor"
+    ]
+  },
+  {
+    "id": "boqitem_40eebd13-c03b-43a4-9278-87d87c3a3ea4",
+    "desc": "Loop powered strobes with sounder (weatherproof)",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Sounder/Strobe",
+    "proposalCategory": "Notification Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Sounder/Strobe",
+    "detCategory": "Notification Devices",
+    "eligible": false,
+    "reasons": [
+      "SYSTEM_NOT_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:indoor_outdoor"
+    ]
+  },
+  {
+    "id": "boqitem_534f049e-6bee-4cb3-9e4a-9b1f69914796",
+    "desc": "Fire alarm control panel with all accessories",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Fire Alarm Control Panel",
+    "detCategory": "Control Equipment",
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE",
+      "PARENT_CATEGORY_MISMATCH",
+      "POLICY_AMBIGUITY_PRESENT:GOVERNED_CANDIDATE_KEY_MISSING"
+    ]
+  },
+  {
+    "id": "boqitem_49728377-7e2b-496a-88f6-12dac33ce198",
+    "desc": "CWZ category fire resistant cable with all accessories",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": "Fire Resistant Cable",
+    "proposalSystem": "Electrical",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "SYSTEM_NOT_GOVERNED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE"
+    ]
+  },
+  {
+    "id": "boqitem_5934f512-2b72-49bf-b820-7eb61e0202c7",
+    "desc": "Smoke detectors on slab",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": null,
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "SYSTEM_NOT_GOVERNED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE",
+      "SYSTEM_NOT_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT"
+    ]
+  },
+  {
+    "id": "boqitem_fe1cabbc-5aa3-4779-8cc7-98e60a6ec687",
+    "desc": "Heat detector",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Heat Detector",
+    "proposalCategory": "Detection Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Heat Detector",
+    "detCategory": "Detection Devices",
+    "eligible": false,
+    "reasons": [
+      "SYSTEM_NOT_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT"
+    ]
+  },
+  {
+    "id": "boqitem_9fccee93-6eaa-4348-a256-6b3fdf897bfa",
+    "desc": "Fire alarm manual station (weather proof)",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Manual Call Point",
+    "proposalCategory": "Manual Initiation",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Manual Call Point",
+    "detCategory": "Manual Initiation",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:indoor_outdoor"
+    ]
+  },
+  {
+    "id": "boqitem_ab9e5d37-d6ad-43f1-8687-ce68ff2ed330",
+    "desc": "Loop powered strobes with sounder (weatherproof)",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Sounder/Strobe",
+    "proposalCategory": "Notification Devices",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Sounder/Strobe",
+    "detCategory": "Notification Devices",
+    "eligible": false,
+    "reasons": [
+      "SYSTEM_NOT_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:indoor_outdoor"
+    ]
+  },
+  {
+    "id": "boqitem_450c453b-f97a-483b-b4e5-74b0876e2818",
+    "desc": "Fire alarm control panel with all accessories",
+    "reviewStatus": "APPROVED",
+    "readiness": "Missing Critical Information",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Fire Alarm Control Panel",
+    "proposalCategory": "Control Equipment",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Fire Alarm Control Panel",
+    "detCategory": "Control Equipment",
+    "eligible": true,
+    "reasons": [
+      "PRODUCT_FAMILY_DETERMINISTICALLY_REPRODUCED_FROM_RAW_TEXT",
+      "PARENT_TAXONOMY_CHAIN_CONFIRMED",
+      "SYSTEM_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT",
+      "NO_TECHNICAL_ATTRIBUTE_EXCEEDS_EVIDENCE",
+      "NO_POLICY_AMBIGUITY"
+    ]
+  },
+  {
+    "id": "boqitem_14fc63e2-fcda-4e26-84e5-11f1adbcc0c7",
+    "desc": "CWZ category fire resistant cable with all accessories",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": "Fire Resistant Cable",
+    "proposalSystem": "Electrical",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "SYSTEM_NOT_GOVERNED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE"
+    ]
+  },
+  {
+    "id": "boqitem_8ecce8d4-5e89-4934-badf-a17739beafe4",
+    "desc": "Smoke detectors on slab",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": null,
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "SYSTEM_NOT_GOVERNED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE",
+      "SYSTEM_NOT_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT"
+    ]
+  },
+  {
+    "id": "boqitem_3255c2ea-24fd-4972-b325-452ab3cb2647",
+    "desc": "Fire alarm manual station (weather proof)",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Manual Call Point",
+    "proposalCategory": "Manual Initiation",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Manual Call Point",
+    "detCategory": "Manual Initiation",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:indoor_outdoor"
+    ]
+  },
+  {
+    "id": "boqitem_fb5175a6-0309-45b5-ba6a-466f7fc8239a",
+    "desc": "Loop powered strobes with sounder (weatherproof)",
+    "reviewStatus": null,
+    "readiness": "Classification Required",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": null,
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Sounder/Strobe",
+    "detCategory": "Notification Devices",
+    "eligible": false,
+    "reasons": [
+      "TAXONOMY_CANDIDATE_NOT_ACCEPTED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE",
+      "PARENT_CATEGORY_MISMATCH",
+      "SYSTEM_NOT_CONFIRMED_BY_DETERMINISTIC_SECTION_CONTEXT",
+      "POLICY_AMBIGUITY_PRESENT:GOVERNED_CANDIDATE_KEY_MISSING"
+    ]
+  },
+  {
+    "id": "boqitem_07b9ab12-1be6-430c-8457-a38657deda6f",
+    "desc": "Fire alarm control panel with all accessories",
+    "reviewStatus": "APPROVED",
+    "readiness": "Ready with Warnings",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": "Fire Alarm Control Panel",
+    "proposalCategory": "Control Equipment",
+    "proposalSystem": "Fire Alarm",
+    "detFamily": "Fire Alarm Control Panel",
+    "detCategory": "Control Equipment",
+    "eligible": false,
+    "reasons": [
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:protocol",
+      "ATTRIBUTE_EXCEEDS_EVIDENCE:product_type"
+    ]
+  },
+  {
+    "id": "boqitem_42a18c17-c3c3-44a6-8071-b70a9f5cfef3",
+    "desc": "CWZ category fire resistant cable with all accessories",
+    "reviewStatus": null,
+    "readiness": "Needs Technical Review",
+    "effectiveState": "AVAILABLE",
+    "proposalFamily": null,
+    "proposalCategory": "Fire Resistant Cable",
+    "proposalSystem": "Electrical",
+    "detFamily": null,
+    "detCategory": null,
+    "eligible": false,
+    "reasons": [
+      "SYSTEM_NOT_GOVERNED",
+      "FAMILY_NOT_DETERMINISTICALLY_REPRODUCIBLE"
+    ]
+  }
+]
